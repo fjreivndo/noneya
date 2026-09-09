@@ -1,0 +1,25 @@
+{
+  "name": "hollowreach-desktop",
+  "productName": "Hollowreach",
+  "version": "1.0.0",
+  "description": "Hollowreach as a desktop app, with a built-in multiplayer server.",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "host": "electron . --port 8080",
+    "solo": "electron . --solo",
+    "server": "node relay.js 8080"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  },
+  "build": {
+    "appId": "dev.hollowreach.desktop",
+    "productName": "Hollowreach",
+    "files": ["main.js", "relay.js", "*.html", "package.json"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}
