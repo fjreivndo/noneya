@@ -4,6 +4,16 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.0', date: 'Sep 2026', title: 'Helicopters, jets and more vehicles', items: [
+    ['New', 'Helicopter: two seats, and the passenger can shoot out of the open door. W/S/A/D fly, the mouse turns, Space climbs, Ctrl descends. Jump out and it falls.'],
+    ['New', 'Attack helicopter: minigun on LMB, 14 rockets on RMB, crew protected.'],
+    ['New', 'Jet: W/S throttle, the mouse steers, take off above 26 m/s. Cannon on LMB, 4 bombs on RMB. Hit a wall at speed and it is over.'],
+    ['New', 'Motorbike (fastest on wheels, leans into turns) and Quad bike.'],
+    ['New', 'APC: armoured, carries two, machine-gun turret aimed with the mouse. Bots crew APCs like tanks.'],
+    ['New', 'Speedboat, and a lake on Flatgrass to drive it on.'],
+    ['New', 'Conquest on Ridgeline: each side also gets an attack helicopter, an APC, two motorbikes and a quad bike.'],
+    ['Fix', 'Vehicles destroyed in the air explode where they are, not on the ground below. Rockets no longer hit the vehicle that fired them.'],
+  ] },
   { v: '1.9', date: 'Sep 2026', title: 'Ragdolls and a lot more wiring', items: [
     ['New', 'Ragdolls: bodies go limp when they die, get thrown by the hit (explosions throw them far), tumble down stairs and land on props. Explosions shove bodies already on the ground. Settings can turn them off.'],
     ['New', 'Wiring inputs: keypad (code lock), key input (bind any free key), laser tripwire, damage sensor, prop sensor, toggle button, random.'],

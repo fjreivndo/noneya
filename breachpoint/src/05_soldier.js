@@ -329,7 +329,7 @@ class Rocket {
     const sp = this.vel.length(), step = sp * dt; this.dir.copy(this.vel).multiplyScalar(1 / sp);
     let t = World.raycast(this.pos.x, this.pos.y, this.pos.z, this.dir.x, this.dir.y, this.dir.z, step);
     const sh = raySoldiers(this.pos, this.dir, t >= 0 ? t : step, this.owner, Game.soldiers);
-    const vh = Game.rayVehicles(this.pos, this.dir, t >= 0 ? t : step);
+    const vh = Game.rayVehicles(this.pos, this.dir, t >= 0 ? t : step, this.t < 1.5 && this.owner ? this.owner.vehicle : null);   // don't hit the vehicle that fired it
     const ph = Phys.active ? Phys.ray(this.pos, this.dir, t >= 0 ? t : step) : null;
     if (sh) t = sh.t; else if (vh) t = vh.t; else if (ph) t = ph.t;
     if (t >= 0 || this.t > 6) {
@@ -355,7 +355,7 @@ class Rocket {
 const VKIND = {
   jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
   car: { name: 'Car', hp: 380, max: 27, rev: -9, acc: 17, r: 1.15, h: 1.5, crush: 7, enter: 3.5, bullet: 0.2, blast: 2.5, at: 1, respawn: 25, build: buildCar, seatY: 1.3 },
-  tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
+  tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6, turret: true, seats: 1 },
 };
 WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
 class Vehicle {
@@ -396,13 +396,13 @@ class Vehicle {
     if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
     // held by a physics gun, or frozen in place: the sandbox owns the position
     if (this.driver && this.frozen) this.frozen = false;
-    if (this.held || this.frozen) { this.speed = 0; this.vel.set(0, 0, 0); this.ext.set(0, 0, 0); this.model.position.copy(this.pos); this.model.rotation.y = this.yaw; if (this.kind === 'tank') this.syncTurret(); return; }
+    if (this.held || this.frozen) { this.speed = 0; this.vel.set(0, 0, 0); this.ext.set(0, 0, 0); this.model.position.copy(this.pos); this.model.rotation.y = this.yaw; if (this.K.turret) this.syncTurret(); return; }
     this.vel.set(-Math.sin(this.yaw) * this.speed + this.ext.x, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed + this.ext.z);
     if (this.ext.y > 0) { this.vel.y = Math.max(this.vel.y, this.ext.y); this.ext.y = 0; }
     const before = this.speed; const r = moveBody(this.pos, this.vel, dt, this.K.r, this.K.h, true);
     this.ext.x *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); this.ext.z *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); if (r.hitWall) { this.ext.x *= -0.3; this.ext.z *= -0.3; }
     this.reloadT -= dt; this.recoil = Math.max(0, this.recoil - dt * 2.5);
-    if (this.kind === 'tank') { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
+    if (this.K.turret) { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
     if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority() && this.kind !== 'tank') this.damage(Math.abs(before) * 3, null); this.speed *= this.kind === 'tank' ? 0 : -0.25; }
     if (Math.abs(this.speed) > 5 && Game.authority()) {
       for (const s of Game.soldiers) if (s.alive && !s.vehicle && dist2(s.pos.x, s.pos.z, this.pos.x, this.pos.z) < this.K.r + 0.8 && s.team !== this.team) Game.damage(s, Math.abs(this.speed) * this.K.crush, this.driver, this.kind, 'chest');
@@ -414,9 +414,9 @@ class Vehicle {
   damage(d, by) {
     if (!this.alive) return; this.hp -= d;
     if (this.hp <= 0) {
-      this.alive = false; this.respawnT = this.K.respawn; FX.explosion(this.pos.clone().setY(1)); Sfx.play('explode', this.pos);
+      this.alive = false; this.respawnT = this.K.respawn; FX.explosion(this.pos.clone().setY(this.pos.y + 1)); Sfx.play('explode', this.pos);
       for (const s of [this.driver, this.passenger]) if (s) { const occ = s; Game.exitVehicle(occ, true); if (Game.authority()) Game.damage(occ, 999, by, 'jeep', 'chest'); }
-      Game.explosion(this.pos.clone().setY(1), 60, 5, by, 'jeep');
+      Game.explosion(this.pos.clone().setY(this.pos.y + 1), 60, 5, by, 'jeep');
       this.model.visible = false; Game.broadcastVehicle(this);
     }
   }

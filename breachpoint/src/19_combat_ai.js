@@ -120,7 +120,7 @@ const TankAI = {
     this.t -= dt; if (this.t > 0) return; this.t = 1.5;
     const sbx = Game.mode.id === 'sandbox'; if (!Game.mode.vehicles && !sbx) return;
     for (const v of Game.vehicles) {
-      if (v.kind !== 'tank' || !v.alive || v.driver || v.held || v.frozen) continue;
+      if (!v.K.turret || !v.alive || v.driver || v.held || v.frozen) continue;
       if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle) continue;   // someone is on the way
       let best = null, bd = sbx ? 45 : 90;
       for (const s of Game.soldiers) {
@@ -139,7 +139,7 @@ Brain.prototype.reset = function () { _brainReset19.call(this); this.crew = null
 const _brainUpdate19 = Brain.prototype.update;
 Brain.prototype.update = function (dt) {
   const s = this.s; if (!s.alive) return;
-  if (s.vehicle) { if (s.vehicle.driver === s && s.vehicle.kind === 'tank') return this.driveTank(dt); if (s.vehicle.driver === s) { Game.exitVehicle(s); } return; }
+  if (s.vehicle) { if (s.vehicle.driver === s && s.vehicle.K.turret) return this.driveTank(dt); if (s.vehicle.driver === s) { Game.exitVehicle(s); } return; }
   const v = this.crew;
   if (v) {
     if (!v.alive || v.driver || v.held || (Game.mode.id !== 'sandbox' && v.team !== s.team)) { if (v.crew === s) v.crew = null; this.crew = null; }
@@ -207,6 +207,6 @@ Brain.prototype.driveTank = function (dt) {
     const W = WEAPONS.tankshell, drop = (W.gravity || 0) * hd * hd / (2 * W.projectile * W.projectile);
     s.yaw = Math.atan2(-dx, -dz) + T.ex; s.pitch = Math.atan2(p.y - m.y, hd) + drop / Math.max(hd, 1) + T.ey;
     const aligned = Math.abs(angDiff(v.yaw + v.tYaw, s.yaw)) < 0.05 && Math.abs(v.tPitch - clamp(s.pitch, -0.12, 0.32)) < 0.06;
-    if (aligned && v.reloadT <= 0 && hd > 14) v.fire(s);
+    if (aligned && (v.kind === 'tank' ? v.reloadT <= 0 && hd > 14 : true)) v.fire(s);
   } else { s.yaw = angWrap(v.yaw); s.pitch = 0.02; }
 };

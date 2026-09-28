@@ -38,7 +38,7 @@ const Player = {
       if (I.hit('KeyV')) { s.noclip = !s.noclip; s.vel.set(0, 0, 0); HUD.center(s.noclip ? 'Noclip on' : 'Noclip off', 0.6); }
       for (const k of ['KeyT', 'KeyK', 'KeyU', 'KeyJ', 'KeyL', 'KeyO']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
     }
-    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); else if (I.mouse.left && s.vehicle.kind === 'tank') s.vehicle.fire(s); return; }
+    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); else s.vehicle.controls(s, I); return; }
     // move
     const m = s.moveIn;
     m.f = (I.down('KeyW') ? 1 : 0) - (I.down('KeyS') ? 1 : 0); m.s = (I.down('KeyD') ? 1 : 0) - (I.down('KeyA') ? 1 : 0);
@@ -110,9 +110,9 @@ const Player = {
     const cam = Game.camera, V = Game.view;
     let fov = Settings.fov;
     this.inspectT -= dt;
-    if (s.alive && s.vehicle && s.vehicle.driver === s && s.vehicle.kind === 'tank') {
-      // tank: orbit behind the turret, looking where you aim
-      V.third = true; const v = s.vehicle, f = s.forward(new V3()), back = 10;
+    if (s.alive && s.vehicle && s.vehicle.driver === s && (s.vehicle.K.turret || s.vehicle.K.type === 'heli' || s.vehicle.K.type === 'jet')) {
+      // tanks, APCs and aircraft: orbit behind, looking where you aim
+      V.third = true; const v = s.vehicle, f = s.forward(new V3()), back = v.K.camBack || 10;
       const c = new V3(v.pos.x, v.pos.y + 3.2, v.pos.z).addScaledVector(f, -back); c.y = Math.max(c.y + 1.2, 1.5);
       cam.position.lerp(c, 1 - Math.exp(-dt * 12)); cam.lookAt(new V3(v.pos.x, v.pos.y + 2.2, v.pos.z).addScaledVector(f, 30));
     } else if (s.alive && s.vehicle && s.vehicle.driver === s) {

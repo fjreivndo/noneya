@@ -506,7 +506,7 @@ const Game = {
     if (!this.authority() && s.ctrl === 'local') Net.send({ t: 'med' });
     return true;
   },
-  rayVehicles(o, d, maxT) { let best = maxT, hit = null; for (const v of this.vehicles) { if (!v.alive) continue; const t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, v.box()); if (t >= 0 && t < best) { best = t; hit = v; } } return hit ? { v: hit, t: best } : null; },
+  rayVehicles(o, d, maxT, skip) { let best = maxT, hit = null; for (const v of this.vehicles) { if (!v.alive || v === skip) continue; const t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, v.box()); if (t >= 0 && t < best) { best = t; hit = v; } } return hit ? { v: hit, t: best } : null; },
   onShot(s, end, eye) { Net.shot(s, end); },
   /* a bullet hit a sandbox prop: push it, maybe set it off */
   propHit(s, p, point, dir, dmg) {
@@ -520,7 +520,7 @@ const Game = {
     for (const v of this.vehicles) {
       if (!v.alive || dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) > v.K.enter) continue;
       if (!v.driver) { v.driver = s; s.vehicle = v; Net.vehicleSeat(v); if (s.ctrl === 'local' && v.kind === 'tank') HUD.center('Tank: W/S drive, A/D turn, mouse aims the turret, LMB fires', 2.5); return true; }
-      if (!v.passenger && v.kind !== 'tank') { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
+      if (!v.passenger && (v.K.seats || 2) > 1) { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
     }
     return false;
   },

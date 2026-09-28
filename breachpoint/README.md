@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.9.html     the game (built, self-contained, works offline)
+Breachpoint v2.0.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.9.html
+build.js                  npm install && node build.js  →  Breachpoint v2.0.html
 ```
 
 ## Modes
@@ -35,7 +35,7 @@ Press **Q** for the spawn menu. It has these tabs:
 - **NPCs:** Aegis and Vanta soldiers (pick their weapon and skill), zombies,
   citizens and target dummies.
 - **Weapons:** everything in the game, with your skins and attachments on.
-- **Vehicles:** jeeps, cars, plus tanks (W/S drive, A/D turn on the spot, mouse aims the turret, LMB fires the cannon; the crew is safe from bullets, so bring RPGs or M79s).
+- **Vehicles:** jeeps, cars, motorbikes, quad bikes, APCs, helicopters, attack helicopters, jets, speedboats, plus tanks (W/S drive, A/D turn on the spot, mouse aims the turret, LMB fires the cannon; the crew is safe from bullets, so bring RPGs or M79s).
 - **Tools**, **Saves** (named slots, export / import as a file, an Autosave
   when you leave) and **Options.**
 
@@ -77,6 +77,16 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.0
+
+- **Helicopters** (transport and attack), a **jet**, **motorbike**, **quad
+  bike**, **APC** and **speedboat** (Flatgrass has a lake for it).
+- Flying: W/S/A/D move, the mouse turns, Space climbs, Ctrl descends. Jet:
+  W/S throttle, the mouse steers, take off above 26 m/s.
+- Weapons: attack heli minigun + rockets, jet cannon + bombs, APC turret
+  machine gun (bots crew APCs too).
+- Ridgeline Conquest adds an attack heli, an APC, two bikes and a quad per side.
 
 ## New in v1.9
 

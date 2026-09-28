@@ -288,7 +288,7 @@ const Net = {
         break;
       }
       case 'flag': if (Game.local) { const f = World.flags.find(x => x.name === e.f); if (f) f.owner = e.o; if (e.o === Game.local.team) Sfx.play('capture'); } break;
-      case 'veh': { const v = Game.vehicles.find(x => x.id === e.id); if (v) { if (!e.alive && v.alive) { v.alive = false; FX.explosion(v.pos.clone().setY(1)); Sfx.play('explode', v.pos); v.model.visible = false; for (const s of [v.driver, v.passenger]) if (s) Game.exitVehicle(s, true); } else if (e.alive && !v.alive) v.reset(); v.hp = e.hp; } break; }
+      case 'veh': { const v = Game.vehicles.find(x => x.id === e.id); if (v) { if (!e.alive && v.alive) { v.alive = false; FX.explosion(v.pos.clone().setY(v.pos.y + 1)); Sfx.play('explode', v.pos); v.model.visible = false; for (const s of [v.driver, v.passenger]) if (s) Game.exitVehicle(s, true); } else if (e.alive && !v.alive) v.reset(); v.hp = e.hp; } break; }
       case 'pk': if (e.op === 'add') Game.addPickup(e.kind, new V3(...e.p), e.id); else Game.removePickup(e.id); break;
       case 'ammo': { const s = Game.byId(e.s), L = Game.local; if (s && L && L.alive && L.team === s.team && dist2(L.pos.x, L.pos.z, s.pos.x, s.pos.z) < 6) { for (const id in L.ammo) { const w = WEAPONS[id]; L.ammo[id].res = Math.min(w.reserve * 1.5, L.ammo[id].res + w.mag * 2); } HUD.center('Ammo resupplied', 1); } break; }
     }
@@ -330,7 +330,7 @@ const Net = {
     const n = v.net; if (!n) return; const k = 1 - Math.exp(-dt * 12);
     v.pos.x = lerp(v.pos.x, n.x, k); v.pos.y = lerp(v.pos.y, n.y, k); v.pos.z = lerp(v.pos.z, n.z, k); v.yaw = angWrap(v.yaw + angDiff(v.yaw, n.yaw) * k); v.speed = n.sp;
     v.model.position.copy(v.pos); v.model.rotation.y = v.yaw; v.model.userData.wheels.forEach(w => w.rotation.x += v.speed * dt / 0.42);
-    if (v.kind === 'tank') { v.tYaw = angWrap(v.tYaw + angDiff(v.tYaw, n.ty || 0) * k); v.tPitch = lerp(v.tPitch, n.tp || 0, k); v.reloadT -= dt; v.recoil = Math.max(0, v.recoil - dt * 2.5); v.syncTurret(); }
+    if (v.K.turret) { v.tYaw = angWrap(v.tYaw + angDiff(v.tYaw, n.ty || 0) * k); v.tPitch = lerp(v.tPitch, n.tp || 0, k); v.reloadT -= dt; v.recoil = Math.max(0, v.recoil - dt * 2.5); v.syncTurret(); }
   },
 
   /* ── hooks called by the game ── */
