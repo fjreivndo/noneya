@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.0.html     the game (built, self-contained, works offline)
+Breachpoint v2.1.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.0.html
+build.js                  npm install && node build.js  →  Breachpoint v2.1.html
 ```
 
 ## Modes
@@ -77,6 +77,17 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.1
+
+- **Water on every map.** Dustyard: a flooded canal with a plank walkway and
+  a fountain pool. Ridgeline: a river with three bridges and a lake around
+  an island that holds a sixth flag (F, Island), plus a speedboat per side.
+  Flatgrass: a deep lake with an island lighthouse, a dock and a footbridge.
+- **Swimming:** wade slowly in shallows; swim at half speed in deep water,
+  no shooting, Space up / Ctrl dive, climb out at the bank, drown after 8 s
+  under. Murky underwater view; bullets stop at the surface.
+- Vehicles flood in deep water, boats float, bots stick to bridges.
 
 ## New in v2.0
 

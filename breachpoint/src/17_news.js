@@ -4,6 +4,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.1', date: 'Sep 2026', title: 'Water everywhere', items: [
+    ['New', 'Every map has water. Dustyard: a flooded canal through Lower with a dry plank walkway, and a fountain pool in CT spawn. Ridgeline: a river across the valley with three bridges, and a lake around an island. Flatgrass: a deep lake with an island lighthouse, a dock and a footbridge.'],
+    ['New', 'A sixth Conquest flag on Ridgeline: F, the Island. Take it over the footbridge, from the dock, by boat, or swim. Each side gets a speedboat on the river.'],
+    ['New', 'Swimming: wade slowly through the shallows; in deep water you swim at half speed and can\'t shoot. Space rises, Ctrl dives, and you climb out at the bank. Stay under for more than 8 seconds and you start to drown.'],
+    ['New', 'Underwater the view turns murky blue. Bullets stop at the surface, so a swimmer can only be hit from the neck up.'],
+    ['New', 'Ground vehicles that drive into deep water stall and flood; aircraft that ditch sink fast. Boats float. Bullets and blood splash on the surface.'],
+    ['Change', 'Bots use the bridges instead of swimming, and nobody spawns in the water.'],
+  ] },
   { v: '2.0', date: 'Sep 2026', title: 'Helicopters, jets and more vehicles', items: [
     ['New', 'Helicopter: two seats, and the passenger can shoot out of the open door. W/S/A/D fly, the mouse turns, Space climbs, Ctrl descends. Jump out and it falls.'],
     ['New', 'Attack helicopter: minigun on LMB, 14 rockets on RMB, crew protected.'],

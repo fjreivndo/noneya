@@ -91,20 +91,6 @@ Object.assign(VKIND, {
   boat:       { name: 'Speedboat', desc: 'Fast on water, stuck on land. Flatgrass has a lake', type: 'boat', hp: 320, max: 26, rev: -6, acc: 13, r: 1.2, h: 1.2, br: 1.2, bh: 1.2, crush: 6, enter: 3.5, bullet: 0.2, blast: 2.4, at: 1, respawn: 25, seats: 2, seatAt: [-0.4, 0.75, 0.3], seatAt2: [0.4, 0.75, 0.9], build: buildBoat },
 });
 
-/* ── water (Flatgrass gets a lake) ─────────────────────────────────────── */
-World.water = [];
-const inWater = (x, z) => World.water.some(w => x > w.x0 && x < w.x1 && z > w.z0 && z < w.z1);
-for (const k in MAPS) { const m = MAPS[k], b = m.build; m.build = function () { World.water = []; const r = b.apply(this, arguments); if (k === 'flatgrass') World.water.push({ x0: 52, z0: -96, x1: 96, z1: -52 }); return r; }; }
-let _waterScene = null;
-function ensureWater() {
-  if (_waterScene === Game.scene || !Game.scene) return; _waterScene = Game.scene;
-  for (const w of World.water) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w.x1 - w.x0, w.z1 - w.z0), new THREE.MeshLambertMaterial({ color: 0x2a6a9a, transparent: true, opacity: 0.8 }));
-    m.rotation.x = -Math.PI / 2; m.position.set((w.x0 + w.x1) / 2, 0.03, (w.z0 + w.z1) / 2); Game.scene.add(m);
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(w.x1 - w.x0 + 3, w.z1 - w.z0 + 3), lam('#c8b888')); sh.rotation.x = -Math.PI / 2; sh.position.set(m.position.x, 0.015, m.position.z); Game.scene.add(sh);
-  }
-}
-
 /* ── seats, hitboxes, controls ─────────────────────────────────────────── */
 const _seat22 = Vehicle.prototype.seatPos;
 Vehicle.prototype.seatPos = function (out, s) {
@@ -235,7 +221,7 @@ Vehicle.prototype.physics = function (dt) {
   _phys22.call(this, dt); this.gunTick(dt);
   if (!this.alive) return;
   if (this.K.lean) { this.model.rotation.z = -this.steer * clamp(Math.abs(this.speed) / this.K.max, 0, 1) * 0.5; }
-  if (T === 'boat') { this.onWater = inWater(this.pos.x, this.pos.z); if (this.onWater) { this.model.position.y = this.pos.y + Math.sin(Game.now * 3 + this.pos.x) * 0.05; this.model.rotation.x = clamp(this.speed / this.K.max, -1, 1) * 0.12; if (Math.abs(this.speed) > 4 && Math.random() < 0.5) FX.emit('norm', this.pos.x + Math.sin(this.yaw) * 2, 0.1, this.pos.z + Math.cos(this.yaw) * 2, 3, 2, [0.85, 0.9, 0.95], 0.6, -6, 0.6); } }
+  if (T === 'boat') { this.onWater = inWater(this.pos.x, this.pos.z); if (this.onWater) { this.pos.y = 0; this.vel.y = 0; this.model.position.y = Math.sin(Game.now * 3 + this.pos.x) * 0.05; this.model.rotation.x = clamp(this.speed / this.K.max, -1, 1) * 0.12; if (Math.abs(this.speed) > 4 && Math.random() < 0.5) FX.emit('norm', this.pos.x + Math.sin(this.yaw) * 2, 0.1, this.pos.z + Math.cos(this.yaw) * 2, 3, 2, [0.85, 0.9, 0.95], 0.6, -6, 0.6); } }
 };
 /* other people's aircraft: tilt and spin from how they're moving */
 const _interp22 = Net.interpVehicle.bind(Net);
@@ -260,9 +246,7 @@ function vehicleHint(L) {
   return `${hp} · W/S drive · A/D steer · Space brake · E exit`;
 }
 
-/* ── per frame: water meshes; Conquest gets the new vehicles too ──────── */
-const _gu22 = Game.update.bind(Game);
-Game.update = function (dt) { if (this.running) ensureWater(); return _gu22(dt); };
+/* ── Conquest gets the new vehicles too ─────────────────────────────── */
 if (MAPS.ridgeline) {
   const b = MAPS.ridgeline.build;
   MAPS.ridgeline.build = function () {

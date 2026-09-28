@@ -61,13 +61,13 @@ function rayBox(ox, oy, oz, dx, dy, dz, b) {
 /* ── world ─────────────────────────────────────────────────────────────── */
 const World = {
   scene: null, group: null, boxes: [], cell: 8, grid: null, gx0: 0, gz0: 0, gw: 0, gh: 0, stamp: 1,
-  zones: [], sites: {}, spawns: { T: [], CT: [] }, flags: [], hq: {}, vehicleSpawns: [], smokeSpots: {},
+  zones: [], sites: {}, spawns: { T: [], CT: [] }, flags: [], hq: {}, vehicleSpawns: [], smokeSpots: {}, water: [],
   bounds: { x0: -50, z0: -50, x1: 50, z1: 50 }, nav: null, def: null, hit: { t: 0, nx: 0, ny: 0, nz: 0, box: null },
 
   reset(scene) {
     if (this.group) { scene.remove(this.group); this.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     this.scene = scene; this.group = new THREE.Group(); scene.add(this.group);
-    this.boxes = []; this.zones = []; this.sites = {}; this.spawns = { T: [], CT: [] }; this.flags = []; this.hq = {}; this.vehicleSpawns = []; this.smokeSpots = {};
+    this.boxes = []; this.zones = []; this.sites = {}; this.spawns = { T: [], CT: [] }; this.flags = []; this.hq = {}; this.vehicleSpawns = []; this.smokeSpots = {}; this.water = [];
   },
   add(x0, y0, z0, x1, y1, z1, tex, color, opts = {}) {
     const b = { x0: Math.min(x0, x1), y0: Math.min(y0, y1), z0: Math.min(z0, z1), x1: Math.max(x0, x1), y1: Math.max(y0, y1), z1: Math.max(z0, z1), stamp: 0, tex };
@@ -152,6 +152,8 @@ function moveBody(p, v, dt, r, h, grounded) {
   for (let axis = 0; axis < 2; axis++) {
     const vv = axis === 0 ? v.x : v.z; if (vv === 0) continue;
     if (axis === 0) p.x += vv * dt; else p.z += vv * dt;
+    // a water bank is a wall to anything below it by more than it can climb
+    if (World.water.length && World.floorAt(p.x, p.z) - p.y > moveBody.climb) { if (axis === 0) p.x -= vv * dt; else p.z -= vv * dt; res.hitWall = true; continue; }
     for (const b of near) {
       if (!(p.x + r > b.x0 && p.x - r < b.x1 && p.z + r > b.z0 && p.z - r < b.z1 && p.y + h > b.y0 && p.y < b.y1 - 0.001)) continue;
       const rise = b.y1 - p.y;
@@ -165,7 +167,8 @@ function moveBody(p, v, dt, r, h, grounded) {
     }
   }
   const prevY = p.y; p.y += v.y * dt;
-  if (p.y <= 0) { if (v.y < 0) res.landed = -v.y; p.y = 0; v.y = 0; res.grounded = true; }
+  const floor = World.water.length ? World.floorAt(p.x, p.z) : 0;   // lakes and rivers have beds below 0
+  if (p.y <= floor) { if (v.y < 0) res.landed = -v.y; p.y = floor; v.y = 0; res.grounded = true; }
   for (const b of near) {
     if (!(p.x + r > b.x0 && p.x - r < b.x1 && p.z + r > b.z0 && p.z - r < b.z1)) continue;
     if (p.y + h > b.y0 && p.y < b.y1) {
@@ -176,6 +179,8 @@ function moveBody(p, v, dt, r, h, grounded) {
   const B = World.bounds; p.x = clamp(p.x, B.x0 + r, B.x1 - r); p.z = clamp(p.z, B.z0 + r, B.z1 - r);
   return res;
 }
+
+moveBody.climb = STEP;
 
 /* ── navigation grid + A* ──────────────────────────────────────────────── */
 class NavGrid {
@@ -208,7 +213,7 @@ class NavGrid {
   walkableAt(x, z) { const i = this.idx(x, z); return i >= 0 && this.walk[i] === 1; }
   nearest(x, z, maxR = 12, reachOnly = false) {
     if (reachOnly) this.ensureReach();
-    const ok = i => this.walk[i] && (!reachOnly || this.reach[i]);
+    const ok = i => this.walk[i] && (!reachOnly || (this.reach[i] && !(this.wet && this.wet[i])));
     let i = this.idx(x, z); if (i >= 0 && ok(i)) return i;
     const cx = Math.floor((x - this.x0) / this.cs), cz = Math.floor((z - this.z0) / this.cs);
     for (let r = 1; r <= maxR; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
@@ -219,8 +224,8 @@ class NavGrid {
   }
   /* straight grid line clear of blocked cells (supercover-ish by sampling) */
   lineClear(ax, az, bx, bz) {
-    const d = Math.hypot(bx - ax, bz - az), n = Math.ceil(d / (this.cs * 0.5));
-    for (let k = 0; k <= n; k++) { const t = n ? k / n : 0; const i = this.idx(ax + (bx - ax) * t, az + (bz - az) * t); if (i < 0 || !this.walk[i]) return false; }
+    const d = Math.hypot(bx - ax, bz - az), n = Math.ceil(d / (this.cs * 0.5)), i0 = this.idx(ax, az), wetOk = this.wet && i0 >= 0 && this.wet[i0];
+    for (let k = 0; k <= n; k++) { const t = n ? k / n : 0; const i = this.idx(ax + (bx - ax) * t, az + (bz - az) * t); if (i < 0 || !this.walk[i] || (this.wet && this.wet[i] && !wetOk)) return false; }   // straight lines don't cut across water
     return true;
   }
   lineHits(ax, az, bx, bz, fn) { const n = Math.ceil(Math.hypot(bx - ax, bz - az)); for (let k = 0; k <= n; k++) { const t = n ? k / n : 0; if (fn(ax + (bx - ax) * t, az + (bz - az) * t)) return true; } return false; }
