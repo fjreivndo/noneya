@@ -4,6 +4,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.4', date: 'Sep 2026', title: 'Tanks, scopes and a pricier armory', items: [
+    ['New', 'Tanks. One per side in Conquest, and in the Sandbox spawn menu. W/S drive, A/D turn on the spot, the turret follows your aim, LMB fires the cannon. The crew is safe from bullets. RPGs and M79s do extra damage to it, and engineer bots go after tanks with them.'],
+    ['New', 'Real scope overlays for the 4x ACOG, the AUG and the crossbow (with bullet-drop marks), plus a new mil-dot sniper reticle. The overlay fades in as you aim.'],
+    ['Fix', 'Aiming down sights blocks much less of the screen: the gun sits further out and is barely magnified.'],
+    ['Change', 'Everything bought with credits costs 3× more: cases, keys, key bundles and attachment unlocks. Skin sell values went up 3× too. Match rewards are unchanged, so it takes longer to earn. In-match Defuse prices are unchanged.'],
+  ] },
   { v: '1.3', date: 'Sep 2026', title: 'Keys, levels and a proper victory screen', items: [
     ['New', 'Every case now opens with its own key (Ember, Glacier, Neon, Arsenal). Old keys became Master Keys that open anything.'],
     ['New', 'Buy keys one at a time or in bundles of 5 at 15% off, right on each case.'],

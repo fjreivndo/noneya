@@ -121,8 +121,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 #flash{position:absolute;inset:0;background:#fff;opacity:0}
 #blood{position:absolute;inset:0;box-shadow:inset 0 0 120px 30px rgba(200,0,0,.8);opacity:0;transition:opacity .25s}
 #vign{position:absolute;inset:0;box-shadow:inset 0 0 200px 60px rgba(160,0,0,.9);opacity:0}
-#scope{position:absolute;inset:0;background:radial-gradient(circle at center,transparent 0,transparent 36vh,#000 36.2vh)}
-#scope:before,#scope:after{content:"";position:absolute;background:#000}#scope:before{left:0;right:0;top:50%;height:1px}#scope:after{top:0;bottom:0;left:50%;width:1px}
+#scope{position:absolute;inset:0}#scope svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #prog{position:absolute;top:62%;left:50%;transform:translateX(-50%);width:300px;text-align:center}#prog .pb{height:8px;background:rgba(0,0,0,.6);border-radius:4px;overflow:hidden;margin-top:4px}#progbar{height:100%;background:var(--acc)}
 #hint{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);font-size:14px;color:#ffe6a0}
 #spec{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 16px;border-radius:3px}
@@ -147,7 +146,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 #newsBody{max-width:780px}.cl{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--mut);border-radius:4px;padding:14px 18px;margin-bottom:12px}
 .cl.latest{border-left-color:var(--acc)}.clh{display:flex;gap:12px;align-items:baseline}.clh b{font-size:20px;color:var(--acc2)}.clh span{font-weight:700;font-size:16px}.clh small{margin-left:auto;color:var(--mut)}
 .cl ul{margin:10px 0 0;padding:0;list-style:none}.cl li{padding:4px 0;line-height:1.45;display:flex;gap:10px}.cl em{font-style:normal;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;height:fit-content;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;flex:none}
-.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
+.t-change{background:rgba(255,176,58,.18);color:#ffb03a}.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
 .ndot{background:var(--acc);color:#1a0f06;font-size:10px;padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:6px}
 /* keys */
 .keychip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:3px solid var(--kc);padding:5px 10px;border-radius:3px;font-size:12px}.keychip b{color:var(--kc);font-size:15px}
@@ -306,7 +305,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.3';
+const VERSION = '1.4';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -512,11 +511,11 @@ Object.assign(WEAPONS, {
   // rifles
   galil:      { name: 'Galil AR', slot: 1, type: 'rifle', dmg: 30, rpm: 666, mag: 35, reserve: 90, reload: 3.0, spread: 0.005, moveSpread: 0.1, recoil: 0.9, falloff: 0.98, pen: 0.775, price: 1800, kill: 300, speed: 0.89, sound: 0.95, zoom: 56, auto: true, side: 'T' },
   famas:      { name: 'FAMAS', slot: 1, type: 'rifle', dmg: 30, rpm: 666, burst: 3, burstRpm: 1100, mag: 25, reserve: 90, reload: 3.3, spread: 0.004, moveSpread: 0.09, recoil: 0.8, falloff: 0.97, pen: 0.7, price: 2050, kill: 300, speed: 0.9, sound: 0.9, zoom: 56, side: 'CT' },
-  aug:        { name: 'AUG', slot: 1, type: 'rifle', dmg: 28, rpm: 600, mag: 30, reserve: 90, reload: 3.8, spread: 0.003, moveSpread: 0.085, recoil: 0.75, falloff: 0.98, pen: 0.9, price: 3300, kill: 300, speed: 0.88, sound: 0.9, zoom: 40, auto: true, side: 'CT', builtinScope: true },
+  aug:        { name: 'AUG', slot: 1, type: 'rifle', dmg: 28, rpm: 600, mag: 30, reserve: 90, reload: 3.8, spread: 0.003, moveSpread: 0.085, recoil: 0.75, falloff: 0.98, pen: 0.9, price: 3300, kill: 300, speed: 0.88, sound: 0.9, zoom: 40, auto: true, side: 'CT', builtinScope: true, scope: true, overlay: 'acog' },
   // heavy
   minigun:    { name: 'Minigun', slot: 1, type: 'lmg', dmg: 22, rpm: 1400, mag: 200, reserve: 400, reload: 7, spread: 0.018, moveSpread: 0.08, recoil: 0.35, falloff: 0.95, pen: 0.7, price: 0, kill: 300, speed: 0.72, sound: 0.9, zoom: 62, auto: true, spinup: 0.7, special: true },
   autosniper: { name: 'Auto-Sniper', slot: 1, type: 'sniper', dmg: 80, rpm: 240, mag: 20, reserve: 90, reload: 3.1, spread: 0.002, hipSpread: 0.07, moveSpread: 0.12, recoil: 1.8, falloff: 0.99, pen: 0.82, price: 5000, kill: 300, speed: 0.78, sound: 1.3, zoom: 28, scope: true },
-  crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true },
+  crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true, scope: true, overlay: 'bow' },
   m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 8, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
 });
 WEAPONS.rpg.gravity = 0.7; WEAPONS.rpg.explosive = true;
@@ -554,13 +553,13 @@ const CLASSES = {
 
 /* ── rarity, wear ──────────────────────────────────────────────────────── */
 const RARITY = [
-  { name: 'Common', color: '#b0c3d9', value: 6 },
-  { name: 'Uncommon', color: '#5e98d9', value: 18 },
-  { name: 'Rare', color: '#4b69ff', value: 45 },
-  { name: 'Epic', color: '#8847ff', value: 140 },
-  { name: 'Legendary', color: '#d32ce6', value: 420 },
-  { name: 'Mythic', color: '#eb4b4b', value: 1300 },
-  { name: 'Exotic', color: '#e4ae39', value: 4200 },
+  { name: 'Common', color: '#b0c3d9', value: 18 },
+  { name: 'Uncommon', color: '#5e98d9', value: 54 },
+  { name: 'Rare', color: '#4b69ff', value: 135 },
+  { name: 'Epic', color: '#8847ff', value: 420 },
+  { name: 'Legendary', color: '#d32ce6', value: 1260 },
+  { name: 'Mythic', color: '#eb4b4b', value: 3900 },
+  { name: 'Exotic', color: '#e4ae39', value: 12600 },
 ];
 const CASE_ODDS = [0, 0.50, 0.28, 0.14, 0.055, 0.02, 0.005]; // by rarity index
 const WEARS = [
@@ -601,7 +600,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defSkin(F, 1, 'ak47', 'Jungle Stripe', 'tiger', ['#4f6b2f', '#1c2412']);
   defSkin(F, 1, 'm4a4', 'Desert Hex', 'hex', ['#b8a076', '#6b5a3c']);
 
-  CASES.push({ id: 'ember', name: 'Ember Case', color: '#ff7a2f', price: 120, desc: 'Heat, ash and dragons.' });
+  CASES.push({ id: 'ember', name: 'Ember Case', color: '#ff7a2f', price: 360, desc: 'Heat, ash and dragons.' });
   const E = 'ember';
   defSkin(E, 1, 'glock', 'Rustwire', 'rust', ['#7a3b1c', '#b8612b', '#3b1d0f']);
   defSkin(E, 1, 'nova', 'Kiln', 'fade', ['#ffb347', '#ff5e1a', '#7a1f0a']);
@@ -622,7 +621,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(E, 'flipwing', 'Ember Doppler', 'doppler', ['#ff3d00', '#1a0500', '#ffb300', '#6a0f00']);
   defKnife(E, 'spike', 'Crimson Web', 'web', ['#8a0f14', '#0a0a0a']);
 
-  CASES.push({ id: 'glacier', name: 'Glacier Case', color: '#5fd4ff', price: 120, desc: 'Cold steel and aurora light.' });
+  CASES.push({ id: 'glacier', name: 'Glacier Case', color: '#5fd4ff', price: 360, desc: 'Cold steel and aurora light.' });
   const G = 'glacier';
   defSkin(G, 1, 'glock', 'Frostbite', 'digital', ['#d8eef7', '#8ab6cc', '#4f7d96']);
   defSkin(G, 1, 'p90', 'Snowdrift', 'camo', ['#eef4f7', '#b8c8d0', '#8aa0ac']);
@@ -643,7 +642,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(G, 'talon', 'Tiger Ice', 'tiger', ['#dff6ff', '#0a2a4a']);
   defKnife(G, 'flipwing', 'Marble Veil', 'marble', ['#f2f6fa', '#1a2a4a', '#8fb0d6']);
 
-  CASES.push({ id: 'neon', name: 'Neon Case', color: '#ff3df0', price: 120, desc: 'Synthwave, glitches and arcade light.' });
+  CASES.push({ id: 'neon', name: 'Neon Case', color: '#ff3df0', price: 360, desc: 'Synthwave, glitches and arcade light.' });
   const N = 'neon';
   defSkin(N, 1, 'glock', 'Pixel Pop', 'digital', ['#ff3df0', '#3df0ff', '#1a0a2a']);
   defSkin(N, 1, 'p2000', 'Grid Runner', 'mesh', ['#0a0a1a', '#ff3df0']);
@@ -664,7 +663,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(N, 'flipwing', 'Prism Fade', 'fade', ['#3df0ff', '#ff3df0', '#ffd23d']);
   defKnife(N, 'talon', 'Sakura', 'web', ['#ffb8d8', '#8a1f4a']);
 
-  CASES.push({ id: 'arsenal', name: 'Arsenal Case', color: '#7dff4a', price: 150, desc: 'Finishes for the new guns: miniguns, crossbows and more.' });
+  CASES.push({ id: 'arsenal', name: 'Arsenal Case', color: '#7dff4a', price: 450, desc: 'Finishes for the new guns: miniguns, crossbows and more.' });
   const A = 'arsenal';
   defSkin(A, 1, 'tec9', 'Hazard Stripe', 'stripes', ['#1a1a1a', '#ffd23d']);
   defSkin(A, 1, 'fiveseven', 'Coolant', 'fade', ['#7dffd8', '#1a8aff']);
@@ -875,7 +874,7 @@ function tradeUp(items) {
 
 /* Match reward: credits plus a chance at a drop (field skin or a case). */
 /* ── keys: each case has its own; master keys open any case ── */
-const KEY_PRICE = { ember: 250, glacier: 250, neon: 250, arsenal: 300 };
+const KEY_PRICE = { ember: 750, glacier: 750, neon: 750, arsenal: 900 };   // everything credit-priced went up 3× in 1.4
 const KEY_BUNDLE = { n: 5, discount: 0.85 };
 Object.assign(Inv, {
   keysFor(caseId) { return (this.data.keys[caseId] || 0) + (this.data.keys.master || 0); },
@@ -1312,7 +1311,7 @@ function buildRidgeline() {
     sandbags(h.x - 12, h.z - 8 * s, h.x - 4, h.z - 8 * s + 1 * s); sandbags(h.x + 4, h.z - 8 * s, h.x + 12, h.z - 8 * s + 1 * s);
     house(h.x - 18, h.z + 2 * s, 8, 6, s > 0 ? 'n' : 's', 'concrete', k === 'CT' ? '#9ab0c8' : '#c8a890');
     for (let i = 0; i < 8; i++) World.spawns[k].push({ x: h.x - 8 + i * 2.2, z: h.z + 2 * s, yaw: s > 0 ? Math.PI : 0 });
-    World.vehicleSpawns.push({ team: k, x: h.x + 16, z: h.z, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 22, z: h.z - 3 * s, yaw: s > 0 ? Math.PI : 0 });
+    World.vehicleSpawns.push({ team: k, x: h.x + 16, z: h.z, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 22, z: h.z - 3 * s, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 32, z: h.z - 4 * s, yaw: s > 0 ? Math.PI : 0, kind: 'tank' });
   }
   // scattered cover
   for (let i = 0; i < 70; i++) {
@@ -1538,6 +1537,24 @@ function buildJeep(team) {
   [[-1, -1.3], [1, -1.3], [-1, 1.3], [1, 1.3]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12), D); w.rotation.z = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w); wheels.push(w); });
   g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), -0.6, 0.85, -2.0)); g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), 0.6, 0.85, -2.0));
   g.userData.wheels = wheels;
+  return g;
+}
+
+/* ── tank ── hull, tracks, a turret that turns, a gun that elevates ───── */
+function buildTank(team) {
+  const g = new THREE.Group(), C = lam(team === 'T' ? '#6a5e3e' : '#46566a'), Dk = lam(team === 'T' ? '#4e452c' : '#34404f'), K = lam('#1a1a1a'), M = lam('#3a3a3a');
+  g.add(bx(2.6, 0.9, 5.0, C, 0, 0.95, 0)); g.add(bx(2.4, 0.35, 1.2, Dk, 0, 1.3, -2.3)); g.add(bx(2.2, 0.2, 0.4, Dk, 0, 1.45, 2.4));
+  const wheels = [];
+  for (const sx of [-1.45, 1.45]) {
+    g.add(bx(0.55, 0.85, 5.3, K, sx, 0.5, 0));
+    for (let i = 0; i < 6; i++) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.58, 10), M); w.rotation.z = Math.PI / 2; w.position.set(sx, 0.38, -2.1 + i * 0.84); g.add(w); wheels.push(w); }
+  }
+  const turret = new THREE.Group(); turret.position.set(0, 1.4, 0.3); g.add(turret);
+  turret.add(bx(2.0, 0.75, 2.5, C, 0, 0.38, 0)); turret.add(bx(1.6, 0.3, 0.9, Dk, 0, 0.35, 1.5)); turret.add(cyl(0.3, 0.2, Dk, 0.55, 0.85, 0.4, 10)).rotation.x = 0;
+  const gun = new THREE.Group(); gun.position.set(0, 0.38, -1.25); turret.add(gun);
+  gun.add(bx(0.55, 0.45, 0.5, Dk, 0, 0, 0)); gun.add(cyl(0.11, 3.4, M, 0, 0, -1.9, 10)); gun.add(cyl(0.16, 0.5, M, 0, 0, -3.45, 10));
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, -3.75); gun.add(muzzle);
+  g.userData = { wheels, turret, gun, muzzle };
   return g;
 }
 
@@ -1812,7 +1829,7 @@ class Soldier {
   syncModel(dt, localTeam, viewer) {
     const M = this.model; if (!M) return;
     const u = M.userData;
-    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.driver === this && false);
+    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.K.closed);   // tank crews ride inside
     if (!M.visible) return;
     if (this.vehicle) { this.vehicle.seatPos(M.position, this); M.position.y = this.vehicle.pos.y + 0.35; M.rotation.y = this.vehicle.yaw; }
     else { M.position.copy(this.pos); M.rotation.y = this.yaw; }
@@ -1840,7 +1857,7 @@ const _hbSeat = new V3();
 function raySoldiers(o, d, maxT, exclude, list) {
   let best = maxT, hit = null, zone = null;
   for (const s of list) {
-    if (!s.alive || s === exclude) continue;
+    if (!s.alive || s === exclude || (s.vehicle && s.vehicle.K.closed)) continue;
     const dx = s.pos.x - o.x, dz = s.pos.z - o.z; if (dx * dx + dz * dz > (best + 2) * (best + 2)) continue;
     const hb = s.hitboxes();
     let t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, hb.head);
@@ -1899,7 +1916,7 @@ function fireWeapon(s, now, recoilControl = 0) {
       const mult = { head: Game.mode.headMult, chest: 1, stomach: 1.25, legs: 0.75 }[sh.zone];
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
       FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
-    } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * 0.15, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
+    } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * vehHit.v.K.bullet, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
     else if (wt < range) {
       FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e);
       if (ph && (s.ctrl === 'local' || s.ctrl === 'bot')) Game.propHit(s, ph.p, _e, _d, w.dmg);
@@ -2004,43 +2021,71 @@ class Rocket {
 }
 
 /* ── vehicles ──────────────────────────────────────────────────────────── */
+/* Jeeps are quick and fragile; tanks are slow, armoured, turn on the spot,
+   and carry a cannon aimed wherever the driver looks. */
+const VKIND = {
+  jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
+  tank: { name: 'Tank', hp: 1300, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.012, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
+};
+WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
 class Vehicle {
   constructor(id, team, spawn) {
-    this.id = id; this.team = team; this.spawn = spawn; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
-    this.hp = 500; this.maxHp = 500; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
-    this.model = buildJeep(team); Game.scene.add(this.model); this.reset();
+    this.id = id; this.team = team; this.spawn = spawn; this.kind = spawn.kind || 'jeep'; this.K = VKIND[this.kind]; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
+    this.hp = this.K.hp; this.maxHp = this.K.hp; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
+    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0;
+    this.model = this.K.build(team); Game.scene.add(this.model); this.reset();
   }
-  reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); }
-  seatPos(out, s) { const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
+  /* the turret swings toward where the driver aims, at a tank-like pace */
+  aimTurret(dt, yaw, pitch) {
+    const want = angDiff(this.yaw, yaw), cur = this.tYaw, d = angDiff(cur, want), step = 1.1 * dt;
+    this.tYaw = angWrap(cur + clamp(d, -step, step));
+    this.tPitch = lerp(this.tPitch, clamp(pitch, -0.12, 0.32), 1 - Math.exp(-dt * 4));
+  }
+  syncTurret() { const u = this.model.userData; if (!u.turret) return; u.turret.rotation.y = this.tYaw; u.gun.rotation.x = this.tPitch; u.gun.position.z = -1.25 + this.recoil * 0.4; }
+  fire(s) {
+    if (this.kind !== 'tank' || this.reloadT > 0 || !this.alive) return false;
+    this.reloadT = this.K.reload; this.recoil = 1;
+    this.model.updateMatrixWorld(true); const m = new V3(); this.model.userData.muzzle.getWorldPosition(m);
+    const yaw = this.yaw + this.tYaw, cp = Math.cos(this.tPitch), dir = new V3(-Math.sin(yaw) * cp, Math.sin(this.tPitch), -Math.cos(yaw) * cp);
+    Game.spawnRocket(s, m, dir, true, 'tankshell');
+    FX.explosion(m); Sfx.play('explode', m, { vol: 0.8 }); if (s.ctrl === 'local') HUD.shake(0.35);
+    return true;
+  }
+  reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; }
+  seatPos(out, s) {
+    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
   drive(inp, dt) {
-    const acc = inp.f * 14, max = 22;
-    this.speed += acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * 0.8); if (inp.brake) this.speed *= Math.exp(-dt * 4);
-    this.speed = clamp(this.speed, -8, max);
+    const K = this.K;
+    this.speed += inp.f * K.acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * (this.kind === 'tank' ? 2.5 : 0.8)); if (inp.brake) this.speed *= Math.exp(-dt * 4);
+    this.speed = clamp(this.speed, K.rev, K.max);
     this.steer = lerp(this.steer, inp.s, 1 - Math.exp(-dt * 6));
-    this.yaw -= this.steer * dt * clamp(this.speed / 6, -1.2, 1.2) * 0.9;
+    if (this.kind === 'tank') this.yaw -= this.steer * dt * 0.75;   // tracks: turns on the spot
+    else this.yaw -= this.steer * dt * clamp(this.speed / 6, -1.2, 1.2) * 0.9;
   }
   physics(dt) {
     if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
     this.vel.set(-Math.sin(this.yaw) * this.speed, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed);
-    const before = this.speed; const r = moveBody(this.pos, this.vel, dt, 1.25, 1.7, true);
-    if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority()) this.damage(Math.abs(before) * 3, null); this.speed *= -0.25; }
+    const before = this.speed; const r = moveBody(this.pos, this.vel, dt, this.K.r, this.K.h, true);
+    this.reloadT -= dt; this.recoil = Math.max(0, this.recoil - dt * 2.5);
+    if (this.kind === 'tank') { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
+    if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority() && this.kind !== 'tank') this.damage(Math.abs(before) * 3, null); this.speed *= this.kind === 'tank' ? 0 : -0.25; }
     if (Math.abs(this.speed) > 5 && Game.authority()) {
-      for (const s of Game.soldiers) if (s.alive && !s.vehicle && dist2(s.pos.x, s.pos.z, this.pos.x, this.pos.z) < 2.0 && s.team !== this.team) Game.damage(s, Math.abs(this.speed) * 9, this.driver, 'jeep', 'chest');
+      for (const s of Game.soldiers) if (s.alive && !s.vehicle && dist2(s.pos.x, s.pos.z, this.pos.x, this.pos.z) < this.K.r + 0.8 && s.team !== this.team) Game.damage(s, Math.abs(this.speed) * this.K.crush, this.driver, this.kind, 'chest');
     }
     this.model.position.copy(this.pos); this.model.rotation.y = this.yaw;
-    this.model.userData.wheels.forEach(w => w.rotation.x += this.speed * dt / 0.42);
-    if (this.driver && Math.abs(this.speed) > 0.5 && Math.random() < 0.3) Sfx.play('vehicle', this.pos, { f: 50 + Math.abs(this.speed) * 4, dur: 0.12 });
+    this.model.userData.wheels.forEach(w => w.rotation.x += (this.speed + (this.kind === 'tank' ? this.steer * 2 : 0)) * dt / 0.4);
+    if (this.driver && (Math.abs(this.speed) > 0.5 || this.kind === 'tank') && Math.random() < 0.3) Sfx.play('vehicle', this.pos, { f: (this.kind === 'tank' ? 32 : 50) + Math.abs(this.speed) * 4, dur: 0.12 });
   }
   damage(d, by) {
     if (!this.alive) return; this.hp -= d;
     if (this.hp <= 0) {
-      this.alive = false; this.respawnT = 25; FX.explosion(this.pos.clone().setY(1)); Sfx.play('explode', this.pos);
+      this.alive = false; this.respawnT = this.K.respawn; FX.explosion(this.pos.clone().setY(1)); Sfx.play('explode', this.pos);
       for (const s of [this.driver, this.passenger]) if (s) { const occ = s; Game.exitVehicle(occ, true); if (Game.authority()) Game.damage(occ, 999, by, 'jeep', 'chest'); }
       Game.explosion(this.pos.clone().setY(1), 60, 5, by, 'jeep');
       this.model.visible = false; Game.broadcastVehicle(this);
     }
   }
-  box() { return { x0: this.pos.x - 1.1, x1: this.pos.x + 1.1, y0: this.pos.y + 0.2, y1: this.pos.y + 1.6, z0: this.pos.z - 1.1, z1: this.pos.z + 1.1 }; }
+  box() { const r = this.kind === 'tank' ? 1.7 : 1.1, h = this.kind === 'tank' ? 2.2 : 1.6; return { x0: this.pos.x - r, x1: this.pos.x + r, y0: this.pos.y + 0.2, y1: this.pos.y + h, z0: this.pos.z - r, z1: this.pos.z + r }; }
 }
 
 /* ── 06_ai.js ── */
@@ -2333,7 +2378,8 @@ class Brain {
   get d() { const base = DIFF[(Sandbox.on ? Sandbox.opts.npcSkill : Game.botDiff) || Settings.diff] || DIFF.normal; const k = (Game.mode.id === 'conquest' ? 1.5 : 1) * (Settings.botSight || 1); return k === 1 ? base : Object.assign({}, base, { range: base.range * k }); }
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
-  enemies() { return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e)); }
+  /* tank crews can't be shot, so only bots carrying a launcher bother with them */
+  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed))); }
 
   /* ── senses ── */
   sense() {
@@ -2424,7 +2470,8 @@ class Brain {
     const lowHp = s.hp < 35 && this.role !== 'entry';
     // weapon choice
     if (w && s.ammo[s.cur] && s.ammo[s.cur].mag === 0 && s.ammo[s.cur].res === 0) s.switchTo(s.weapons[2] || 'knife');
-    if (isNade(s.cur)) s.switchTo(s.bestWeapon());
+    if (e.vehicle && e.vehicle.K.closed && s.weapons[4] && s.ammo[s.weapons[4]] && (s.ammo[s.weapons[4]].mag + s.ammo[s.weapons[4]].res) > 0) { if (s.cur !== s.weapons[4]) s.switchTo(s.weapons[4]); }
+    else if (isNade(s.cur) || (w && w.projectile && w.explosive && dist < 8)) s.switchTo(s.bestWeapon());
     if (s.cur === 'knife' && s.bestWeapon() !== 'knife' && dist > 2) s.switchTo(s.bestWeapon());
     if (w && w.type === 'sniper') s.ads = visible && this.reactT < 0.25 && dist > 6;
     else s.ads = Game.mode.id !== 'defuse' && visible && dist > 25;
@@ -3102,7 +3149,7 @@ const Game = {
       if (owner && owner.team === s.team && owner !== s) continue;
       this.damage(s, dmg * f, owner, weapon, 'chest');
     }
-    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p); if (d < radius + 1.5) v.damage(dmg * 2.2 * (1 - d / (radius + 1.5)), owner); }
+    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); }
     if (Phys.active) { Phys.blast(p, radius * 1.6, 10); for (const q of Phys.props.slice()) if (q.def.explosive && dist3(new V3(q.x, q.y, q.z), p) < radius) Phys.damage(q, dmg, owner); }
   },
   flashbang(p, owner) {
@@ -3180,9 +3227,9 @@ const Game = {
   tryEnterVehicle(s) {
     if (s.vehicle) { this.exitVehicle(s); return true; }
     for (const v of this.vehicles) {
-      if (!v.alive || dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) > 3.5) continue;
-      if (!v.driver) { v.driver = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
-      if (!v.passenger) { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
+      if (!v.alive || dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) > v.K.enter) continue;
+      if (!v.driver) { v.driver = s; s.vehicle = v; Net.vehicleSeat(v); if (s.ctrl === 'local' && v.kind === 'tank') HUD.center('Tank: W/S drive, A/D turn, mouse aims the turret, LMB fires', 2.5); return true; }
+      if (!v.passenger && v.kind !== 'tank') { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
     }
     return false;
   },
@@ -3296,7 +3343,7 @@ const Player = {
       if (I.hit('KeyV')) { s.noclip = !s.noclip; s.vel.set(0, 0, 0); HUD.center(s.noclip ? 'Noclip on' : 'Noclip off', 0.6); }
       for (const k of ['KeyT', 'KeyK', 'KeyU', 'KeyJ', 'KeyL', 'KeyO']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
     }
-    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); return; }
+    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); else if (I.mouse.left && s.vehicle.kind === 'tank') s.vehicle.fire(s); return; }
     // move
     const m = s.moveIn;
     m.f = (I.down('KeyW') ? 1 : 0) - (I.down('KeyS') ? 1 : 0); m.s = (I.down('KeyD') ? 1 : 0) - (I.down('KeyA') ? 1 : 0);
@@ -3368,7 +3415,12 @@ const Player = {
     const cam = Game.camera, V = Game.view;
     let fov = Settings.fov;
     this.inspectT -= dt;
-    if (s.alive && s.vehicle && s.vehicle.driver === s) {
+    if (s.alive && s.vehicle && s.vehicle.driver === s && s.vehicle.kind === 'tank') {
+      // tank: orbit behind the turret, looking where you aim
+      V.third = true; const v = s.vehicle, f = s.forward(new V3()), back = 10;
+      const c = new V3(v.pos.x, v.pos.y + 3.2, v.pos.z).addScaledVector(f, -back); c.y = Math.max(c.y + 1.2, 1.5);
+      cam.position.lerp(c, 1 - Math.exp(-dt * 12)); cam.lookAt(new V3(v.pos.x, v.pos.y + 2.2, v.pos.z).addScaledVector(f, 30));
+    } else if (s.alive && s.vehicle && s.vehicle.driver === s) {
       V.third = true; const v = s.vehicle, back = 8, h = 3.6;
       const cx = v.pos.x + Math.sin(v.yaw) * back, cz = v.pos.z + Math.cos(v.yaw) * back;
       cam.position.lerp(new V3(cx, v.pos.y + h, cz), 1 - Math.exp(-dt * 8)); cam.lookAt(v.pos.x, v.pos.y + 1.4, v.pos.z);
@@ -3418,13 +3470,13 @@ Game.requestAmmo = function (s) {
    (in the gun's own space). Forearms run from the hands to elbows placed
    below the screen edge, so you only ever see hands, sleeves and the gun. */
 const VM_POSE = {
-  rifle:    { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.042, -0.29], rel: [0.13, -0.3, 0.32], lel: [-0.17, -0.3, 0.02], ads: -0.3 },
-  smg:      { hip: [0.13, -0.14, -0.4], rot: [-0.045, 0.035, 0], rh: [0, -0.072, 0.075], lh: [0, -0.04, -0.2], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, 0.04], ads: -0.3 },
-  lmg:      { hip: [0.145, -0.155, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.045, -0.27], rel: [0.14, -0.3, 0.32], lel: [-0.18, -0.3, 0.02], ads: -0.3 },
-  sniper:   { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.03, 0], rh: [0, -0.075, 0.13], lh: [0, -0.05, -0.16], rel: [0.13, -0.3, 0.34], lel: [-0.17, -0.3, 0.06], ads: -0.3 },
-  shotgun:  { hip: [0.14, -0.145, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.07, 0.09], lh: [0, -0.04, -0.34], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, -0.02], ads: -0.3, pump: true },
-  pistol:   { hip: [0.11, -0.125, -0.36], rot: [0, 0.05, 0], rh: [0.004, -0.06, 0.035], lh: [-0.02, -0.07, 0.025], rel: [0.1, -0.3, 0.26], lel: [-0.1, -0.3, 0.24], ads: -0.38 },
-  launcher: { hip: [0.13, -0.06, -0.22], rot: [0, 0.03, 0], rh: [0, -0.1, 0.02], lh: [0, -0.1, -0.2], rel: [0.13, -0.32, 0.26], lel: [-0.14, -0.32, -0.02], ads: -0.3 },
+  rifle:    { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.042, -0.29], rel: [0.13, -0.3, 0.32], lel: [-0.17, -0.3, 0.02], ads: -0.42 },
+  smg:      { hip: [0.13, -0.14, -0.4], rot: [-0.045, 0.035, 0], rh: [0, -0.072, 0.075], lh: [0, -0.04, -0.2], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, 0.04], ads: -0.42 },
+  lmg:      { hip: [0.145, -0.155, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.045, -0.27], rel: [0.14, -0.3, 0.32], lel: [-0.18, -0.3, 0.02], ads: -0.42 },
+  sniper:   { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.03, 0], rh: [0, -0.075, 0.13], lh: [0, -0.05, -0.16], rel: [0.13, -0.3, 0.34], lel: [-0.17, -0.3, 0.06], ads: -0.42 },
+  shotgun:  { hip: [0.14, -0.145, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.07, 0.09], lh: [0, -0.04, -0.34], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, -0.02], ads: -0.42, pump: true },
+  pistol:   { hip: [0.11, -0.125, -0.36], rot: [0, 0.05, 0], rh: [0.004, -0.06, 0.035], lh: [-0.02, -0.07, 0.025], rel: [0.1, -0.3, 0.26], lel: [-0.1, -0.3, 0.24], ads: -0.46 },
+  launcher: { hip: [0.13, -0.06, -0.22], rot: [0, 0.03, 0], rh: [0, -0.1, 0.02], lh: [0, -0.1, -0.2], rel: [0.13, -0.32, 0.26], lel: [-0.14, -0.32, -0.02], ads: -0.42 },
   knife:    { hip: [0.11, -0.11, -0.26], rot: [0.15, -0.35, 0.35], rh: [0, 0, 0.05], rel: [0.12, -0.28, 0.25], ads: -0.26 },
   nade:     { hip: [0.12, -0.11, -0.26], rot: [0.1, 0, 0.1], rh: [0, -0.02, 0.02], rel: [0.1, -0.28, 0.24], ads: -0.26 },
   tool:     { hip: [0.13, -0.14, -0.4], rot: [0, 0.04, 0], rh: [0, -0.065, 0.05], lh: [0, -0.04, -0.12], rel: [0.12, -0.3, 0.28], lel: [-0.15, -0.3, 0.06], ads: -0.22 },
@@ -3528,7 +3580,7 @@ class ViewModel {
     const kickK = w && w.recoil ? Math.min(1.4, 0.4 + w.recoil * 0.5) : 0.5, ak = 1 - a * 0.6;
     g.position.set(p.x + (bx_ + this.sway.x) * (1 - a * 0.7) + ox, p.y + by + idle + this.sway.y * (1 - a * 0.7) + oy, p.z + this.kick * 0.035 * kickK * ak + oz);
     g.rotation.set(rx + this.kick * 0.05 * kickK * ak, ry + this.sway.x * 1.5, rz);
-    const fov = 62 - a * 10;
+    const fov = 62 - a * 4;   // barely magnify the gun itself when aiming, so it covers less
     if (Math.abs(this.camera.fov - fov) > 0.01) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
     // muzzle flash sprite
     this.flashT -= dt;
@@ -3664,8 +3716,10 @@ const HUD = {
     this.centerT -= dt; if (this.centerT <= 0) E.center.classList.add('hidden');
     this.hitT -= dt; E.hitm.style.opacity = clamp(this.hitT / 0.2, 0, 1);
     E.flash.style.opacity = L.blind > 0 ? clamp(L.blind / Math.min(1.5, L.blindMax || 1), 0, 1) : 0;
-    const scoped = L.alive && w && w.scope && L.adsT > 0.85; E.scope.classList.toggle('hidden', !scoped);
-    E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L));
+    // scope overlay fades in over the last part of the aim-in
+    const scopeK = L.alive && w && w.scope && !L.vehicle ? clamp((L.adsT - 0.7) / 0.2, 0, 1) : 0, scoped = scopeK > 0.5;
+    E.scope.classList.toggle('hidden', scopeK <= 0); if (scopeK > 0) { this.setScope(w.overlay || 'sniper'); E.scope.style.opacity = scopeK; }
+    E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L && L.vehicle.kind !== 'tank'));
     if (L.alive && w && !scoped) { const g = Settings.xhGap + L.spread() * 900; E.xh.querySelectorAll('i').forEach((i, k) => { const s = Settings.xhSize; if (k === 0) i.style.left = (-g - s) + 'px'; if (k === 1) i.style.left = g + 'px'; if (k === 2) i.style.top = (-g - s) + 'px'; if (k === 3) i.style.top = g + 'px'; }); }
     E.vign.style.opacity = L.alive ? clamp((50 - L.hp) / 50, 0, 0.8) : 0;
     this.drawDamage(dt);
@@ -3675,6 +3729,7 @@ const HUD = {
     const B = Game.bomb;
     if (B.defuser === L.id) prog = ['Defusing…', 1 - B.progress / (B.progressMax || 10)];
     if (L.healT > 0) prog = ['Healing…', 1 - L.healT / 2];
+    if (L.vehicle && L.vehicle.kind === 'tank' && L.vehicle.reloadT > 0) prog = ['Cannon reloading', 1 - L.vehicle.reloadT / L.vehicle.K.reload];
     if (w && w.spinup && L.spin > 0 && L.spin < 1) prog = ['Spinning up', L.spin];
     if (B.localDefuse) prog = ['Defusing…', 1 - B.localDefuse.t / (L.kit ? Game.mode.kitTime : Game.mode.defuseTime)];
     E.prog.classList.toggle('hidden', !prog); if (prog) { E.progtxt.textContent = prog[0]; E.progbar.style.width = clamp(prog[1], 0, 1) * 100 + '%'; }
@@ -3683,8 +3738,8 @@ const HUD = {
     if (L.alive) {
       if (B.state === 'carried' && B.carrier === L.id) hint = World.siteAt(L.pos.x, L.pos.z) ? 'Hold E to plant the bomb' : 'You have the bomb — plant it at A or B';
       else if (L.team === 'CT' && B.state === 'planted' && B.pos && dist2(L.pos.x, L.pos.z, B.pos.x, B.pos.z) < 2 && !prog) hint = 'Hold E to defuse';
-      else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || !v.passenger) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < 3.5)) hint = 'E — enter jeep';
-      else if (L.vehicle) hint = L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
+      else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || (!v.passenger && v.kind !== 'tank')) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter)) { const v = Game.vehicles.find(v => v.alive && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter); hint = 'E — enter ' + (v ? v.K.name.toLowerCase() : 'vehicle'); }
+      else if (L.vehicle) hint = L.vehicle.kind === 'tank' ? `Tank ${Math.max(0, Math.ceil(L.vehicle.hp))}/${L.vehicle.maxHp} · W/S drive · A/D turn · mouse aim · LMB fire · E exit` : L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
       else if (Game.mode.buy && Game.round && UI.canBuy(L)) hint = 'B — buy menu';
     }
     E.hint.textContent = hint;
@@ -3692,6 +3747,31 @@ const HUD = {
     if (Input.down('Tab') && !UI.blocking()) this.renderBoard(); else E.board.classList.add('hidden');
     this.drawRadar();
     if (!E.deploy.classList.contains('hidden')) this.updateDeploy();
+  },
+  /* Scope reticles drawn as SVG in a 100×100 box centred on the screen.
+     The black surround is one huge path with a round hole. */
+  setScope(kind) {
+    if (this.scopeKind === kind) return; this.scopeKind = kind;
+    const R = 44, hole = `M-2000,-2000H2000V2000H-2000Z M0,${-R}A${R},${R} 0 1,0 0,${R}A${R},${R} 0 1,0 0,${-R}Z`;
+    const ln = (x1, y1, x2, y2, w = 0.14, c = '#000') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"/>`;
+    let ret = '';
+    if (kind === 'sniper') {
+      ret = ln(-R, 0, -1.4, 0) + ln(1.4, 0, R, 0) + ln(0, -R, 0, -1.4) + ln(0, 1.4, 0, R)
+        + ln(-R, 0, -16, 0, 1.1) + ln(16, 0, R, 0, 1.1) + ln(0, 16, 0, R, 1.1) + ln(0, -R, 0, -16, 1.1)
+        + [4, 8, 12].map(d => `<circle cx="${d}" cy="0" r=".32"/><circle cx="${-d}" cy="0" r=".32"/><circle cx="0" cy="${d}" r=".32"/><circle cx="0" cy="${-d}" r=".32"/>`).join('')
+        + '<circle r=".28" fill="#ff2a2a"/>';
+    } else if (kind === 'acog') {
+      ret = ln(-R, 0, -9, 0, 0.18) + ln(9, 0, R, 0, 0.18) + ln(0, 2.6, 0, 18, 0.14, '#111')
+        + [[5, 2.2], [8, 1.7], [11, 1.3], [14, 1]].map(([y, w]) => ln(-w, y, w, y, 0.16, '#111')).join('')
+        + '<path d="M0,0 L-1.9,2.5 L-1.3,2.5 L0,0.8 L1.3,2.5 L1.9,2.5 Z" fill="#ff3a2a" style="filter:drop-shadow(0 0 .4px #ff5a3a)"/>';
+    } else {  // crossbow: thin cross and drop marks for longer shots
+      ret = ln(-R, 0, -2, 0, 0.12) + ln(2, 0, R, 0, 0.12) + ln(0, -R, 0, -2, 0.12) + ln(0, 2, 0, R, 0.12)
+        + [[3, 3], [6, 2.4], [9.5, 1.8]].map(([y, w]) => ln(-w, y, w, y, 0.2, '#1a1a1a')).join('') + '<circle r=".35" fill="#3aff6a"/>';
+    }
+    this.el.scope.innerHTML = `<svg viewBox="-50 -50 100 100" preserveAspectRatio="xMidYMid meet"><defs>
+      <radialGradient id="scV"><stop offset="0.72" stop-color="#000" stop-opacity="0"/><stop offset="0.97" stop-color="#000" stop-opacity="0.85"/><stop offset="1" stop-color="#000"/></radialGradient>
+      <radialGradient id="scT"><stop offset="0" stop-color="${kind === 'acog' ? '#ffdca0' : '#bfe8ff'}" stop-opacity="0.07"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+      <circle r="${R}" fill="url(#scT)"/>${ret}<circle r="${R}" fill="url(#scV)"/><circle r="${R}" fill="none" stroke="#111" stroke-width="1.2"/><path d="${hole}" fill="#000" fill-rule="evenodd"/></svg>`;
   },
   center(t, dur = 2) { const e = this.el.center; e.textContent = t; e.classList.remove('hidden'); this.centerT = dur; },
   hitmarker(head) { this.hitT = 0.2; this.el.hitm.classList.toggle('head', !!head); },
@@ -3994,7 +4074,7 @@ const Net = {
     if (!s.alive) return;
     s.vel.set(m.v[0], m.v[1], m.v[2]); s.crouch = m.c; s.ads = !!m.a;
     if (m.w && m.w !== s.cur && (WEAPONS[m.w] || isNade(m.w))) { s.cur = m.w; }
-    if (m.veh && s.vehicle && s.vehicle.driver === s) { const v = s.vehicle; v.net = { x: m.veh[0], y: m.veh[1], z: m.veh[2], yaw: m.veh[3], sp: m.veh[4] }; }
+    if (m.veh && s.vehicle && s.vehicle.driver === s) { const v = s.vehicle; v.net = { x: m.veh[0], y: m.veh[1], z: m.veh[2], yaw: m.veh[3], sp: m.veh[4], ty: m.veh[5] || 0, tp: m.veh[6] || 0 }; }
   },
   applySeat(v, m) {
     for (const k of ['driver', 'passenger']) { const cur = v[k]; if (cur && cur.ctrl !== 'local') { cur.vehicle = null; v[k] = null; } }
@@ -4065,7 +4145,7 @@ const Net = {
       if (g.tk) Game.tickets = { T: g.tk[0], CT: g.tk[1] };
       if (g.f) g.f.forEach((f, i) => { const F = World.flags[i]; if (F) { F.prog = f[0]; F.owner = f[1] || null; F.contested = !!f[2]; } });
       if (g.td && Game.tdm) { Game.tdm.kills = { T: g.td[0], CT: g.td[1] }; Game.tdm.timeLeft = g.td[2]; }
-      if (g.v) g.v.forEach(a => { const v = Game.vehicles.find(x => x.id === a[0]); if (!v || (v.driver && v.driver.ctrl === 'local')) return; v.net = { x: a[1], y: a[2], z: a[3], yaw: a[4], sp: a[5] }; v.hp = a[6]; if (!!a[7] !== v.alive) { v.alive = !!a[7]; v.model.visible = v.alive; if (v.alive) v.reset(); } });
+      if (g.v) g.v.forEach(a => { const v = Game.vehicles.find(x => x.id === a[0]); if (!v || (v.driver && v.driver.ctrl === 'local')) return; v.net = { x: a[1], y: a[2], z: a[3], yaw: a[4], sp: a[5], ty: a[8] || 0, tp: a[9] || 0 }; v.hp = a[6]; if (!!a[7] !== v.alive) { v.alive = !!a[7]; v.model.visible = v.alive; if (v.alive) v.reset(); } });
     }
     if (m.p) for (const a of m.p) { const p = Phys.byId.get(a[0]); if (p) p.net = a.slice(1); }
     if (m.sh) for (const sh of m.sh) { const s = Game.byId(sh[0]); if (s && s !== L) this.showShot(s, new V3(sh[1], sh[2], sh[3]), s.cur); }
@@ -4135,6 +4215,7 @@ const Net = {
     const n = v.net; if (!n) return; const k = 1 - Math.exp(-dt * 12);
     v.pos.x = lerp(v.pos.x, n.x, k); v.pos.y = lerp(v.pos.y, n.y, k); v.pos.z = lerp(v.pos.z, n.z, k); v.yaw = angWrap(v.yaw + angDiff(v.yaw, n.yaw) * k); v.speed = n.sp;
     v.model.position.copy(v.pos); v.model.rotation.y = v.yaw; v.model.userData.wheels.forEach(w => w.rotation.x += v.speed * dt / 0.42);
+    if (v.kind === 'tank') { v.tYaw = angWrap(v.tYaw + angDiff(v.tYaw, n.ty || 0) * k); v.tPitch = lerp(v.tPitch, n.tp || 0, k); v.reloadT -= dt; v.recoil = Math.max(0, v.recoil - dt * 2.5); v.syncTurret(); }
   },
 
   /* ── hooks called by the game ── */
@@ -4179,7 +4260,7 @@ const Net = {
       if (this.sendT <= 0 && L) {
         this.sendT = 1 / 20;
         const m = { t: 'st', p: [+L.pos.x.toFixed(2), +L.pos.y.toFixed(2), +L.pos.z.toFixed(2)], v: [+L.vel.x.toFixed(1), +L.vel.y.toFixed(1), +L.vel.z.toFixed(1)], y: +L.yaw.toFixed(3), pi: +L.pitch.toFixed(3), c: +L.crouch.toFixed(2), w: L.cur, a: L.ads ? 1 : 0 };
-        if (L.vehicle && L.vehicle.driver === L) { const v = L.vehicle; m.veh = [+v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2)]; }
+        if (L.vehicle && L.vehicle.driver === L) { const v = L.vehicle; m.veh = [+v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]; }
         this.send(m);
       }
       if (performance.now() - this.lastHost > 8000 && this.link && !this.link.conn) this.hostGone();
@@ -4195,7 +4276,7 @@ const Net = {
     if (Game.mode.id === 'defuse') { const B = Game.bomb; g.b = [B.state, B.carrier, B.pos ? [+B.pos.x.toFixed(2), +B.pos.y.toFixed(2), +B.pos.z.toFixed(2)] : null, +(B.timer || 0).toFixed(1), B.site, B.defuser, +(B.progress || 0).toFixed(2), B.progressMax || 10]; }
     if (Game.mode.id === 'conquest') { g.tk = [Math.ceil(Game.tickets.T), Math.ceil(Game.tickets.CT)]; g.f = World.flags.map(f => [+f.prog.toFixed(3), f.owner, f.contested ? 1 : 0]); }
     if (Game.mode.id === 'tdm') g.td = [Game.tdm.kills.T, Game.tdm.kills.CT, Math.round(Game.tdm.timeLeft)];
-    if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0]);
+    if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0, +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]);
     let props;
     if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
     this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0), p: props });
@@ -4666,8 +4747,8 @@ UI.renderSpawnMenu = function () {
   if (T === 'Props' || T === 'Entities') html = `<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T && p.id !== 'lightbulb').map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)))).join('')}</div>`;
   else if (T === 'NPCs') html = `<div class="sp-row"><label>Weapon <select id="npcW"><option value="default">Default</option>${Object.values(WEAPONS).filter(w => w.mag && w.type !== 'launcher').map(w => `<option value="${w.id}" ${O.npcWeapon === w.id ? 'selected' : ''}>${w.name}</option>`).join('')}<option value="knife" ${O.npcWeapon === 'knife' ? 'selected' : ''}>Knife</option></select></label><label>Skill <select id="npcS">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${O.npcSkill === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label></div>
     <div class="sp-grid">${Object.entries(NPCS).map(([k, n]) => tile('npc', k, n.name, Thumbs.get('n:' + k, () => { const m = buildSoldierModel(n.team); if (!n.weapon) m.userData.gunMount.visible = false; else setSoldierGun(m, n.weapon, null, null); if (k === 'zombie') m.userData.arms.rotation.x = -0.3; m.rotation.y = Math.PI * 0.85; return m; }), n.desc)).join('')}</div>`;
-  else if (T === 'Weapons') html = `<div class="sp-grid">${Object.values(WEAPONS).filter(w => w.id !== 'physgun' && w.id !== 'toolgun').map(w => tile('weapon', w.id, w.name, Thumbs.get('w:' + w.id + attSig(Inv.data.attach[w.id]), () => { const g = buildGun(w.id, Inv.equippedItem(w.id), Inv.data.attach[w.id]); g.rotation.y = Math.PI / 2; return g; }))).join('')}${['frag', 'flash', 'smoke'].map(n => tile('weapon', n, GRENADES[n].name, Thumbs.get('g:' + n, () => new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), lam(n === 'frag' ? '#3a4a2a' : n === 'flash' ? '#b8b8b8' : '#5a6a7a'))))).join('')}</div>`;
-  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'E to drive')}</div>`;
+  else if (T === 'Weapons') html = `<div class="sp-grid">${Object.values(WEAPONS).filter(w => w.id !== 'physgun' && w.id !== 'toolgun' && !w.hidden).map(w => tile('weapon', w.id, w.name, Thumbs.get('w:' + w.id + attSig(Inv.data.attach[w.id]), () => { const g = buildGun(w.id, Inv.equippedItem(w.id), Inv.data.attach[w.id]); g.rotation.y = Math.PI / 2; return g; }))).join('')}${['frag', 'flash', 'smoke'].map(n => tile('weapon', n, GRENADES[n].name, Thumbs.get('g:' + n, () => new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), lam(n === 'frag' ? '#3a4a2a' : n === 'flash' ? '#b8b8b8' : '#5a6a7a'))))).join('')}</div>`;
+  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'Fast. E to drive')}${tile('veh', 'tank', 'Tank', Thumbs.get('v:tank', () => { const j = buildTank('CT'); j.rotation.y = 0.6; return j; }), 'Armoured, cannon on LMB')}</div>`;
   else if (T === 'Tools') {
     const tool = TOOLS[O.tool], opt = tool.opts || [];
     html = `<div class="sp-tools"><div class="sp-toollist">${Object.entries(TOOLS).map(([k, t]) => `<button class="${O.tool === k ? 'on' : ''}" data-tool="${k}">${t.name}</button>`).join('')}</div><div class="sp-toolopts"><h3>${tool.name}</h3><p><b>LMB</b> ${tool.lmb}<br><b>RMB</b> ${tool.rmb}<br><b>R</b> clear selection</p>
@@ -4730,14 +4811,14 @@ const MenuBG = {
 const ATT_SLOTS = ['optic', 'muzzle', 'under', 'mag'];
 const ATT_SLOT_NAMES = { optic: 'Optic', muzzle: 'Muzzle', under: 'Underbarrel', mag: 'Magazine' };
 const ATTACH = {
-  reddot:      { slot: 'optic', name: 'Red Dot', price: 150, desc: 'Clean dot, slight zoom. Faster to aim than irons.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
-  holo:        { slot: 'optic', name: 'Holographic', price: 220, desc: 'Wide window with a ring reticle.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
-  acog:        { slot: 'optic', name: '4x ACOG', price: 420, desc: 'Magnified optic for long lanes. Slower to aim.', types: ['rifle', 'lmg'] },
-  suppressor:  { slot: 'muzzle', name: 'Suppressor', price: 380, desc: 'Quiet shots, no tracer, tiny flash. Bots hear you from much closer. -5% damage.', types: ['rifle', 'smg', 'lmg', 'pistol', 'sniper'] },
-  compensator: { slot: 'muzzle', name: 'Compensator', price: 220, desc: '-30% horizontal recoil.', types: ['rifle', 'smg', 'lmg', 'pistol'] },
-  grip:        { slot: 'under', name: 'Vertical Grip', price: 240, desc: '-22% vertical recoil, steadier on the move.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
-  laser:       { slot: 'under', name: 'Laser Sight', price: 260, desc: '-35% hip-fire spread. Everyone can see the dot.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
-  extmag:      { slot: 'mag', name: 'Extended Mag', price: 320, desc: '+50% magazine, +15% reload time.', types: ['rifle', 'smg', 'pistol', 'lmg', 'sniper'] },
+  reddot:      { slot: 'optic', name: 'Red Dot', price: 450, desc: 'Clean dot, slight zoom. Faster to aim than irons.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
+  holo:        { slot: 'optic', name: 'Holographic', price: 660, desc: 'Wide window with a ring reticle.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
+  acog:        { slot: 'optic', name: '4x ACOG', price: 1260, desc: 'Magnified optic for long lanes. Slower to aim.', types: ['rifle', 'lmg'] },
+  suppressor:  { slot: 'muzzle', name: 'Suppressor', price: 1140, desc: 'Quiet shots, no tracer, tiny flash. Bots hear you from much closer. -5% damage.', types: ['rifle', 'smg', 'lmg', 'pistol', 'sniper'] },
+  compensator: { slot: 'muzzle', name: 'Compensator', price: 660, desc: '-30% horizontal recoil.', types: ['rifle', 'smg', 'lmg', 'pistol'] },
+  grip:        { slot: 'under', name: 'Vertical Grip', price: 720, desc: '-22% vertical recoil, steadier on the move.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
+  laser:       { slot: 'under', name: 'Laser Sight', price: 780, desc: '-35% hip-fire spread. Everyone can see the dot.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
+  extmag:      { slot: 'mag', name: 'Extended Mag', price: 960, desc: '+50% magazine, +15% reload time.', types: ['rifle', 'smg', 'pistol', 'lmg', 'sniper'] },
 };
 function attachAllowed(wid, aid) {
   const w = WEAPONS[wid], a = ATTACH[aid]; if (!w || !a || w.special) return false;
@@ -4755,7 +4836,7 @@ function modWeapon(base, att) {
   const has = id => ATT_SLOTS.some(k => att[k] === id && attachAllowed(base.id, id));
   if (has('reddot')) w.zoom = Math.min(w.zoom || 70, base.type === 'pistol' ? 62 : 60);
   if (has('holo')) w.zoom = Math.min(w.zoom || 70, 58);
-  if (has('acog')) { w.zoom = 34; w.adsSlow = 0.8; }
+  if (has('acog')) { w.zoom = 34; w.adsSlow = 0.8; w.scope = true; w.overlay = 'acog'; }
   if (has('suppressor')) { w.suppressed = true; w.dmg *= 0.95; w.sound = (w.sound || 1) * 0.35; }
   if (has('compensator')) w.sideK = 0.7;
   if (has('grip')) { w.upK = 0.78; w.moveSpread *= 0.88; }
@@ -5354,7 +5435,7 @@ const Sandbox = {
         this.emit({ e: 'npc', id, k: a.k, name: n.name.split(' ')[0] + ' ' + pick(BOT_NAMES), team: n.team, w: weapon, pos: a.pos, yaw: a.yaw || 0, att });
         undo.push({ kind: 'npc', id }); break;
       }
-      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0 }); undo.push({ kind: 'veh', id }); break; }
+      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0, k: a.k === 'tank' ? 'tank' : 'jeep' }); undo.push({ kind: 'veh', id }); break; }
       case 'undo': {
         let u; while ((u = undo.pop())) { if (this.exists(u)) break; }
         if (!u) return;
@@ -5451,7 +5532,7 @@ const Sandbox = {
         break;
       }
       case 'npcdel': Game.removeSoldier(ev.id); break;
-      case 'veh': { const v = new Vehicle(ev.id, 'CT', { x: ev.x, z: ev.z, yaw: ev.yaw, team: 'CT' }); v.noRespawn = true; Game.vehicles.push(v); break; }
+      case 'veh': { const v = new Vehicle(ev.id, Sandbox.opts.faction || 'CT', { x: ev.x, z: ev.z, yaw: ev.yaw, team: 'CT', kind: ev.k || 'jeep' }); v.noRespawn = true; Game.vehicles.push(v); break; }
       case 'vehdel': { const v = Game.vehicles.find(x => x.id === ev.id); if (!v) return; for (const s of [v.driver, v.passenger]) if (s) Game.exitVehicle(s, true); Game.scene.remove(v.model); Game.vehicles = Game.vehicles.filter(x => x !== v); break; }
       case 'boom': { const p = new V3(...ev.p); FX.explosion(p); Sfx.play('explode', p); if (Game.local && dist3(Game.local.pos, p) < 20) HUD.shake(0.6); break; }
     }
@@ -5461,7 +5542,7 @@ const Sandbox = {
     return {
       props: Phys.props.map(p => ({ e: 'add', id: p.id, k: p.def.id, pos: [p.x, p.y, p.z], quat: [p.q.x, p.q.y, p.q.z, p.q.w], sc: p.scale, col: p.color, mat: p.mat, fr: p.frozen, own: p.own, lk: p.liftK, thr: p.thrusters ? p.thrusters.map(t => ({ at: t.at, dir: t.dir, force: t.force, key: t.key, own: t.own })) : null })),
       cons: Phys.constraints.map(c => ({ e: 'con', id: c.id, type: c.type, a: c.a && c.a.id, b: c.b && c.b.id, la: c.la, lb: c.lb, len: c.len })),
-      veh: Game.vehicles.filter(v => v.noRespawn).map(v => ({ e: 'veh', id: v.id, x: v.pos.x, z: v.pos.z, yaw: v.yaw })),
+      veh: Game.vehicles.filter(v => v.noRespawn).map(v => ({ e: 'veh', id: v.id, x: v.pos.x, z: v.pos.z, yaw: v.yaw, k: v.kind })),
     };
   },
 
@@ -5595,7 +5676,7 @@ const Sandbox = {
     const L = Game.local; if (!L || !L.alive) return;
     if (kind === 'prop') { const d = PROPS[key]; const p = this.spawnPoint(L, d.radius * 0.8); this.exec({ op: 'prop', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
     else if (kind === 'npc') { const p = this.spawnPoint(L, 0.1); const q = World.nav.walkableAt(p.x, p.z) ? p : World.nav.randomNear(p.x, p.z, 3); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, Math.max(0, p.y - 0.1), q.z], yaw: L.yaw + Math.PI }); }
-    else if (kind === 'veh') { const p = this.spawnPoint(L, 1.2); this.exec({ op: 'veh', pos: [p.x, 0, p.z], yaw: L.yaw }); }
+    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); this.exec({ op: 'veh', k: key, pos: [p.x, 0, p.z], yaw: L.yaw }); }
     else if (kind === 'weapon') {
       if (isNade(key)) { L.nades[key] = Math.min(3, L.nades[key] + 1); } else { const w = WEAPONS[key]; if (w.slot === 4) { L.weapons[4] = key; L.fillAmmo(key); L.switchTo(key); } else L.give(key); }
       Sfx.play('buy');
@@ -5923,6 +6004,12 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.4', date: 'Sep 2026', title: 'Tanks, scopes and a pricier armory', items: [
+    ['New', 'Tanks. One per side in Conquest, and in the Sandbox spawn menu. W/S drive, A/D turn on the spot, the turret follows your aim, LMB fires the cannon. The crew is safe from bullets. RPGs and M79s do extra damage to it, and engineer bots go after tanks with them.'],
+    ['New', 'Real scope overlays for the 4x ACOG, the AUG and the crossbow (with bullet-drop marks), plus a new mil-dot sniper reticle. The overlay fades in as you aim.'],
+    ['Fix', 'Aiming down sights blocks much less of the screen: the gun sits further out and is barely magnified.'],
+    ['Change', 'Everything bought with credits costs 3× more: cases, keys, key bundles and attachment unlocks. Skin sell values went up 3× too. Match rewards are unchanged, so it takes longer to earn. In-match Defuse prices are unchanged.'],
+  ] },
   { v: '1.3', date: 'Sep 2026', title: 'Keys, levels and a proper victory screen', items: [
     ['New', 'Every case now opens with its own key (Ember, Glacier, Neon, Arsenal). Old keys became Master Keys that open anything.'],
     ['New', 'Buy keys one at a time or in bundles of 5 at 15% off, right on each case.'],

@@ -157,7 +157,7 @@ class Soldier {
   syncModel(dt, localTeam, viewer) {
     const M = this.model; if (!M) return;
     const u = M.userData;
-    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.driver === this && false);
+    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.K.closed);   // tank crews ride inside
     if (!M.visible) return;
     if (this.vehicle) { this.vehicle.seatPos(M.position, this); M.position.y = this.vehicle.pos.y + 0.35; M.rotation.y = this.vehicle.yaw; }
     else { M.position.copy(this.pos); M.rotation.y = this.yaw; }
@@ -185,7 +185,7 @@ const _hbSeat = new V3();
 function raySoldiers(o, d, maxT, exclude, list) {
   let best = maxT, hit = null, zone = null;
   for (const s of list) {
-    if (!s.alive || s === exclude) continue;
+    if (!s.alive || s === exclude || (s.vehicle && s.vehicle.K.closed)) continue;
     const dx = s.pos.x - o.x, dz = s.pos.z - o.z; if (dx * dx + dz * dz > (best + 2) * (best + 2)) continue;
     const hb = s.hitboxes();
     let t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, hb.head);
@@ -244,7 +244,7 @@ function fireWeapon(s, now, recoilControl = 0) {
       const mult = { head: Game.mode.headMult, chest: 1, stomach: 1.25, legs: 0.75 }[sh.zone];
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
       FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
-    } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * 0.15, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
+    } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * vehHit.v.K.bullet, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
     else if (wt < range) {
       FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e);
       if (ph && (s.ctrl === 'local' || s.ctrl === 'bot')) Game.propHit(s, ph.p, _e, _d, w.dmg);
@@ -349,41 +349,69 @@ class Rocket {
 }
 
 /* ── vehicles ──────────────────────────────────────────────────────────── */
+/* Jeeps are quick and fragile; tanks are slow, armoured, turn on the spot,
+   and carry a cannon aimed wherever the driver looks. */
+const VKIND = {
+  jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
+  tank: { name: 'Tank', hp: 1300, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.012, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
+};
+WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
 class Vehicle {
   constructor(id, team, spawn) {
-    this.id = id; this.team = team; this.spawn = spawn; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
-    this.hp = 500; this.maxHp = 500; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
-    this.model = buildJeep(team); Game.scene.add(this.model); this.reset();
+    this.id = id; this.team = team; this.spawn = spawn; this.kind = spawn.kind || 'jeep'; this.K = VKIND[this.kind]; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
+    this.hp = this.K.hp; this.maxHp = this.K.hp; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
+    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0;
+    this.model = this.K.build(team); Game.scene.add(this.model); this.reset();
   }
-  reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); }
-  seatPos(out, s) { const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
+  /* the turret swings toward where the driver aims, at a tank-like pace */
+  aimTurret(dt, yaw, pitch) {
+    const want = angDiff(this.yaw, yaw), cur = this.tYaw, d = angDiff(cur, want), step = 1.1 * dt;
+    this.tYaw = angWrap(cur + clamp(d, -step, step));
+    this.tPitch = lerp(this.tPitch, clamp(pitch, -0.12, 0.32), 1 - Math.exp(-dt * 4));
+  }
+  syncTurret() { const u = this.model.userData; if (!u.turret) return; u.turret.rotation.y = this.tYaw; u.gun.rotation.x = this.tPitch; u.gun.position.z = -1.25 + this.recoil * 0.4; }
+  fire(s) {
+    if (this.kind !== 'tank' || this.reloadT > 0 || !this.alive) return false;
+    this.reloadT = this.K.reload; this.recoil = 1;
+    this.model.updateMatrixWorld(true); const m = new V3(); this.model.userData.muzzle.getWorldPosition(m);
+    const yaw = this.yaw + this.tYaw, cp = Math.cos(this.tPitch), dir = new V3(-Math.sin(yaw) * cp, Math.sin(this.tPitch), -Math.cos(yaw) * cp);
+    Game.spawnRocket(s, m, dir, true, 'tankshell');
+    FX.explosion(m); Sfx.play('explode', m, { vol: 0.8 }); if (s.ctrl === 'local') HUD.shake(0.35);
+    return true;
+  }
+  reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; }
+  seatPos(out, s) {
+    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
   drive(inp, dt) {
-    const acc = inp.f * 14, max = 22;
-    this.speed += acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * 0.8); if (inp.brake) this.speed *= Math.exp(-dt * 4);
-    this.speed = clamp(this.speed, -8, max);
+    const K = this.K;
+    this.speed += inp.f * K.acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * (this.kind === 'tank' ? 2.5 : 0.8)); if (inp.brake) this.speed *= Math.exp(-dt * 4);
+    this.speed = clamp(this.speed, K.rev, K.max);
     this.steer = lerp(this.steer, inp.s, 1 - Math.exp(-dt * 6));
-    this.yaw -= this.steer * dt * clamp(this.speed / 6, -1.2, 1.2) * 0.9;
+    if (this.kind === 'tank') this.yaw -= this.steer * dt * 0.75;   // tracks: turns on the spot
+    else this.yaw -= this.steer * dt * clamp(this.speed / 6, -1.2, 1.2) * 0.9;
   }
   physics(dt) {
     if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
     this.vel.set(-Math.sin(this.yaw) * this.speed, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed);
-    const before = this.speed; const r = moveBody(this.pos, this.vel, dt, 1.25, 1.7, true);
-    if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority()) this.damage(Math.abs(before) * 3, null); this.speed *= -0.25; }
+    const before = this.speed; const r = moveBody(this.pos, this.vel, dt, this.K.r, this.K.h, true);
+    this.reloadT -= dt; this.recoil = Math.max(0, this.recoil - dt * 2.5);
+    if (this.kind === 'tank') { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
+    if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority() && this.kind !== 'tank') this.damage(Math.abs(before) * 3, null); this.speed *= this.kind === 'tank' ? 0 : -0.25; }
     if (Math.abs(this.speed) > 5 && Game.authority()) {
-      for (const s of Game.soldiers) if (s.alive && !s.vehicle && dist2(s.pos.x, s.pos.z, this.pos.x, this.pos.z) < 2.0 && s.team !== this.team) Game.damage(s, Math.abs(this.speed) * 9, this.driver, 'jeep', 'chest');
+      for (const s of Game.soldiers) if (s.alive && !s.vehicle && dist2(s.pos.x, s.pos.z, this.pos.x, this.pos.z) < this.K.r + 0.8 && s.team !== this.team) Game.damage(s, Math.abs(this.speed) * this.K.crush, this.driver, this.kind, 'chest');
     }
     this.model.position.copy(this.pos); this.model.rotation.y = this.yaw;
-    this.model.userData.wheels.forEach(w => w.rotation.x += this.speed * dt / 0.42);
-    if (this.driver && Math.abs(this.speed) > 0.5 && Math.random() < 0.3) Sfx.play('vehicle', this.pos, { f: 50 + Math.abs(this.speed) * 4, dur: 0.12 });
+    this.model.userData.wheels.forEach(w => w.rotation.x += (this.speed + (this.kind === 'tank' ? this.steer * 2 : 0)) * dt / 0.4);
+    if (this.driver && (Math.abs(this.speed) > 0.5 || this.kind === 'tank') && Math.random() < 0.3) Sfx.play('vehicle', this.pos, { f: (this.kind === 'tank' ? 32 : 50) + Math.abs(this.speed) * 4, dur: 0.12 });
   }
   damage(d, by) {
     if (!this.alive) return; this.hp -= d;
     if (this.hp <= 0) {
-      this.alive = false; this.respawnT = 25; FX.explosion(this.pos.clone().setY(1)); Sfx.play('explode', this.pos);
+      this.alive = false; this.respawnT = this.K.respawn; FX.explosion(this.pos.clone().setY(1)); Sfx.play('explode', this.pos);
       for (const s of [this.driver, this.passenger]) if (s) { const occ = s; Game.exitVehicle(occ, true); if (Game.authority()) Game.damage(occ, 999, by, 'jeep', 'chest'); }
       Game.explosion(this.pos.clone().setY(1), 60, 5, by, 'jeep');
       this.model.visible = false; Game.broadcastVehicle(this);
     }
   }
-  box() { return { x0: this.pos.x - 1.1, x1: this.pos.x + 1.1, y0: this.pos.y + 0.2, y1: this.pos.y + 1.6, z0: this.pos.z - 1.1, z1: this.pos.z + 1.1 }; }
+  box() { const r = this.kind === 'tank' ? 1.7 : 1.1, h = this.kind === 'tank' ? 2.2 : 1.6; return { x0: this.pos.x - r, x1: this.pos.x + r, y0: this.pos.y + 0.2, y1: this.pos.y + h, z0: this.pos.z - r, z1: this.pos.z + r }; }
 }

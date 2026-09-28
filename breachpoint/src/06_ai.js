@@ -287,7 +287,8 @@ class Brain {
   get d() { const base = DIFF[(Sandbox.on ? Sandbox.opts.npcSkill : Game.botDiff) || Settings.diff] || DIFF.normal; const k = (Game.mode.id === 'conquest' ? 1.5 : 1) * (Settings.botSight || 1); return k === 1 ? base : Object.assign({}, base, { range: base.range * k }); }
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
-  enemies() { return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e)); }
+  /* tank crews can't be shot, so only bots carrying a launcher bother with them */
+  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed))); }
 
   /* ── senses ── */
   sense() {
@@ -378,7 +379,8 @@ class Brain {
     const lowHp = s.hp < 35 && this.role !== 'entry';
     // weapon choice
     if (w && s.ammo[s.cur] && s.ammo[s.cur].mag === 0 && s.ammo[s.cur].res === 0) s.switchTo(s.weapons[2] || 'knife');
-    if (isNade(s.cur)) s.switchTo(s.bestWeapon());
+    if (e.vehicle && e.vehicle.K.closed && s.weapons[4] && s.ammo[s.weapons[4]] && (s.ammo[s.weapons[4]].mag + s.ammo[s.weapons[4]].res) > 0) { if (s.cur !== s.weapons[4]) s.switchTo(s.weapons[4]); }
+    else if (isNade(s.cur) || (w && w.projectile && w.explosive && dist < 8)) s.switchTo(s.bestWeapon());
     if (s.cur === 'knife' && s.bestWeapon() !== 'knife' && dist > 2) s.switchTo(s.bestWeapon());
     if (w && w.type === 'sniper') s.ads = visible && this.reactT < 0.25 && dist > 6;
     else s.ads = Game.mode.id !== 'defuse' && visible && dist > 25;

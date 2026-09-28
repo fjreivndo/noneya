@@ -121,8 +121,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 #flash{position:absolute;inset:0;background:#fff;opacity:0}
 #blood{position:absolute;inset:0;box-shadow:inset 0 0 120px 30px rgba(200,0,0,.8);opacity:0;transition:opacity .25s}
 #vign{position:absolute;inset:0;box-shadow:inset 0 0 200px 60px rgba(160,0,0,.9);opacity:0}
-#scope{position:absolute;inset:0;background:radial-gradient(circle at center,transparent 0,transparent 36vh,#000 36.2vh)}
-#scope:before,#scope:after{content:"";position:absolute;background:#000}#scope:before{left:0;right:0;top:50%;height:1px}#scope:after{top:0;bottom:0;left:50%;width:1px}
+#scope{position:absolute;inset:0}#scope svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #prog{position:absolute;top:62%;left:50%;transform:translateX(-50%);width:300px;text-align:center}#prog .pb{height:8px;background:rgba(0,0,0,.6);border-radius:4px;overflow:hidden;margin-top:4px}#progbar{height:100%;background:var(--acc)}
 #hint{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);font-size:14px;color:#ffe6a0}
 #spec{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 16px;border-radius:3px}
@@ -147,7 +146,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 #newsBody{max-width:780px}.cl{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--mut);border-radius:4px;padding:14px 18px;margin-bottom:12px}
 .cl.latest{border-left-color:var(--acc)}.clh{display:flex;gap:12px;align-items:baseline}.clh b{font-size:20px;color:var(--acc2)}.clh span{font-weight:700;font-size:16px}.clh small{margin-left:auto;color:var(--mut)}
 .cl ul{margin:10px 0 0;padding:0;list-style:none}.cl li{padding:4px 0;line-height:1.45;display:flex;gap:10px}.cl em{font-style:normal;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;height:fit-content;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;flex:none}
-.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
+.t-change{background:rgba(255,176,58,.18);color:#ffb03a}.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
 .ndot{background:var(--acc);color:#1a0f06;font-size:10px;padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:6px}
 /* keys */
 .keychip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:3px solid var(--kc);padding:5px 10px;border-radius:3px;font-size:12px}.keychip b{color:var(--kc);font-size:15px}

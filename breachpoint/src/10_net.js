@@ -188,7 +188,7 @@ const Net = {
     if (!s.alive) return;
     s.vel.set(m.v[0], m.v[1], m.v[2]); s.crouch = m.c; s.ads = !!m.a;
     if (m.w && m.w !== s.cur && (WEAPONS[m.w] || isNade(m.w))) { s.cur = m.w; }
-    if (m.veh && s.vehicle && s.vehicle.driver === s) { const v = s.vehicle; v.net = { x: m.veh[0], y: m.veh[1], z: m.veh[2], yaw: m.veh[3], sp: m.veh[4] }; }
+    if (m.veh && s.vehicle && s.vehicle.driver === s) { const v = s.vehicle; v.net = { x: m.veh[0], y: m.veh[1], z: m.veh[2], yaw: m.veh[3], sp: m.veh[4], ty: m.veh[5] || 0, tp: m.veh[6] || 0 }; }
   },
   applySeat(v, m) {
     for (const k of ['driver', 'passenger']) { const cur = v[k]; if (cur && cur.ctrl !== 'local') { cur.vehicle = null; v[k] = null; } }
@@ -259,7 +259,7 @@ const Net = {
       if (g.tk) Game.tickets = { T: g.tk[0], CT: g.tk[1] };
       if (g.f) g.f.forEach((f, i) => { const F = World.flags[i]; if (F) { F.prog = f[0]; F.owner = f[1] || null; F.contested = !!f[2]; } });
       if (g.td && Game.tdm) { Game.tdm.kills = { T: g.td[0], CT: g.td[1] }; Game.tdm.timeLeft = g.td[2]; }
-      if (g.v) g.v.forEach(a => { const v = Game.vehicles.find(x => x.id === a[0]); if (!v || (v.driver && v.driver.ctrl === 'local')) return; v.net = { x: a[1], y: a[2], z: a[3], yaw: a[4], sp: a[5] }; v.hp = a[6]; if (!!a[7] !== v.alive) { v.alive = !!a[7]; v.model.visible = v.alive; if (v.alive) v.reset(); } });
+      if (g.v) g.v.forEach(a => { const v = Game.vehicles.find(x => x.id === a[0]); if (!v || (v.driver && v.driver.ctrl === 'local')) return; v.net = { x: a[1], y: a[2], z: a[3], yaw: a[4], sp: a[5], ty: a[8] || 0, tp: a[9] || 0 }; v.hp = a[6]; if (!!a[7] !== v.alive) { v.alive = !!a[7]; v.model.visible = v.alive; if (v.alive) v.reset(); } });
     }
     if (m.p) for (const a of m.p) { const p = Phys.byId.get(a[0]); if (p) p.net = a.slice(1); }
     if (m.sh) for (const sh of m.sh) { const s = Game.byId(sh[0]); if (s && s !== L) this.showShot(s, new V3(sh[1], sh[2], sh[3]), s.cur); }
@@ -329,6 +329,7 @@ const Net = {
     const n = v.net; if (!n) return; const k = 1 - Math.exp(-dt * 12);
     v.pos.x = lerp(v.pos.x, n.x, k); v.pos.y = lerp(v.pos.y, n.y, k); v.pos.z = lerp(v.pos.z, n.z, k); v.yaw = angWrap(v.yaw + angDiff(v.yaw, n.yaw) * k); v.speed = n.sp;
     v.model.position.copy(v.pos); v.model.rotation.y = v.yaw; v.model.userData.wheels.forEach(w => w.rotation.x += v.speed * dt / 0.42);
+    if (v.kind === 'tank') { v.tYaw = angWrap(v.tYaw + angDiff(v.tYaw, n.ty || 0) * k); v.tPitch = lerp(v.tPitch, n.tp || 0, k); v.reloadT -= dt; v.recoil = Math.max(0, v.recoil - dt * 2.5); v.syncTurret(); }
   },
 
   /* ── hooks called by the game ── */
@@ -373,7 +374,7 @@ const Net = {
       if (this.sendT <= 0 && L) {
         this.sendT = 1 / 20;
         const m = { t: 'st', p: [+L.pos.x.toFixed(2), +L.pos.y.toFixed(2), +L.pos.z.toFixed(2)], v: [+L.vel.x.toFixed(1), +L.vel.y.toFixed(1), +L.vel.z.toFixed(1)], y: +L.yaw.toFixed(3), pi: +L.pitch.toFixed(3), c: +L.crouch.toFixed(2), w: L.cur, a: L.ads ? 1 : 0 };
-        if (L.vehicle && L.vehicle.driver === L) { const v = L.vehicle; m.veh = [+v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2)]; }
+        if (L.vehicle && L.vehicle.driver === L) { const v = L.vehicle; m.veh = [+v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]; }
         this.send(m);
       }
       if (performance.now() - this.lastHost > 8000 && this.link && !this.link.conn) this.hostGone();
@@ -389,7 +390,7 @@ const Net = {
     if (Game.mode.id === 'defuse') { const B = Game.bomb; g.b = [B.state, B.carrier, B.pos ? [+B.pos.x.toFixed(2), +B.pos.y.toFixed(2), +B.pos.z.toFixed(2)] : null, +(B.timer || 0).toFixed(1), B.site, B.defuser, +(B.progress || 0).toFixed(2), B.progressMax || 10]; }
     if (Game.mode.id === 'conquest') { g.tk = [Math.ceil(Game.tickets.T), Math.ceil(Game.tickets.CT)]; g.f = World.flags.map(f => [+f.prog.toFixed(3), f.owner, f.contested ? 1 : 0]); }
     if (Game.mode.id === 'tdm') g.td = [Game.tdm.kills.T, Game.tdm.kills.CT, Math.round(Game.tdm.timeLeft)];
-    if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0]);
+    if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0, +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]);
     let props;
     if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
     this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0), p: props });

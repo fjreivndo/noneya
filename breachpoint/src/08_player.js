@@ -38,7 +38,7 @@ const Player = {
       if (I.hit('KeyV')) { s.noclip = !s.noclip; s.vel.set(0, 0, 0); HUD.center(s.noclip ? 'Noclip on' : 'Noclip off', 0.6); }
       for (const k of ['KeyT', 'KeyK', 'KeyU', 'KeyJ', 'KeyL', 'KeyO']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
     }
-    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); return; }
+    if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); else if (I.mouse.left && s.vehicle.kind === 'tank') s.vehicle.fire(s); return; }
     // move
     const m = s.moveIn;
     m.f = (I.down('KeyW') ? 1 : 0) - (I.down('KeyS') ? 1 : 0); m.s = (I.down('KeyD') ? 1 : 0) - (I.down('KeyA') ? 1 : 0);
@@ -110,7 +110,12 @@ const Player = {
     const cam = Game.camera, V = Game.view;
     let fov = Settings.fov;
     this.inspectT -= dt;
-    if (s.alive && s.vehicle && s.vehicle.driver === s) {
+    if (s.alive && s.vehicle && s.vehicle.driver === s && s.vehicle.kind === 'tank') {
+      // tank: orbit behind the turret, looking where you aim
+      V.third = true; const v = s.vehicle, f = s.forward(new V3()), back = 10;
+      const c = new V3(v.pos.x, v.pos.y + 3.2, v.pos.z).addScaledVector(f, -back); c.y = Math.max(c.y + 1.2, 1.5);
+      cam.position.lerp(c, 1 - Math.exp(-dt * 12)); cam.lookAt(new V3(v.pos.x, v.pos.y + 2.2, v.pos.z).addScaledVector(f, 30));
+    } else if (s.alive && s.vehicle && s.vehicle.driver === s) {
       V.third = true; const v = s.vehicle, back = 8, h = 3.6;
       const cx = v.pos.x + Math.sin(v.yaw) * back, cz = v.pos.z + Math.cos(v.yaw) * back;
       cam.position.lerp(new V3(cx, v.pos.y + h, cz), 1 - Math.exp(-dt * 8)); cam.lookAt(v.pos.x, v.pos.y + 1.4, v.pos.z);
@@ -160,13 +165,13 @@ Game.requestAmmo = function (s) {
    (in the gun's own space). Forearms run from the hands to elbows placed
    below the screen edge, so you only ever see hands, sleeves and the gun. */
 const VM_POSE = {
-  rifle:    { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.042, -0.29], rel: [0.13, -0.3, 0.32], lel: [-0.17, -0.3, 0.02], ads: -0.3 },
-  smg:      { hip: [0.13, -0.14, -0.4], rot: [-0.045, 0.035, 0], rh: [0, -0.072, 0.075], lh: [0, -0.04, -0.2], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, 0.04], ads: -0.3 },
-  lmg:      { hip: [0.145, -0.155, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.045, -0.27], rel: [0.14, -0.3, 0.32], lel: [-0.18, -0.3, 0.02], ads: -0.3 },
-  sniper:   { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.03, 0], rh: [0, -0.075, 0.13], lh: [0, -0.05, -0.16], rel: [0.13, -0.3, 0.34], lel: [-0.17, -0.3, 0.06], ads: -0.3 },
-  shotgun:  { hip: [0.14, -0.145, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.07, 0.09], lh: [0, -0.04, -0.34], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, -0.02], ads: -0.3, pump: true },
-  pistol:   { hip: [0.11, -0.125, -0.36], rot: [0, 0.05, 0], rh: [0.004, -0.06, 0.035], lh: [-0.02, -0.07, 0.025], rel: [0.1, -0.3, 0.26], lel: [-0.1, -0.3, 0.24], ads: -0.38 },
-  launcher: { hip: [0.13, -0.06, -0.22], rot: [0, 0.03, 0], rh: [0, -0.1, 0.02], lh: [0, -0.1, -0.2], rel: [0.13, -0.32, 0.26], lel: [-0.14, -0.32, -0.02], ads: -0.3 },
+  rifle:    { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.042, -0.29], rel: [0.13, -0.3, 0.32], lel: [-0.17, -0.3, 0.02], ads: -0.42 },
+  smg:      { hip: [0.13, -0.14, -0.4], rot: [-0.045, 0.035, 0], rh: [0, -0.072, 0.075], lh: [0, -0.04, -0.2], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, 0.04], ads: -0.42 },
+  lmg:      { hip: [0.145, -0.155, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.045, -0.27], rel: [0.14, -0.3, 0.32], lel: [-0.18, -0.3, 0.02], ads: -0.42 },
+  sniper:   { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.03, 0], rh: [0, -0.075, 0.13], lh: [0, -0.05, -0.16], rel: [0.13, -0.3, 0.34], lel: [-0.17, -0.3, 0.06], ads: -0.42 },
+  shotgun:  { hip: [0.14, -0.145, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.07, 0.09], lh: [0, -0.04, -0.34], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, -0.02], ads: -0.42, pump: true },
+  pistol:   { hip: [0.11, -0.125, -0.36], rot: [0, 0.05, 0], rh: [0.004, -0.06, 0.035], lh: [-0.02, -0.07, 0.025], rel: [0.1, -0.3, 0.26], lel: [-0.1, -0.3, 0.24], ads: -0.46 },
+  launcher: { hip: [0.13, -0.06, -0.22], rot: [0, 0.03, 0], rh: [0, -0.1, 0.02], lh: [0, -0.1, -0.2], rel: [0.13, -0.32, 0.26], lel: [-0.14, -0.32, -0.02], ads: -0.42 },
   knife:    { hip: [0.11, -0.11, -0.26], rot: [0.15, -0.35, 0.35], rh: [0, 0, 0.05], rel: [0.12, -0.28, 0.25], ads: -0.26 },
   nade:     { hip: [0.12, -0.11, -0.26], rot: [0.1, 0, 0.1], rh: [0, -0.02, 0.02], rel: [0.1, -0.28, 0.24], ads: -0.26 },
   tool:     { hip: [0.13, -0.14, -0.4], rot: [0, 0.04, 0], rh: [0, -0.065, 0.05], lh: [0, -0.04, -0.12], rel: [0.12, -0.3, 0.28], lel: [-0.15, -0.3, 0.06], ads: -0.22 },
@@ -270,7 +275,7 @@ class ViewModel {
     const kickK = w && w.recoil ? Math.min(1.4, 0.4 + w.recoil * 0.5) : 0.5, ak = 1 - a * 0.6;
     g.position.set(p.x + (bx_ + this.sway.x) * (1 - a * 0.7) + ox, p.y + by + idle + this.sway.y * (1 - a * 0.7) + oy, p.z + this.kick * 0.035 * kickK * ak + oz);
     g.rotation.set(rx + this.kick * 0.05 * kickK * ak, ry + this.sway.x * 1.5, rz);
-    const fov = 62 - a * 10;
+    const fov = 62 - a * 4;   // barely magnify the gun itself when aiming, so it covers less
     if (Math.abs(this.camera.fov - fov) > 0.01) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
     // muzzle flash sprite
     this.flashT -= dt;

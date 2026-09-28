@@ -38,11 +38,11 @@ Object.assign(WEAPONS, {
   // rifles
   galil:      { name: 'Galil AR', slot: 1, type: 'rifle', dmg: 30, rpm: 666, mag: 35, reserve: 90, reload: 3.0, spread: 0.005, moveSpread: 0.1, recoil: 0.9, falloff: 0.98, pen: 0.775, price: 1800, kill: 300, speed: 0.89, sound: 0.95, zoom: 56, auto: true, side: 'T' },
   famas:      { name: 'FAMAS', slot: 1, type: 'rifle', dmg: 30, rpm: 666, burst: 3, burstRpm: 1100, mag: 25, reserve: 90, reload: 3.3, spread: 0.004, moveSpread: 0.09, recoil: 0.8, falloff: 0.97, pen: 0.7, price: 2050, kill: 300, speed: 0.9, sound: 0.9, zoom: 56, side: 'CT' },
-  aug:        { name: 'AUG', slot: 1, type: 'rifle', dmg: 28, rpm: 600, mag: 30, reserve: 90, reload: 3.8, spread: 0.003, moveSpread: 0.085, recoil: 0.75, falloff: 0.98, pen: 0.9, price: 3300, kill: 300, speed: 0.88, sound: 0.9, zoom: 40, auto: true, side: 'CT', builtinScope: true },
+  aug:        { name: 'AUG', slot: 1, type: 'rifle', dmg: 28, rpm: 600, mag: 30, reserve: 90, reload: 3.8, spread: 0.003, moveSpread: 0.085, recoil: 0.75, falloff: 0.98, pen: 0.9, price: 3300, kill: 300, speed: 0.88, sound: 0.9, zoom: 40, auto: true, side: 'CT', builtinScope: true, scope: true, overlay: 'acog' },
   // heavy
   minigun:    { name: 'Minigun', slot: 1, type: 'lmg', dmg: 22, rpm: 1400, mag: 200, reserve: 400, reload: 7, spread: 0.018, moveSpread: 0.08, recoil: 0.35, falloff: 0.95, pen: 0.7, price: 0, kill: 300, speed: 0.72, sound: 0.9, zoom: 62, auto: true, spinup: 0.7, special: true },
   autosniper: { name: 'Auto-Sniper', slot: 1, type: 'sniper', dmg: 80, rpm: 240, mag: 20, reserve: 90, reload: 3.1, spread: 0.002, hipSpread: 0.07, moveSpread: 0.12, recoil: 1.8, falloff: 0.99, pen: 0.82, price: 5000, kill: 300, speed: 0.78, sound: 1.3, zoom: 28, scope: true },
-  crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true },
+  crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true, scope: true, overlay: 'bow' },
   m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 8, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
 });
 WEAPONS.rpg.gravity = 0.7; WEAPONS.rpg.explosive = true;
@@ -80,13 +80,13 @@ const CLASSES = {
 
 /* ── rarity, wear ──────────────────────────────────────────────────────── */
 const RARITY = [
-  { name: 'Common', color: '#b0c3d9', value: 6 },
-  { name: 'Uncommon', color: '#5e98d9', value: 18 },
-  { name: 'Rare', color: '#4b69ff', value: 45 },
-  { name: 'Epic', color: '#8847ff', value: 140 },
-  { name: 'Legendary', color: '#d32ce6', value: 420 },
-  { name: 'Mythic', color: '#eb4b4b', value: 1300 },
-  { name: 'Exotic', color: '#e4ae39', value: 4200 },
+  { name: 'Common', color: '#b0c3d9', value: 18 },
+  { name: 'Uncommon', color: '#5e98d9', value: 54 },
+  { name: 'Rare', color: '#4b69ff', value: 135 },
+  { name: 'Epic', color: '#8847ff', value: 420 },
+  { name: 'Legendary', color: '#d32ce6', value: 1260 },
+  { name: 'Mythic', color: '#eb4b4b', value: 3900 },
+  { name: 'Exotic', color: '#e4ae39', value: 12600 },
 ];
 const CASE_ODDS = [0, 0.50, 0.28, 0.14, 0.055, 0.02, 0.005]; // by rarity index
 const WEARS = [
@@ -127,7 +127,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defSkin(F, 1, 'ak47', 'Jungle Stripe', 'tiger', ['#4f6b2f', '#1c2412']);
   defSkin(F, 1, 'm4a4', 'Desert Hex', 'hex', ['#b8a076', '#6b5a3c']);
 
-  CASES.push({ id: 'ember', name: 'Ember Case', color: '#ff7a2f', price: 120, desc: 'Heat, ash and dragons.' });
+  CASES.push({ id: 'ember', name: 'Ember Case', color: '#ff7a2f', price: 360, desc: 'Heat, ash and dragons.' });
   const E = 'ember';
   defSkin(E, 1, 'glock', 'Rustwire', 'rust', ['#7a3b1c', '#b8612b', '#3b1d0f']);
   defSkin(E, 1, 'nova', 'Kiln', 'fade', ['#ffb347', '#ff5e1a', '#7a1f0a']);
@@ -148,7 +148,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(E, 'flipwing', 'Ember Doppler', 'doppler', ['#ff3d00', '#1a0500', '#ffb300', '#6a0f00']);
   defKnife(E, 'spike', 'Crimson Web', 'web', ['#8a0f14', '#0a0a0a']);
 
-  CASES.push({ id: 'glacier', name: 'Glacier Case', color: '#5fd4ff', price: 120, desc: 'Cold steel and aurora light.' });
+  CASES.push({ id: 'glacier', name: 'Glacier Case', color: '#5fd4ff', price: 360, desc: 'Cold steel and aurora light.' });
   const G = 'glacier';
   defSkin(G, 1, 'glock', 'Frostbite', 'digital', ['#d8eef7', '#8ab6cc', '#4f7d96']);
   defSkin(G, 1, 'p90', 'Snowdrift', 'camo', ['#eef4f7', '#b8c8d0', '#8aa0ac']);
@@ -169,7 +169,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(G, 'talon', 'Tiger Ice', 'tiger', ['#dff6ff', '#0a2a4a']);
   defKnife(G, 'flipwing', 'Marble Veil', 'marble', ['#f2f6fa', '#1a2a4a', '#8fb0d6']);
 
-  CASES.push({ id: 'neon', name: 'Neon Case', color: '#ff3df0', price: 120, desc: 'Synthwave, glitches and arcade light.' });
+  CASES.push({ id: 'neon', name: 'Neon Case', color: '#ff3df0', price: 360, desc: 'Synthwave, glitches and arcade light.' });
   const N = 'neon';
   defSkin(N, 1, 'glock', 'Pixel Pop', 'digital', ['#ff3df0', '#3df0ff', '#1a0a2a']);
   defSkin(N, 1, 'p2000', 'Grid Runner', 'mesh', ['#0a0a1a', '#ff3df0']);
@@ -190,7 +190,7 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(N, 'flipwing', 'Prism Fade', 'fade', ['#3df0ff', '#ff3df0', '#ffd23d']);
   defKnife(N, 'talon', 'Sakura', 'web', ['#ffb8d8', '#8a1f4a']);
 
-  CASES.push({ id: 'arsenal', name: 'Arsenal Case', color: '#7dff4a', price: 150, desc: 'Finishes for the new guns: miniguns, crossbows and more.' });
+  CASES.push({ id: 'arsenal', name: 'Arsenal Case', color: '#7dff4a', price: 450, desc: 'Finishes for the new guns: miniguns, crossbows and more.' });
   const A = 'arsenal';
   defSkin(A, 1, 'tec9', 'Hazard Stripe', 'stripes', ['#1a1a1a', '#ffd23d']);
   defSkin(A, 1, 'fiveseven', 'Coolant', 'fade', ['#7dffd8', '#1a8aff']);
@@ -401,7 +401,7 @@ function tradeUp(items) {
 
 /* Match reward: credits plus a chance at a drop (field skin or a case). */
 /* ── keys: each case has its own; master keys open any case ── */
-const KEY_PRICE = { ember: 250, glacier: 250, neon: 250, arsenal: 300 };
+const KEY_PRICE = { ember: 750, glacier: 750, neon: 750, arsenal: 900 };   // everything credit-priced went up 3× in 1.4
 const KEY_BUNDLE = { n: 5, discount: 0.85 };
 Object.assign(Inv, {
   keysFor(caseId) { return (this.data.keys[caseId] || 0) + (this.data.keys.master || 0); },

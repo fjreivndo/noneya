@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.3.html     the game (built, self-contained, works offline)
+Breachpoint v1.4.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.3.html
+build.js                  npm install && node build.js  →  Breachpoint v1.4.html
 ```
 
 ## Modes
@@ -16,9 +16,9 @@ build.js                  npm install && node build.js  →  Breachpoint v1.3.ht
 | mode | map | what it is |
 |---|---|---|
 | **Defuse** | Dustyard | 5v5 rounds, first to 7, sides swap at 6. Buy menu, economy with loss bonus, bomb plant/defuse, kits, armor, one life per round. |
-| **Conquest** | Ridgeline | Up to 16v16 on a 220 m valley. Five flags, tickets that bleed, four classes, squad spawns, jeeps, RPGs. |
+| **Conquest** | Ridgeline | Up to 16v16 on a 220 m valley. Five flags, tickets that bleed, four classes, squad spawns, jeeps, a tank per side, RPGs. |
 | **Team Deathmatch** | either | Respawns, classes, first to 50. |
-| **Sandbox** | Flatgrass (or any map) | Garry's Mod-style: spawn props, NPCs, weapons and jeeps, then build with the physics gun and tool gun. |
+| **Sandbox** | Flatgrass (or any map) | Garry's Mod-style: spawn props, NPCs, weapons, jeeps and tanks, then build with the physics gun and tool gun. |
 
 ## Sandbox
 
@@ -31,7 +31,7 @@ Press **Q** for the spawn menu. It has these tabs:
 - **NPCs:** Aegis and Vanta soldiers (pick their weapon and skill), zombies,
   citizens and target dummies.
 - **Weapons:** everything in the game, with your skins and attachments on.
-- **Vehicles:** jeeps.
+- **Vehicles:** jeeps, plus tanks (W/S drive, A/D turn on the spot, mouse aims the turret, LMB fires the cannon; the crew is safe from bullets, so bring RPGs or M79s).
 - **Tools** and **Options.**
 
 Things spawn where you're aiming.
@@ -71,6 +71,13 @@ Things spawn where you're aiming.
 - **Multiplayer.** Sandbox works in multiplayer too. The host runs the
   physics and everyone builds in the same world; people who join late get
   the whole build.
+
+
+## New in v1.4
+
+- **Tanks** in Conquest (one per side) and the Sandbox spawn menu.
+- **Prices:** everything bought with credits (cases, keys, bundles, attachment unlocks) costs 3× more; skin sell values are 3× too. In-match Defuse prices are unchanged.
+- **Scopes:** sniper, 4x ACOG, AUG and crossbow get full-screen reticles; iron sights and red dots block much less of the view.
 
 ## Weapons
 

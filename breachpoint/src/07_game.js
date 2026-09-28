@@ -430,7 +430,7 @@ const Game = {
       if (owner && owner.team === s.team && owner !== s) continue;
       this.damage(s, dmg * f, owner, weapon, 'chest');
     }
-    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p); if (d < radius + 1.5) v.damage(dmg * 2.2 * (1 - d / (radius + 1.5)), owner); }
+    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); }
     if (Phys.active) { Phys.blast(p, radius * 1.6, 10); for (const q of Phys.props.slice()) if (q.def.explosive && dist3(new V3(q.x, q.y, q.z), p) < radius) Phys.damage(q, dmg, owner); }
   },
   flashbang(p, owner) {
@@ -508,9 +508,9 @@ const Game = {
   tryEnterVehicle(s) {
     if (s.vehicle) { this.exitVehicle(s); return true; }
     for (const v of this.vehicles) {
-      if (!v.alive || dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) > 3.5) continue;
-      if (!v.driver) { v.driver = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
-      if (!v.passenger) { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
+      if (!v.alive || dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) > v.K.enter) continue;
+      if (!v.driver) { v.driver = s; s.vehicle = v; Net.vehicleSeat(v); if (s.ctrl === 'local' && v.kind === 'tank') HUD.center('Tank: W/S drive, A/D turn, mouse aims the turret, LMB fires', 2.5); return true; }
+      if (!v.passenger && v.kind !== 'tank') { v.passenger = s; s.vehicle = v; Net.vehicleSeat(v); return true; }
     }
     return false;
   },

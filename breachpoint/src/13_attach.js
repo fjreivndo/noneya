@@ -7,14 +7,14 @@
 const ATT_SLOTS = ['optic', 'muzzle', 'under', 'mag'];
 const ATT_SLOT_NAMES = { optic: 'Optic', muzzle: 'Muzzle', under: 'Underbarrel', mag: 'Magazine' };
 const ATTACH = {
-  reddot:      { slot: 'optic', name: 'Red Dot', price: 150, desc: 'Clean dot, slight zoom. Faster to aim than irons.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
-  holo:        { slot: 'optic', name: 'Holographic', price: 220, desc: 'Wide window with a ring reticle.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
-  acog:        { slot: 'optic', name: '4x ACOG', price: 420, desc: 'Magnified optic for long lanes. Slower to aim.', types: ['rifle', 'lmg'] },
-  suppressor:  { slot: 'muzzle', name: 'Suppressor', price: 380, desc: 'Quiet shots, no tracer, tiny flash. Bots hear you from much closer. -5% damage.', types: ['rifle', 'smg', 'lmg', 'pistol', 'sniper'] },
-  compensator: { slot: 'muzzle', name: 'Compensator', price: 220, desc: '-30% horizontal recoil.', types: ['rifle', 'smg', 'lmg', 'pistol'] },
-  grip:        { slot: 'under', name: 'Vertical Grip', price: 240, desc: '-22% vertical recoil, steadier on the move.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
-  laser:       { slot: 'under', name: 'Laser Sight', price: 260, desc: '-35% hip-fire spread. Everyone can see the dot.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
-  extmag:      { slot: 'mag', name: 'Extended Mag', price: 320, desc: '+50% magazine, +15% reload time.', types: ['rifle', 'smg', 'pistol', 'lmg', 'sniper'] },
+  reddot:      { slot: 'optic', name: 'Red Dot', price: 450, desc: 'Clean dot, slight zoom. Faster to aim than irons.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
+  holo:        { slot: 'optic', name: 'Holographic', price: 660, desc: 'Wide window with a ring reticle.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
+  acog:        { slot: 'optic', name: '4x ACOG', price: 1260, desc: 'Magnified optic for long lanes. Slower to aim.', types: ['rifle', 'lmg'] },
+  suppressor:  { slot: 'muzzle', name: 'Suppressor', price: 1140, desc: 'Quiet shots, no tracer, tiny flash. Bots hear you from much closer. -5% damage.', types: ['rifle', 'smg', 'lmg', 'pistol', 'sniper'] },
+  compensator: { slot: 'muzzle', name: 'Compensator', price: 660, desc: '-30% horizontal recoil.', types: ['rifle', 'smg', 'lmg', 'pistol'] },
+  grip:        { slot: 'under', name: 'Vertical Grip', price: 720, desc: '-22% vertical recoil, steadier on the move.', types: ['rifle', 'smg', 'lmg', 'shotgun'] },
+  laser:       { slot: 'under', name: 'Laser Sight', price: 780, desc: '-35% hip-fire spread. Everyone can see the dot.', types: ['rifle', 'smg', 'lmg', 'shotgun', 'pistol'] },
+  extmag:      { slot: 'mag', name: 'Extended Mag', price: 960, desc: '+50% magazine, +15% reload time.', types: ['rifle', 'smg', 'pistol', 'lmg', 'sniper'] },
 };
 function attachAllowed(wid, aid) {
   const w = WEAPONS[wid], a = ATTACH[aid]; if (!w || !a || w.special) return false;
@@ -32,7 +32,7 @@ function modWeapon(base, att) {
   const has = id => ATT_SLOTS.some(k => att[k] === id && attachAllowed(base.id, id));
   if (has('reddot')) w.zoom = Math.min(w.zoom || 70, base.type === 'pistol' ? 62 : 60);
   if (has('holo')) w.zoom = Math.min(w.zoom || 70, 58);
-  if (has('acog')) { w.zoom = 34; w.adsSlow = 0.8; }
+  if (has('acog')) { w.zoom = 34; w.adsSlow = 0.8; w.scope = true; w.overlay = 'acog'; }
   if (has('suppressor')) { w.suppressed = true; w.dmg *= 0.95; w.sound = (w.sound || 1) * 0.35; }
   if (has('compensator')) w.sideK = 0.7;
   if (has('grip')) { w.upK = 0.78; w.moveSpread *= 0.88; }

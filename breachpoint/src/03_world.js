@@ -403,7 +403,7 @@ function buildRidgeline() {
     sandbags(h.x - 12, h.z - 8 * s, h.x - 4, h.z - 8 * s + 1 * s); sandbags(h.x + 4, h.z - 8 * s, h.x + 12, h.z - 8 * s + 1 * s);
     house(h.x - 18, h.z + 2 * s, 8, 6, s > 0 ? 'n' : 's', 'concrete', k === 'CT' ? '#9ab0c8' : '#c8a890');
     for (let i = 0; i < 8; i++) World.spawns[k].push({ x: h.x - 8 + i * 2.2, z: h.z + 2 * s, yaw: s > 0 ? Math.PI : 0 });
-    World.vehicleSpawns.push({ team: k, x: h.x + 16, z: h.z, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 22, z: h.z - 3 * s, yaw: s > 0 ? Math.PI : 0 });
+    World.vehicleSpawns.push({ team: k, x: h.x + 16, z: h.z, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 22, z: h.z - 3 * s, yaw: s > 0 ? Math.PI : 0 }, { team: k, x: h.x + 32, z: h.z - 4 * s, yaw: s > 0 ? Math.PI : 0, kind: 'tank' });
   }
   // scattered cover
   for (let i = 0; i < 70; i++) {

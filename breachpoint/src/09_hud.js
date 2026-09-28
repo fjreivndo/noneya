@@ -124,8 +124,10 @@ const HUD = {
     this.centerT -= dt; if (this.centerT <= 0) E.center.classList.add('hidden');
     this.hitT -= dt; E.hitm.style.opacity = clamp(this.hitT / 0.2, 0, 1);
     E.flash.style.opacity = L.blind > 0 ? clamp(L.blind / Math.min(1.5, L.blindMax || 1), 0, 1) : 0;
-    const scoped = L.alive && w && w.scope && L.adsT > 0.85; E.scope.classList.toggle('hidden', !scoped);
-    E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L));
+    // scope overlay fades in over the last part of the aim-in
+    const scopeK = L.alive && w && w.scope && !L.vehicle ? clamp((L.adsT - 0.7) / 0.2, 0, 1) : 0, scoped = scopeK > 0.5;
+    E.scope.classList.toggle('hidden', scopeK <= 0); if (scopeK > 0) { this.setScope(w.overlay || 'sniper'); E.scope.style.opacity = scopeK; }
+    E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L && L.vehicle.kind !== 'tank'));
     if (L.alive && w && !scoped) { const g = Settings.xhGap + L.spread() * 900; E.xh.querySelectorAll('i').forEach((i, k) => { const s = Settings.xhSize; if (k === 0) i.style.left = (-g - s) + 'px'; if (k === 1) i.style.left = g + 'px'; if (k === 2) i.style.top = (-g - s) + 'px'; if (k === 3) i.style.top = g + 'px'; }); }
     E.vign.style.opacity = L.alive ? clamp((50 - L.hp) / 50, 0, 0.8) : 0;
     this.drawDamage(dt);
@@ -135,6 +137,7 @@ const HUD = {
     const B = Game.bomb;
     if (B.defuser === L.id) prog = ['Defusing…', 1 - B.progress / (B.progressMax || 10)];
     if (L.healT > 0) prog = ['Healing…', 1 - L.healT / 2];
+    if (L.vehicle && L.vehicle.kind === 'tank' && L.vehicle.reloadT > 0) prog = ['Cannon reloading', 1 - L.vehicle.reloadT / L.vehicle.K.reload];
     if (w && w.spinup && L.spin > 0 && L.spin < 1) prog = ['Spinning up', L.spin];
     if (B.localDefuse) prog = ['Defusing…', 1 - B.localDefuse.t / (L.kit ? Game.mode.kitTime : Game.mode.defuseTime)];
     E.prog.classList.toggle('hidden', !prog); if (prog) { E.progtxt.textContent = prog[0]; E.progbar.style.width = clamp(prog[1], 0, 1) * 100 + '%'; }
@@ -143,8 +146,8 @@ const HUD = {
     if (L.alive) {
       if (B.state === 'carried' && B.carrier === L.id) hint = World.siteAt(L.pos.x, L.pos.z) ? 'Hold E to plant the bomb' : 'You have the bomb — plant it at A or B';
       else if (L.team === 'CT' && B.state === 'planted' && B.pos && dist2(L.pos.x, L.pos.z, B.pos.x, B.pos.z) < 2 && !prog) hint = 'Hold E to defuse';
-      else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || !v.passenger) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < 3.5)) hint = 'E — enter jeep';
-      else if (L.vehicle) hint = L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
+      else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || (!v.passenger && v.kind !== 'tank')) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter)) { const v = Game.vehicles.find(v => v.alive && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter); hint = 'E — enter ' + (v ? v.K.name.toLowerCase() : 'vehicle'); }
+      else if (L.vehicle) hint = L.vehicle.kind === 'tank' ? `Tank ${Math.max(0, Math.ceil(L.vehicle.hp))}/${L.vehicle.maxHp} · W/S drive · A/D turn · mouse aim · LMB fire · E exit` : L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
       else if (Game.mode.buy && Game.round && UI.canBuy(L)) hint = 'B — buy menu';
     }
     E.hint.textContent = hint;
@@ -152,6 +155,31 @@ const HUD = {
     if (Input.down('Tab') && !UI.blocking()) this.renderBoard(); else E.board.classList.add('hidden');
     this.drawRadar();
     if (!E.deploy.classList.contains('hidden')) this.updateDeploy();
+  },
+  /* Scope reticles drawn as SVG in a 100×100 box centred on the screen.
+     The black surround is one huge path with a round hole. */
+  setScope(kind) {
+    if (this.scopeKind === kind) return; this.scopeKind = kind;
+    const R = 44, hole = `M-2000,-2000H2000V2000H-2000Z M0,${-R}A${R},${R} 0 1,0 0,${R}A${R},${R} 0 1,0 0,${-R}Z`;
+    const ln = (x1, y1, x2, y2, w = 0.14, c = '#000') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"/>`;
+    let ret = '';
+    if (kind === 'sniper') {
+      ret = ln(-R, 0, -1.4, 0) + ln(1.4, 0, R, 0) + ln(0, -R, 0, -1.4) + ln(0, 1.4, 0, R)
+        + ln(-R, 0, -16, 0, 1.1) + ln(16, 0, R, 0, 1.1) + ln(0, 16, 0, R, 1.1) + ln(0, -R, 0, -16, 1.1)
+        + [4, 8, 12].map(d => `<circle cx="${d}" cy="0" r=".32"/><circle cx="${-d}" cy="0" r=".32"/><circle cx="0" cy="${d}" r=".32"/><circle cx="0" cy="${-d}" r=".32"/>`).join('')
+        + '<circle r=".28" fill="#ff2a2a"/>';
+    } else if (kind === 'acog') {
+      ret = ln(-R, 0, -9, 0, 0.18) + ln(9, 0, R, 0, 0.18) + ln(0, 2.6, 0, 18, 0.14, '#111')
+        + [[5, 2.2], [8, 1.7], [11, 1.3], [14, 1]].map(([y, w]) => ln(-w, y, w, y, 0.16, '#111')).join('')
+        + '<path d="M0,0 L-1.9,2.5 L-1.3,2.5 L0,0.8 L1.3,2.5 L1.9,2.5 Z" fill="#ff3a2a" style="filter:drop-shadow(0 0 .4px #ff5a3a)"/>';
+    } else {  // crossbow: thin cross and drop marks for longer shots
+      ret = ln(-R, 0, -2, 0, 0.12) + ln(2, 0, R, 0, 0.12) + ln(0, -R, 0, -2, 0.12) + ln(0, 2, 0, R, 0.12)
+        + [[3, 3], [6, 2.4], [9.5, 1.8]].map(([y, w]) => ln(-w, y, w, y, 0.2, '#1a1a1a')).join('') + '<circle r=".35" fill="#3aff6a"/>';
+    }
+    this.el.scope.innerHTML = `<svg viewBox="-50 -50 100 100" preserveAspectRatio="xMidYMid meet"><defs>
+      <radialGradient id="scV"><stop offset="0.72" stop-color="#000" stop-opacity="0"/><stop offset="0.97" stop-color="#000" stop-opacity="0.85"/><stop offset="1" stop-color="#000"/></radialGradient>
+      <radialGradient id="scT"><stop offset="0" stop-color="${kind === 'acog' ? '#ffdca0' : '#bfe8ff'}" stop-opacity="0.07"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+      <circle r="${R}" fill="url(#scT)"/>${ret}<circle r="${R}" fill="url(#scV)"/><circle r="${R}" fill="none" stroke="#111" stroke-width="1.2"/><path d="${hole}" fill="#000" fill-rule="evenodd"/></svg>`;
   },
   center(t, dur = 2) { const e = this.el.center; e.textContent = t; e.classList.remove('hidden'); this.centerT = dur; },
   hitmarker(head) { this.hitT = 0.2; this.el.hitm.classList.toggle('head', !!head); },

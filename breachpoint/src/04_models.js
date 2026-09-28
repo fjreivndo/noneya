@@ -198,6 +198,24 @@ function buildJeep(team) {
   return g;
 }
 
+/* ── tank ── hull, tracks, a turret that turns, a gun that elevates ───── */
+function buildTank(team) {
+  const g = new THREE.Group(), C = lam(team === 'T' ? '#6a5e3e' : '#46566a'), Dk = lam(team === 'T' ? '#4e452c' : '#34404f'), K = lam('#1a1a1a'), M = lam('#3a3a3a');
+  g.add(bx(2.6, 0.9, 5.0, C, 0, 0.95, 0)); g.add(bx(2.4, 0.35, 1.2, Dk, 0, 1.3, -2.3)); g.add(bx(2.2, 0.2, 0.4, Dk, 0, 1.45, 2.4));
+  const wheels = [];
+  for (const sx of [-1.45, 1.45]) {
+    g.add(bx(0.55, 0.85, 5.3, K, sx, 0.5, 0));
+    for (let i = 0; i < 6; i++) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.58, 10), M); w.rotation.z = Math.PI / 2; w.position.set(sx, 0.38, -2.1 + i * 0.84); g.add(w); wheels.push(w); }
+  }
+  const turret = new THREE.Group(); turret.position.set(0, 1.4, 0.3); g.add(turret);
+  turret.add(bx(2.0, 0.75, 2.5, C, 0, 0.38, 0)); turret.add(bx(1.6, 0.3, 0.9, Dk, 0, 0.35, 1.5)); turret.add(cyl(0.3, 0.2, Dk, 0.55, 0.85, 0.4, 10)).rotation.x = 0;
+  const gun = new THREE.Group(); gun.position.set(0, 0.38, -1.25); turret.add(gun);
+  gun.add(bx(0.55, 0.45, 0.5, Dk, 0, 0, 0)); gun.add(cyl(0.11, 3.4, M, 0, 0, -1.9, 10)); gun.add(cyl(0.16, 0.5, M, 0, 0, -3.45, 10));
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, -3.75); gun.add(muzzle);
+  g.userData = { wheels, turret, gun, muzzle };
+  return g;
+}
+
 /* ── effects ───────────────────────────────────────────────────────────── */
 function softDot(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,255,255,0)') {
   const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d');

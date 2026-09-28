@@ -279,7 +279,7 @@ const Sandbox = {
         this.emit({ e: 'npc', id, k: a.k, name: n.name.split(' ')[0] + ' ' + pick(BOT_NAMES), team: n.team, w: weapon, pos: a.pos, yaw: a.yaw || 0, att });
         undo.push({ kind: 'npc', id }); break;
       }
-      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0 }); undo.push({ kind: 'veh', id }); break; }
+      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0, k: a.k === 'tank' ? 'tank' : 'jeep' }); undo.push({ kind: 'veh', id }); break; }
       case 'undo': {
         let u; while ((u = undo.pop())) { if (this.exists(u)) break; }
         if (!u) return;
@@ -376,7 +376,7 @@ const Sandbox = {
         break;
       }
       case 'npcdel': Game.removeSoldier(ev.id); break;
-      case 'veh': { const v = new Vehicle(ev.id, 'CT', { x: ev.x, z: ev.z, yaw: ev.yaw, team: 'CT' }); v.noRespawn = true; Game.vehicles.push(v); break; }
+      case 'veh': { const v = new Vehicle(ev.id, Sandbox.opts.faction || 'CT', { x: ev.x, z: ev.z, yaw: ev.yaw, team: 'CT', kind: ev.k || 'jeep' }); v.noRespawn = true; Game.vehicles.push(v); break; }
       case 'vehdel': { const v = Game.vehicles.find(x => x.id === ev.id); if (!v) return; for (const s of [v.driver, v.passenger]) if (s) Game.exitVehicle(s, true); Game.scene.remove(v.model); Game.vehicles = Game.vehicles.filter(x => x !== v); break; }
       case 'boom': { const p = new V3(...ev.p); FX.explosion(p); Sfx.play('explode', p); if (Game.local && dist3(Game.local.pos, p) < 20) HUD.shake(0.6); break; }
     }
@@ -386,7 +386,7 @@ const Sandbox = {
     return {
       props: Phys.props.map(p => ({ e: 'add', id: p.id, k: p.def.id, pos: [p.x, p.y, p.z], quat: [p.q.x, p.q.y, p.q.z, p.q.w], sc: p.scale, col: p.color, mat: p.mat, fr: p.frozen, own: p.own, lk: p.liftK, thr: p.thrusters ? p.thrusters.map(t => ({ at: t.at, dir: t.dir, force: t.force, key: t.key, own: t.own })) : null })),
       cons: Phys.constraints.map(c => ({ e: 'con', id: c.id, type: c.type, a: c.a && c.a.id, b: c.b && c.b.id, la: c.la, lb: c.lb, len: c.len })),
-      veh: Game.vehicles.filter(v => v.noRespawn).map(v => ({ e: 'veh', id: v.id, x: v.pos.x, z: v.pos.z, yaw: v.yaw })),
+      veh: Game.vehicles.filter(v => v.noRespawn).map(v => ({ e: 'veh', id: v.id, x: v.pos.x, z: v.pos.z, yaw: v.yaw, k: v.kind })),
     };
   },
 
@@ -520,7 +520,7 @@ const Sandbox = {
     const L = Game.local; if (!L || !L.alive) return;
     if (kind === 'prop') { const d = PROPS[key]; const p = this.spawnPoint(L, d.radius * 0.8); this.exec({ op: 'prop', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
     else if (kind === 'npc') { const p = this.spawnPoint(L, 0.1); const q = World.nav.walkableAt(p.x, p.z) ? p : World.nav.randomNear(p.x, p.z, 3); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, Math.max(0, p.y - 0.1), q.z], yaw: L.yaw + Math.PI }); }
-    else if (kind === 'veh') { const p = this.spawnPoint(L, 1.2); this.exec({ op: 'veh', pos: [p.x, 0, p.z], yaw: L.yaw }); }
+    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); this.exec({ op: 'veh', k: key, pos: [p.x, 0, p.z], yaw: L.yaw }); }
     else if (kind === 'weapon') {
       if (isNade(key)) { L.nades[key] = Math.min(3, L.nades[key] + 1); } else { const w = WEAPONS[key]; if (w.slot === 4) { L.weapons[4] = key; L.fillAmmo(key); L.switchTo(key); } else L.give(key); }
       Sfx.play('buy');
