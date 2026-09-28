@@ -13,9 +13,11 @@ const UI = {
       if (e.code === 'Escape') {
         if ($('opener').classList.contains('open')) return;
         if (this.buyOpen) { this.toggleBuy(false); return; }
+        if (this.spawnOpen) { this.toggleSpawnMenu(false); return; }
         if (Game.running && !this.resultsOpen && $('deploy').classList.contains('hidden')) { this.pause(!this.pauseOpen); }
       }
       if (Game.running && !this.blocking() && (e.code === 'KeyY' || e.code === 'Enter')) { e.preventDefault(); HUD.openChat(); }
+      if (e.code === 'KeyQ' && this.spawnOpen && !e.repeat) { this.toggleSpawnMenu(false); Input.pressed.KeyQ = false; }
     });
     document.addEventListener('pointerlockchange', () => {
       if (!document.pointerLockElement && Game.running && !this.blocking() && !Input.typing && $('deploy').classList.contains('hidden')) this.pause(true);
@@ -23,7 +25,7 @@ const UI = {
     $('view').addEventListener('click', () => { if (Game.running && !this.blocking()) this.lock(); });
     this.show('main');
   },
-  blocking() { return this.pauseOpen || this.buyOpen || this.resultsOpen || Input.typing || !$('deploy').classList.contains('hidden'); },
+  blocking() { return this.pauseOpen || this.buyOpen || this.spawnOpen || this.resultsOpen || Input.typing || !$('deploy').classList.contains('hidden'); },
   lock() { if (!Game.running || this.blocking()) return; const c = Game.renderer.domElement; const plain = () => { try { const q = c.requestPointerLock(); if (q && q.catch) q.catch(() => { }); } catch (e) { } };
     try { const p = c.requestPointerLock({ unadjustedMovement: true }); if (p && p.catch) p.catch(plain); } catch (e) { plain(); } },
   toast(t, ms = 3000) { const e = $('toast'); e.textContent = t; e.classList.add('show'); clearTimeout(this.toastT); this.toastT = setTimeout(() => e.classList.remove('show'), ms); },
@@ -48,21 +50,22 @@ const UI = {
     const c = this.playCfg, M = MODES[c.mode];
     if (!M.maps.includes(c.map)) c.map = M.maps[0];
     const seg = (key, opts) => `<div class="seg" data-k="${key}">${opts.map(([v, l, sub]) => `<button class="${String(c[key]) === String(v) ? 'on' : ''}" data-v="${v}">${l}${sub ? `<small>${sub}</small>` : ''}</button>`).join('')}</div>`;
-    const sizes = c.mode === 'defuse' ? [3, 5] : c.mode === 'conquest' ? [8, 12, 16] : [4, 6, 8];
-    if (!sizes.includes(+c.teamSize)) c.teamSize = sizes[sizes.length > 2 ? 1 : 1];
+    const sb = c.mode === 'sandbox', sizes = c.mode === 'defuse' ? [3, 5] : c.mode === 'conquest' ? [8, 12, 16] : [4, 6, 8];
+    if (!sb && !sizes.includes(+c.teamSize)) c.teamSize = sizes[1];
     $('playForm').innerHTML = `
-      <label>Mode</label>${seg('mode', [['defuse', 'Defuse', 'CS-style rounds, bomb, economy'], ['conquest', 'Conquest', 'Battlefield flags, tickets, jeeps'], ['tdm', 'Team Deathmatch', 'Respawns, classes']])}
+      <label>Mode</label>${seg('mode', [['defuse', 'Defuse', 'CS-style rounds, bomb, economy'], ['conquest', 'Conquest', 'Battlefield flags, tickets, jeeps'], ['tdm', 'Team Deathmatch', 'Respawns, classes'], ['sandbox', 'Sandbox', 'Spawn props & NPCs, physgun, toolgun']])}
       <label>Map</label>${seg('map', M.maps.map(m => [m, MAPS[m].name, MAPS[m].desc]))}
-      <label>Players per team</label>${seg('teamSize', sizes.map(n => [n, n + 'v' + n]))}
-      <label>Bot skill</label>${seg('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}
-      <label>Your team</label>${seg('team', [['auto', 'Auto'], ['CT', 'Aegis', c.mode === 'defuse' ? 'defend' : ''], ['T', 'Vanta', c.mode === 'defuse' ? 'attack' : '']])}`;
+      ${sb ? '' : `<label>Players per team</label>${seg('teamSize', sizes.map(n => [n, n + 'v' + n]))}`}
+      <label>${sb ? 'NPC skill' : 'Bot skill'}</label>${seg('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}
+      <label>${sb ? 'Your faction (NPCs of it follow you)' : 'Your team'}</label>${seg('team', (sb ? [] : [['auto', 'Auto']]).concat([['CT', 'Aegis', c.mode === 'defuse' ? 'defend' : ''], ['T', 'Vanta', c.mode === 'defuse' ? 'attack' : '']]))}`;
     $('playForm').querySelectorAll('.seg').forEach(s => s.querySelectorAll('button').forEach(b => b.onclick = () => { const k = s.dataset.k; c[k] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; Store.set('playcfg', c); Sfx.play('ui'); this.render_play(); }));
     $('playGo').onclick = () => this.startSolo();
   },
   startSolo() {
     const c = this.playCfg, team = c.team === 'auto' ? pick(['T', 'CT']) : c.team;
     Net.leave();
-    this.enterGame({ mode: c.mode, map: c.map, diff: c.diff, teamSize: c.teamSize, players: [{ id: 'me', name: Settings.name, team, ctrl: 'local', cls: 'assault' }], localId: 'me' });
+    if (c.mode === 'sandbox') { Sandbox.opts.npcSkill = c.diff; Sandbox.opts.faction = team; Sandbox.saveOpts(); }
+    this.enterGame({ mode: c.mode, map: c.map, diff: c.diff, teamSize: c.mode === 'sandbox' ? 0 : c.teamSize, players: [{ id: 'me', name: Settings.name, team, ctrl: 'local', cls: 'assault' }], localId: 'me' });
   },
   enterGame(cfg) {
     Sfx.init();
@@ -109,9 +112,9 @@ const UI = {
     const M = MODES[L.mode];
     if (host) {
       const sel = (k, opts) => `<select data-k="${k}">${opts.map(([v, l]) => `<option value="${v}" ${String(L[k]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
-      const sizes = L.mode === 'defuse' ? [3, 5] : L.mode === 'conquest' ? [8, 12, 16] : [4, 6, 8];
-      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label><label>Team size ${sel('teamSize', sizes.map(n => [n, n + 'v' + n]))}</label><label>Bots ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label>`;
-      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } Net.pushLobby(); this.render_lobby(); });
+      const sizes = L.mode === 'defuse' ? [3, 5] : L.mode === 'conquest' ? [8, 12, 16] : L.mode === 'sandbox' ? [0] : [4, 6, 8];
+      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label><label>Team size ${sel('teamSize', sizes.map(n => [n, n ? n + 'v' + n : 'no bots']))}</label><label>Bots ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label>`;
+      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } if (k === 'diff') Sandbox.opts.npcSkill = L.diff; Net.pushLobby(); this.render_lobby(); });
       $('lobbyStart').classList.remove('hidden'); $('lobbyStart').onclick = () => Net.startMatch();
     } else {
       $('lobbySettings').innerHTML = `<p>${M.name} · ${MAPS[L.map].name} · ${L.teamSize}v${L.teamSize} · ${DIFF[L.diff].label} bots</p><p class="muted">Waiting for the host to start…</p>`;
@@ -126,7 +129,9 @@ const UI = {
     document.querySelectorAll('#armTabs button').forEach(b => { b.classList.toggle('on', b.dataset.t === this.armoryTab); b.onclick = () => { this.armoryTab = b.dataset.t; Sfx.play('ui'); this.render_armory(); }; });
     $('credits').textContent = Inv.data.credits.toLocaleString();
     const body = $('armBody');
+    if (this.armoryTab !== 'gunsmith') GunPreview.stop();
     if (this.armoryTab === 'inv') this.renderInventory(body);
+    else if (this.armoryTab === 'gunsmith') this.renderGunsmith(body);
     else if (this.armoryTab === 'cases') this.renderCases(body);
     else if (this.armoryTab === 'trade') this.renderTrade(body);
     else this.renderStats(body);
@@ -353,6 +358,89 @@ const UI = {
     $('resArm').onclick = () => { this.leaveGame(); this.armoryTab = 'inv'; this.show('armory'); };
     if ($('resAgain')) $('resAgain').onclick = () => { this.leaveGame(); this.startSolo(); };
   },
+};
+
+/* ── gunsmith ─────────────────────────────────────────────────────────── */
+UI.gsWeapon = 'ak47';
+UI.renderGunsmith = function (body) {
+  const d = Inv.data, wid = this.gsWeapon, base = WEAPONS[wid], att = d.attach[wid] || (d.attach[wid] = {}), mod = modWeapon(base, att);
+  const guns = Object.values(WEAPONS).filter(w => w.mag && w.type !== 'launcher');
+  const bar = (label, a, b, max, better) => { const pa = clamp(a / max, 0, 1) * 100, pb = clamp(b / max, 0, 1) * 100, good = better === 'high' ? b > a + 1e-6 : b < a - 1e-6, bad = better === 'high' ? b < a - 1e-6 : b > a + 1e-6; return `<div class="gsb"><span>${label}</span><div class="gbar"><i style="width:${Math.min(pa, pb)}%"></i><em class="${good ? 'good' : bad ? 'bad' : ''}" style="left:${Math.min(pa, pb)}%;width:${Math.abs(pb - pa)}%"></em></div><b>${typeof b === 'number' ? (Number.isInteger(b) ? b : b.toFixed(2)) : b}</b></div>`; };
+  body.innerHTML = `<div class="gs"><div class="gslist">${guns.map(w => `<button class="${w.id === wid ? 'on' : ''}" data-w="${w.id}">${w.name}<small>${ATT_SLOTS.filter(k => (d.attach[w.id] || {})[k]).length || ''}</small></button>`).join('')}</div>
+    <div class="gscenter"><canvas id="gsCanvas" width="620" height="330"></canvas><h2>${base.name}</h2>
+      <div class="gstats">${bar('Damage', base.dmg, mod.dmg, 120, 'high')}${bar('Vertical recoil', base.recoil, base.recoil * (mod.upK || 1), 5, 'low')}${bar('Horizontal recoil', base.recoil, base.recoil * (mod.sideK || 1), 5, 'low')}${bar('Hip spread', base.spread * 1000, base.spread * (mod.hipK || 1) * 1000, 20, 'low')}${bar('Move spread', base.moveSpread * 100, mod.moveSpread * 100, 16, 'low')}${bar('Magazine', base.mag, mod.mag, 150, 'high')}${bar('Reload (s)', base.reload, mod.reload, 7, 'low')}${bar('ADS zoom', 90 - base.zoom, 90 - mod.zoom, 70, 'high')}</div></div>
+    <div class="gsslots">${ATT_SLOTS.map(k => { const opts = Object.keys(ATTACH).filter(a => ATTACH[a].slot === k && attachAllowed(wid, a)); if (!opts.length) return ''; return `<div class="gsslot"><h4>${ATT_SLOT_NAMES[k]}</h4><button class="att ${!att[k] ? 'on' : ''}" data-k="${k}" data-a="">None</button>${opts.map(a => { const A = ATTACH[a], own = d.unlocked.includes(a); return `<button class="att ${att[k] === a ? 'on' : ''} ${own ? '' : 'locked'}" data-k="${k}" data-a="${a}" title="${escapeHtml(A.desc)}"><span>${A.name}</span>${own ? '' : `<b>🔒 ₵${A.price}</b>`}<small>${A.desc}</small></button>`; }).join('')}</div>`; }).join('')}</div></div>`;
+  body.querySelectorAll('.gslist button').forEach(b => b.onclick = () => { this.gsWeapon = b.dataset.w; Sfx.play('ui'); this.renderGunsmith(body); });
+  body.querySelectorAll('.att').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, a = b.dataset.a;
+    if (a && !d.unlocked.includes(a)) { const A = ATTACH[a]; if (d.credits < A.price) return this.toast('Not enough credits'); if (!confirm(`Unlock ${A.name} for ₵${A.price}? It works on every gun that fits it.`)) return; d.credits -= A.price; d.unlocked.push(a); Sfx.play('buy'); $('credits').textContent = d.credits.toLocaleString(); }
+    if (a) att[k] = a; else delete att[k];
+    Inv.save(); Sfx.play('ui'); this.renderGunsmith(body);
+  });
+  GunPreview.show($('gsCanvas'), wid, Inv.equippedItem(wid), att);
+};
+const GunPreview = {
+  r: null, raf: 0,
+  show(canvas, wid, item, att) {
+    this.stop();
+    if (!this.r) { this.r = new THREE.WebGLRenderer({ antialias: true, alpha: true }); this.r.outputColorSpace = THREE.SRGBColorSpace; this.scene = new THREE.Scene(); this.scene.add(new THREE.HemisphereLight(0xffffff, 0x555544, 1.8)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(1, 2, 2); this.scene.add(d); this.cam = new THREE.PerspectiveCamera(28, 620 / 330, 0.01, 20); }
+    this.r.setSize(620, 330, false); canvas.replaceWith(this.r.domElement); this.r.domElement.id = 'gsCanvas';
+    if (this.gun) this.scene.remove(this.gun);
+    this.gun = buildGun(wid, item, att); const box = new THREE.Box3().setFromObject(this.gun), c = box.getCenter(new V3()); this.gun.position.sub(c);
+    const piv = new THREE.Group(); piv.add(this.gun); this.scene.add(piv); this.gun = piv;
+    const size = box.getSize(new V3()).length(); this.cam.position.set(0, size * 0.18, size * 1.08); this.cam.lookAt(0, 0, 0);
+    let t = 0; const loop = () => { this.raf = requestAnimationFrame(loop); t += 0.01; piv.rotation.y = Math.PI / 2 + Math.sin(t) * 0.6; piv.rotation.x = Math.sin(t * 0.7) * 0.1; this.r.render(this.scene, this.cam); };
+    loop();
+  },
+  stop() { cancelAnimationFrame(this.raf); },
+};
+
+/* ── spawn menu (sandbox) ──────────────────────────────────────────────── */
+UI.spawnTab = 'Props';
+UI.toggleSpawnMenu = function (on) {
+  if (on === undefined) on = !this.spawnOpen;
+  this.spawnOpen = on; $('spawnmenu').classList.toggle('hidden', !on);
+  if (on) { this.pause(false); Input.clear(); if (document.pointerLockElement) document.exitPointerLock(); this.renderSpawnMenu(); } else this.lock();
+};
+UI.renderSpawnMenu = function () {
+  const tabs = ['Props', 'Entities', 'NPCs', 'Weapons', 'Vehicles', 'Tools', 'Options'], T = this.spawnTab, O = Sandbox.opts;
+  const tile = (kind, key, name, img, sub) => `<button class="sp-tile" data-kind="${kind}" data-key="${key}"><img src="${img}" alt=""><span>${escapeHtml(name)}</span>${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</button>`;
+  let html = '';
+  if (T === 'Props' || T === 'Entities') html = `<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T && p.id !== 'lightbulb').map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)))).join('')}</div>`;
+  else if (T === 'NPCs') html = `<div class="sp-row"><label>Weapon <select id="npcW"><option value="default">Default</option>${Object.values(WEAPONS).filter(w => w.mag && w.type !== 'launcher').map(w => `<option value="${w.id}" ${O.npcWeapon === w.id ? 'selected' : ''}>${w.name}</option>`).join('')}<option value="knife" ${O.npcWeapon === 'knife' ? 'selected' : ''}>Knife</option></select></label><label>Skill <select id="npcS">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${O.npcSkill === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label></div>
+    <div class="sp-grid">${Object.entries(NPCS).map(([k, n]) => tile('npc', k, n.name, Thumbs.get('n:' + k, () => { const m = buildSoldierModel(n.team); if (!n.weapon) m.userData.gunMount.visible = false; else setSoldierGun(m, n.weapon, null, null); if (k === 'zombie') m.userData.arms.rotation.x = -0.3; m.rotation.y = Math.PI * 0.85; return m; }), n.desc)).join('')}</div>`;
+  else if (T === 'Weapons') html = `<div class="sp-grid">${Object.values(WEAPONS).filter(w => w.id !== 'physgun' && w.id !== 'toolgun').map(w => tile('weapon', w.id, w.name, Thumbs.get('w:' + w.id + attSig(Inv.data.attach[w.id]), () => { const g = buildGun(w.id, Inv.equippedItem(w.id), Inv.data.attach[w.id]); g.rotation.y = Math.PI / 2; return g; }))).join('')}${['frag', 'flash', 'smoke'].map(n => tile('weapon', n, GRENADES[n].name, Thumbs.get('g:' + n, () => new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), lam(n === 'frag' ? '#3a4a2a' : n === 'flash' ? '#b8b8b8' : '#5a6a7a'))))).join('')}</div>`;
+  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'E to drive')}</div>`;
+  else if (T === 'Tools') {
+    const tool = TOOLS[O.tool], opt = tool.opts || [];
+    html = `<div class="sp-tools"><div class="sp-toollist">${Object.entries(TOOLS).map(([k, t]) => `<button class="${O.tool === k ? 'on' : ''}" data-tool="${k}">${t.name}</button>`).join('')}</div><div class="sp-toolopts"><h3>${tool.name}</h3><p><b>LMB</b> ${tool.lmb}<br><b>RMB</b> ${tool.rmb}<br><b>R</b> clear selection</p>
+      ${opt.includes('color') ? `<label>Color</label><div class="swatches">${['#ff4a4a', '#ff9a2a', '#ffe04a', '#5ad04a', '#2ac0ff', '#3a6aff', '#a04aff', '#ff4ad0', '#ffffff', '#888888', '#222222', '#8a5a2a'].map(c => `<i data-c="${c}" style="background:${c}" class="${O.color === c ? 'on' : ''}"></i>`).join('')}<input type="color" id="toolColor" value="${O.color}"></div>` : ''}
+      ${opt.includes('material') ? `<label>Material</label><div class="mats">${Object.entries(PMAT).filter(([k]) => k !== 'default').map(([k, m]) => `<button data-m="${k}" class="${O.material === k ? 'on' : ''}">${m.name}</button>`).join('')}</div>` : ''}
+      ${opt.includes('slack') ? `<label>Rope slack <input type="range" id="optSlack" min="1" max="2" step="0.05" value="${O.slack}"></label>` : ''}
+      ${opt.includes('lift') ? `<label>Balloon lift (kg it can carry) <input type="range" id="optLift" min="2" max="150" step="1" value="${O.lift}"></label>` : ''}
+      ${opt.includes('force') ? `<label>Thruster force <input type="range" id="optForce" min="200" max="6000" step="100" value="${O.force}"></label><p class="muted">Hold T to fire every thruster you placed.</p>` : ''}
+      ${O.tool === 'dynamite' ? '<p class="muted">Press K to set off every charge you placed.</p>' : ''}
+      <button class="btn" id="useTool">Use tool gun</button></div></div>`;
+  } else html = `<div class="sp-opts"><label>Faction <select id="optFac"><option value="CT" ${O.faction === 'CT' ? 'selected' : ''}>Aegis</option><option value="T" ${O.faction === 'T' ? 'selected' : ''}>Vanta</option></select> <small class="muted">takes effect when you respawn</small></label>
+    <label><input type="checkbox" id="optIgnore" ${O.ignorePlayers ? 'checked' : ''}> NPCs ignore players</label>
+    <div class="row"><button class="btn" id="optFreeze">Freeze all props</button><button class="btn warn" id="optClearNpc">Remove all NPCs</button><button class="btn warn" id="optClear">Clear everything</button></div>
+    <p class="muted">Keys: <b>Q</b> this menu · <b>6</b> physics gun · <b>7</b> tool gun · <b>Z</b> undo · <b>V</b> noclip · <b>T</b> thrusters · <b>K</b> dynamite · <b>E</b> hold with physgun to rotate</p></div>`;
+  $('spawnmenu').innerHTML = `<div class="sp-box"><div class="sp-tabs">${tabs.map(t => `<button class="${t === T ? 'on' : ''}" data-tab="${t}">${t}</button>`).join('')}<div class="sp-close">Q / Esc to close</div></div><div class="sp-body">${html}</div></div>`;
+  const M = $('spawnmenu'), L = Game.local;
+  M.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { this.spawnTab = b.dataset.tab; Sfx.play('ui'); this.renderSpawnMenu(); });
+  M.querySelectorAll('.sp-tile').forEach(b => b.onclick = () => { Sandbox.spawn(b.dataset.kind, b.dataset.key); this.toggleSpawnMenu(false); });
+  M.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { O.tool = b.dataset.tool; Sandbox.pick = null; Sandbox.saveOpts(); this.renderSpawnMenu(); });
+  M.querySelectorAll('.swatches i').forEach(b => b.onclick = () => { O.color = b.dataset.c; Sandbox.saveOpts(); this.renderSpawnMenu(); });
+  M.querySelectorAll('.mats button').forEach(b => b.onclick = () => { O.material = b.dataset.m; Sandbox.saveOpts(); this.renderSpawnMenu(); });
+  const bind = (id, k, num) => { const e = $(id); if (e) e.oninput = () => { O[k] = num ? +e.value : e.value; Sandbox.saveOpts(); }; };
+  bind('toolColor', 'color'); bind('optSlack', 'slack', 1); bind('optLift', 'lift', 1); bind('optForce', 'force', 1); bind('npcW', 'npcWeapon'); bind('npcS', 'npcSkill');
+  if ($('npcW')) $('npcW').onchange = $('npcW').oninput; if ($('npcS')) $('npcS').onchange = $('npcS').oninput;
+  if ($('useTool')) $('useTool').onclick = () => { if (L) L.switchTo('toolgun'); this.toggleSpawnMenu(false); };
+  if ($('optFac')) $('optFac').onchange = e => { O.faction = e.target.value; Sandbox.saveOpts(); if (L && Net.role === 'off') { L.team = O.faction; L.buildModel(Game.scene); Game.view && (Game.view.key = null); } };
+  if ($('optIgnore')) $('optIgnore').onchange = e => { O.ignorePlayers = e.target.checked; Sandbox.saveOpts(); };
+  if ($('optFreeze')) $('optFreeze').onclick = () => { Sandbox.exec({ op: 'freezeall' }); this.toggleSpawnMenu(false); };
+  if ($('optClearNpc')) $('optClearNpc').onclick = () => { Sandbox.exec({ op: 'clearnpc' }); this.toggleSpawnMenu(false); };
+  if ($('optClear')) $('optClear').onclick = () => { if (confirm('Remove every prop and NPC?')) { Sandbox.exec({ op: 'clear' }); this.toggleSpawnMenu(false); } };
 };
 
 /* A slow orbit over Dustyard behind the menus. */

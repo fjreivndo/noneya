@@ -39,7 +39,7 @@ function recoilPattern(w, i) {
   const s = hashStr(w.id) % 7;
   const up = Math.min(i, 9) * 0.55 + Math.max(0, i - 9) * 0.08;
   const side = i < 4 ? 0 : Math.sin((i - 4) * 0.45 + s) * Math.min(1, (i - 4) / 5) * 1.6;
-  return { x: side * w.recoil, y: up * w.recoil };
+  return { x: side * w.recoil * (w.sideK || 1), y: up * w.recoil * (w.upK || 1) };
 }
 
 /* ── classes (conquest) ────────────────────────────────────────────────── */
@@ -283,6 +283,7 @@ const Inv = {
     }
     this.data.cases = Object.assign({ ember: 0, glacier: 0, neon: 0 }, this.data.cases);
     this.data.stats = Object.assign({ kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, this.data.stats);
+    this.data.attach = this.data.attach || {}; this.data.unlocked = this.data.unlocked || ['reddot'];
     this.save();
   },
   save() { Store.set('inv', this.data); },

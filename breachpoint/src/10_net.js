@@ -84,7 +84,7 @@ const Net = {
   join(code) {
     this.leave(); this.role = 'client'; this.code = code; this.connected = false;
     this.link = this.makeLink(code, false, {
-      open: () => { this.connected = true; clearTimeout(this.link && this.link.helloTimer); this.status = 'Connected'; this.send({ t: 'join', name: Settings.name, skins: Inv.loadoutSkins() }); this.lastHost = performance.now(); },
+      open: () => { this.connected = true; clearTimeout(this.link && this.link.helloTimer); this.status = 'Connected'; this.send({ t: 'join', name: Settings.name, skins: Inv.loadoutSkins(), att: Inv.data.attach }); this.lastHost = performance.now(); },
       data: m => { this.lastHost = performance.now(); this.clientData(m); },
       close: () => this.hostGone(),
       error: e => { this.status = e; this.onError && this.onError(e); },
@@ -119,7 +119,7 @@ const Net = {
         const sid = 'p' + uid(5); p.sid = sid; p.name = String(m.name || 'Player').slice(0, 16);
         const counts = { T: 0, CT: 0 }; this.lobby.players.forEach(x => counts[x.team]++);
         const team = counts.T <= counts.CT ? 'T' : 'CT';
-        const entry = { id: sid, name: p.name, team, skins: m.skins || {}, cls: 'assault' };
+        const entry = { id: sid, name: p.name, team, skins: m.skins || {}, att: m.att || {}, cls: 'assault' };
         this.lobby.players.push(entry);
         this.to(id, { t: 'you', id: sid });
         HUD.chat('Server', p.name + ' joined');
@@ -152,24 +152,26 @@ const Net = {
       case 'seat': { const v = Game.vehicles.find(x => x.id === m.id); if (v && s) { this.applySeat(v, m); this.toAll({ t: 'seat', id: v.id, d: m.d, p: m.p }, id); } break; }
       case 'chat': if (s) { const x = String(m.x).slice(0, 120); HUD.chat(s.name, x, s.team); this.toAll({ t: 'chat', n: s.name, x, team: s.team }, id); } break;
       case 'drop': if (s) Game.dropBomb(s); break;
+      case 'sbx': if (s && Sandbox.on && m.a) Sandbox.run(Object.assign({}, m.a, { by: s.id })); break;
     }
   },
   lateJoin(peerId, entry) {
     // take over a bot on the joining player's team
     const bot = Game.soldiers.find(x => x.team === entry.team && x.isBot);
     if (bot) Game.removeSoldier(bot.id);
-    const s = Game.addSoldier({ id: entry.id, name: entry.name, team: entry.team, ctrl: 'remote', skins: entry.skins });
+    const s = Game.addSoldier({ id: entry.id, name: entry.name, team: entry.team, ctrl: 'remote', skins: entry.skins, att: entry.att });
     s.buildModel(Game.scene); s.alive = false; s.respawnT = 0; s.money = 800; s.resetLoadout(s.team);
     this.to(peerId, { t: 'start', cfg: this.startCfgFor(), late: true });
+    if (Sandbox.on) this.to(peerId, { t: 'sbxfull', st: Sandbox.snapshotAll() });
     this.toAll({ t: 'rosterDel', id: bot ? bot.id : null, add: this.rosterEntry(s) }, peerId);
     if (Game.mode.id === 'defuse') HUD.chat('Server', entry.name + ' will spawn next round');
   },
-  rosterEntry(s) { return { id: s.id, name: s.name, team: s.team, isBot: s.isBot, cls: s.cls, skins: s.skins }; },
+  rosterEntry(s) { return { id: s.id, name: s.name, team: s.team, isBot: s.isBot, cls: s.cls, skins: s.ctrl === 'local' ? Inv.loadoutSkins() : s.skins, att: s.attach, npc: s.npc || undefined }; },
   startCfgFor(cfg) { const c = Object.assign({}, cfg || Game.cfg); c.roster = cfg ? cfg.roster : Game.soldiers.map(s => this.rosterEntry(s)); c.players = []; return c; },
   /* host: start the match for everyone */
   startMatch() {
     const L = this.lobby; L.started = true;
-    const cfg = { mode: L.mode, map: L.map, diff: L.diff, teamSize: L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
+    const cfg = { mode: L.mode, map: L.map, diff: L.diff, teamSize: L.mode === 'sandbox' ? 0 : L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, att: p.id === 'host' ? Inv.data.attach : p.att, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
     // clients must be in the match before the first round's spawn events reach them
     Game.prepareRoster(cfg);
     this.toAll({ t: 'start', cfg: this.startCfgFor(cfg) });
@@ -200,6 +202,9 @@ const Net = {
         break;
       }
       case 'snap': this.applySnap(m); break;
+      case 'sbxev': if (Sandbox.on) Sandbox.apply(m.ev); break;
+      case 'sbxfull': if (Sandbox.on) { for (const ev of m.st.props) Sandbox.apply(ev); for (const ev of m.st.cons) Sandbox.apply(ev); for (const ev of m.st.veh) Sandbox.apply(ev); } break;
+      case 'toast': HUD.center(m.x, 0.8); break;
       case 'ev': this.applyEvent(m.e); break;
       case 'spawn': this.applySpawn(m); break;
       case 'round': this.applyRound(m); break;
@@ -247,12 +252,13 @@ const Net = {
       if (g.td && Game.tdm) { Game.tdm.kills = { T: g.td[0], CT: g.td[1] }; Game.tdm.timeLeft = g.td[2]; }
       if (g.v) g.v.forEach(a => { const v = Game.vehicles.find(x => x.id === a[0]); if (!v || (v.driver && v.driver.ctrl === 'local')) return; v.net = { x: a[1], y: a[2], z: a[3], yaw: a[4], sp: a[5] }; v.hp = a[6]; if (!!a[7] !== v.alive) { v.alive = !!a[7]; v.model.visible = v.alive; if (v.alive) v.reset(); } });
     }
+    if (m.p) for (const a of m.p) { const p = Phys.byId.get(a[0]); if (p) p.net = a.slice(1); }
     if (m.sh) for (const sh of m.sh) { const s = Game.byId(sh[0]); if (s && s !== L) this.showShot(s, new V3(sh[1], sh[2], sh[3]), s.cur); }
   },
   showShot(s, end, wid) {
-    const eye = s.eye(new V3()), w = WEAPONS[wid] || WEAPONS[s.cur];
+    const eye = s.eye(new V3()), w = s.stat(wid) || s.w;
     const mz = eye.clone().add(new V3(0, -0.2, 0));
-    if (chance(0.7)) FX.tracer(mz, end); FX.muzzle(mz);
+    if (!(w && w.suppressed) && chance(0.7)) FX.tracer(mz, end); if (!(w && w.suppressed)) FX.muzzle(mz);
     const d = end.clone().sub(eye), dist = d.length(); d.multiplyScalar(1 / dist);
     const hit = World.raycast(eye.x, eye.y, eye.z, d.x, d.y, d.z, dist + 0.2); if (hit >= 0 && Math.abs(hit - dist) < 0.3) FX.impact(end, { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz });
     if (w) Sfx.play('shot', eye, { w });
@@ -283,7 +289,7 @@ const Net = {
     if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; }
     if (s === Game.local) {
       const L = m.lo; s.weapons = L.w; s.ammo = {}; for (const k in L.w) if (L.w[k]) s.fillAmmo(L.w[k]); s.nades = L.n; s.armor = L.ar; s.helmet = L.hm; s.kit = L.kit; s.cls = L.cls; s.medkits = L.mk || 0; s.ammoBoxes = L.ab || 0;
-      s.cur = s.bestWeapon(); s.drawT = 0.4; s.vel.set(0, 0, 0); s.respawnT = null; s.planting = null;
+      s.cur = Sandbox.on ? 'physgun' : s.bestWeapon(); s.drawT = 0.4; s.vel.set(0, 0, 0); s.respawnT = null; s.planting = null;
       HUD.showDeploy(false); HUD.onSpawn();
     }
   },
@@ -374,6 +380,8 @@ const Net = {
     if (Game.mode.id === 'conquest') { g.tk = [Math.ceil(Game.tickets.T), Math.ceil(Game.tickets.CT)]; g.f = World.flags.map(f => [+f.prog.toFixed(3), f.owner, f.contested ? 1 : 0]); }
     if (Game.mode.id === 'tdm') g.td = [Game.tdm.kills.T, Game.tdm.kills.CT, Math.round(Game.tdm.timeLeft)];
     if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0]);
-    this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0) });
+    let props;
+    if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
+    this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0), p: props });
   },
 };

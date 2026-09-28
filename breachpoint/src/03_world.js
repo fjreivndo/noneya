@@ -146,6 +146,8 @@ const _tmpNear = [], _tmpNear2 = [];
 const STEP = 0.55;
 function moveBody(p, v, dt, r, h, grounded) {
   const near = World.near(p.x - r - 1.5, p.z - r - 1.5, p.x + r + 1.5, p.z + r + 1.5, _tmpNear);
+  // sandbox props: their bounding boxes collide like walls you can stand on
+  if (Phys.dyn.length) for (const d of Phys.dyn) if (d.x1 > p.x - r - 1.5 && d.x0 < p.x + r + 1.5 && d.z1 > p.z - r - 1.5 && d.z0 < p.z + r + 1.5 && d.y1 > p.y - 1 && d.y0 < p.y + h + 1) near.push(d);
   const res = { grounded: false, hitWall: false, landed: 0 };
   for (let axis = 0; axis < 2; axis++) {
     const vv = axis === 0 ? v.x : v.z; if (vv === 0) continue;
@@ -155,6 +157,9 @@ function moveBody(p, v, dt, r, h, grounded) {
       const rise = b.y1 - p.y;
       if (grounded && rise > 0 && rise <= STEP && World.bodyFree(p.x, b.y1 + 0.001, p.z, r, h)) { p.y = b.y1; continue; }
       res.hitWall = true;
+      if (b.prop && !b.prop.frozen && b.prop.body && b.prop.def.mass * b.prop.scale ** 3 < 400) { // shove light props out of the way
+        const bv = b.prop.body.velocity, want = vv * 0.9; if (axis === 0) bv.x += (want - bv.x) * 0.5; else bv.z += (want - bv.z) * 0.5; b.prop.body.wakeUp();
+      }
       if (axis === 0) { p.x = vv > 0 ? b.x0 - r - 1e-4 : b.x1 + r + 1e-4; }
       else { p.z = vv > 0 ? b.z0 - r - 1e-4 : b.z1 + r + 1e-4; }
     }

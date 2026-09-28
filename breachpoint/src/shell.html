@@ -143,6 +143,30 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 .bcat h4{margin:0 0 6px;color:var(--acc2);text-transform:uppercase;letter-spacing:.1em;font-size:12px}
 .bi{display:flex;justify-content:space-between;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);padding:10px 12px;margin-bottom:5px;cursor:pointer;border-radius:3px;font-weight:600}
 .bi:hover{background:rgba(255,122,47,.2);border-color:var(--acc)}.bi b{color:#7dff9a}.bi:disabled{opacity:.35;cursor:not-allowed}.bi.own{border-color:var(--ok)}
+/* spawn menu */
+#spawnmenu{background:rgba(5,6,8,.55)}
+.sp-box{width:min(1180px,94vw);height:min(720px,88vh);background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
+.sp-tabs{display:flex;gap:2px;background:rgba(0,0,0,.35);padding:6px 6px 0}.sp-tabs button{background:rgba(255,255,255,.05);border:0;padding:10px 16px;cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:4px 4px 0 0}
+.sp-tabs button.on{background:var(--acc);color:#1a0f06}.sp-close{margin-left:auto;color:var(--mut);font-size:12px;align-self:center;padding-right:10px}
+.sp-body{flex:1;overflow:auto;padding:14px}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.sp-tile{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:4px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.sp-tile:hover{border-color:var(--acc);background:rgba(255,122,47,.12)}.sp-tile img{width:100px;height:100px}.sp-tile span{font-weight:700;font-size:13px}.sp-tile small{font-size:10px;color:var(--mut);line-height:1.2}
+.sp-row{display:flex;gap:18px;margin-bottom:12px}.sp-row label,.sp-opts label{display:flex;gap:8px;align-items:center;color:var(--mut);margin:8px 0}
+.sp-tools{display:flex;gap:18px;height:100%}.sp-toollist{display:flex;flex-direction:column;gap:3px;width:190px}
+.sp-toollist button{background:rgba(255,255,255,.04);border:1px solid var(--line);padding:9px 12px;text-align:left;cursor:pointer;font-weight:600;border-radius:3px}.sp-toollist button.on{border-color:var(--acc);background:rgba(255,122,47,.18)}
+.sp-toolopts{flex:1}.sp-toolopts h3{margin:0 0 6px}.sp-toolopts label{display:block;color:var(--mut);margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.swatches{display:flex;gap:6px;align-items:center}.swatches i{width:26px;height:26px;border-radius:4px;cursor:pointer;border:2px solid transparent}.swatches i.on{border-color:#fff}
+.mats{display:flex;gap:6px;flex-wrap:wrap}.mats button{background:rgba(255,255,255,.05);border:1px solid var(--line);padding:7px 12px;cursor:pointer;border-radius:3px}.mats button.on{border-color:var(--acc)}
+/* gunsmith */
+.gs{display:flex;gap:16px;align-items:flex-start}.gslist{display:flex;flex-direction:column;gap:3px;width:160px}
+.gslist button{background:rgba(255,255,255,.04);border:1px solid var(--line);padding:8px 10px;text-align:left;cursor:pointer;font-weight:600;border-radius:3px;display:flex;justify-content:space-between}.gslist button.on{border-color:var(--acc);background:rgba(255,122,47,.18)}.gslist small{color:var(--acc2)}
+.gscenter{flex:1;min-width:0}.gscenter canvas{width:100%;max-width:620px;height:auto;background:radial-gradient(ellipse at center,rgba(255,160,80,.12),transparent 70%);border-radius:6px}.gscenter h2{margin:4px 0 8px}
+.gstats{max-width:620px}.gsb{display:grid;grid-template-columns:130px 1fr 60px;gap:10px;align-items:center;font-size:12px;margin:4px 0;color:var(--mut)}.gsb b{color:var(--txt);text-align:right}
+.gbar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;position:relative;overflow:hidden}.gbar i{position:absolute;left:0;top:0;bottom:0;background:#cfcfcf}.gbar em{position:absolute;top:0;bottom:0}.gbar em.good{background:var(--ok)}.gbar em.bad{background:var(--bad)}
+.gsslots{width:300px;display:flex;flex-direction:column;gap:12px}.gsslot h4{margin:0 0 6px;color:var(--acc2);text-transform:uppercase;font-size:12px;letter-spacing:.1em}
+.att{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);border:1px solid var(--line);padding:8px 10px;margin-bottom:4px;cursor:pointer;border-radius:3px}.att.on{border-color:var(--ok);background:rgba(77,255,136,.1)}
+.att span{font-weight:700}.att b{float:right;color:var(--acc2);font-size:12px}.att small{display:block;color:var(--mut);font-size:11px}.att.locked{opacity:.75}
 #deploy h2{font:900 40px Impact,sans-serif;margin:0 0 16px;letter-spacing:.05em}
 .classes{display:flex;gap:12px}.cls{width:200px;background:rgba(255,255,255,.05);border:1px solid var(--line);padding:14px;cursor:pointer;border-radius:4px}.cls.sel{border-color:var(--acc);background:rgba(255,122,47,.16)}.cls small{display:block;color:var(--acc2)}.cls p{font-size:12px;color:var(--mut);margin:8px 0 0}
 .spawns{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap;justify-content:center}.btn.sp{background:rgba(255,255,255,.07);color:var(--txt);box-shadow:none;border:1px solid var(--line)}.btn.sp.sel{border-color:var(--acc);background:rgba(255,122,47,.25)}
@@ -179,6 +203,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 </div>
 
 <div id="buy" class="ov hidden"></div>
+<div id="spawnmenu" class="ov hidden"></div>
 <div id="pause" class="ov hidden"><div class="pbox"><h2>Paused</h2><p class="muted" id="pauseInfo"></p>
   <label>Sensitivity <input type="range" id="pSens" min="0.1" max="4" step="0.05"></label>
   <label>Volume <input type="range" id="pVol" min="0" max="1" step="0.05"></label>
@@ -193,7 +218,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
   <section class="screen" id="scr-main">
     <div class="logo">BREACHPOINT</div><div class="tag">Tactical rounds · all-out war</div>
     <div class="mainnav">
-      <button data-go="play">Play vs bots<small>Defuse, Conquest or Team Deathmatch against squad AI</small></button>
+      <button data-go="play">Play<small>Defuse, Conquest, Team Deathmatch or Sandbox</small></button>
       <button data-go="mp">Multiplayer<small>Host a room or join friends with a code</small></button>
       <button data-go="armory">Armory<small>Cases, skins, trade-ups — <span id="equipCount"></span></small></button>
       <button data-go="settings">Settings<small>Sensitivity, crosshair, audio</small></button>
@@ -213,7 +238,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
     <div class="lteams" id="lobbyTeams"></div><div id="lobbySettings"></div>
     <div class="row"><button class="btn big" id="lobbyStart">Start match</button><button class="btn ghost" id="lobbyLeave">Leave</button></div></section>
   <section class="screen" id="scr-armory"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Armory</h1>
-    <div id="armTabs"><button data-t="inv">Inventory</button><button data-t="cases">Cases</button><button data-t="trade">Trade-Up</button><button data-t="stats">Stats</button></div><div id="armBody"></div></section>
+    <div id="armTabs"><button data-t="inv">Inventory</button><button data-t="cases">Cases</button><button data-t="gunsmith">Gunsmith</button><button data-t="trade">Trade-Up</button><button data-t="stats">Stats</button></div><div id="armBody"></div></section>
   <section class="screen" id="scr-settings"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Settings</h1><div id="setForm"></div>
     <div class="keys"><div><b>WASD</b> move</div><div><b>Shift</b> walk (Defuse) / sprint</div><div><b>Ctrl / C</b> crouch</div><div><b>Space</b> jump</div><div><b>LMB / RMB</b> fire / aim</div><div><b>R</b> reload</div><div><b>1-5</b> weapons, grenades, RPG</div><div><b>X</b> last weapon</div><div><b>E</b> plant / defuse / jeep</div><div><b>B</b> buy menu</div><div><b>Q</b> spot enemy</div><div><b>G</b> class gadget</div><div><b>F</b> inspect weapon</div><div><b>Tab</b> scoreboard</div><div><b>Y / Enter</b> chat</div><div><b>Esc</b> pause</div></div></section>
 </div>
@@ -221,6 +246,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 
 <script>/*__THREE__*/</script>
 <script>/*__PEER__*/</script>
+<script>/*__CANNON__*/</script>
 <script>/*__GAME__*/</script>
 </body>
 </html>

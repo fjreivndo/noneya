@@ -62,6 +62,7 @@ class Commander {
     const m = Game.mode.id;
     if (m === 'defuse') this.team === 'T' ? this.thinkAttack() : this.thinkDefend();
     else if (m === 'conquest') this.thinkConquest();
+    else if (m === 'sandbox') this.thinkSandbox();
     else this.thinkHunt();
   }
 
@@ -283,10 +284,10 @@ class Brain {
     this.nadeCd = rand(4, 9); this.heard = null; this.role = 'entry'; this.support = false; this.home = null; this.lookYaw = 0; this.utilDone = false;
     this.coverT = 0; this.cover = null; this.planting = false; this.fakeShots = 0; this.prefire = null; this.lastSeenAny = -9;
   }
-  get d() { const base = DIFF[Game.botDiff || Settings.diff] || DIFF.normal; return Game.mode.id === 'conquest' ? Object.assign({}, base, { range: base.range * 1.6 }) : base; }
+  get d() { const base = DIFF[(Sandbox.on ? Sandbox.opts.npcSkill : Game.botDiff) || Settings.diff] || DIFF.normal; return Game.mode.id === 'conquest' ? Object.assign({}, base, { range: base.range * 1.6 }) : base; }
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
-  enemies() { return Game.soldiers.filter(e => e.alive && e.team !== this.s.team); }
+  enemies() { return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e)); }
 
   /* ── senses ── */
   sense() {
@@ -605,6 +606,6 @@ const AI = {
     this.budget = Game.mode.id === 'conquest' ? 3 : 4;
     if (!Game.authority()) return;
     for (const t of ['T', 'CT']) Game.cmd[t].update(dt);
-    for (const s of Game.soldiers) if (s.ctrl === 'bot' && s.alive) s.brain.update(dt);
+    for (const s of Game.soldiers) if (s.ctrl === 'bot' && s.alive && s.brain && !s.heldBy) s.brain.update(dt);
   },
 };

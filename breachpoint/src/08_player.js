@@ -21,6 +21,7 @@ const Player = {
       else { s.pos.copy(s.vehicle.pos); s.vel.set(0, 0, 0); }
     } else {
       if (s.respawnT != null) s.respawnT -= dt;
+      if (Sandbox.on && Game.authority() && (s.respawnT == null || s.respawnT <= 0) && s.deadT > 0.5) Game.respawn(s);
       if (!blocked && (Input.mouse.leftPressed || Input.hit('Space'))) this.specIdx++;
     }
     this.camera(s, dt);
@@ -30,7 +31,13 @@ const Player = {
     // look
     const zoomK = s.ads && w ? Math.tan((w.zoom || Settings.fov) * DEG / 2) / Math.tan(Settings.fov * DEG / 2) : 1;
     const sens = Settings.sens * 0.0022 * (s.adsT > 0.5 ? zoomK * 1.1 : 1);
-    s.yaw = angWrap(s.yaw - I.mouse.dx * sens); s.pitch = clamp(s.pitch - I.mouse.dy * sens, -1.52, 1.52);
+    if (!(Sandbox.on && Sandbox.rotating(s))) { s.yaw = angWrap(s.yaw - I.mouse.dx * sens); s.pitch = clamp(s.pitch - I.mouse.dy * sens, -1.52, 1.52); }
+    if (Sandbox.on) {
+      if (I.hit('KeyQ')) { UI.toggleSpawnMenu(true); return; }
+      if (I.hit('KeyZ')) Sandbox.exec({ op: 'undo' });
+      if (I.hit('KeyV')) { s.noclip = !s.noclip; s.vel.set(0, 0, 0); HUD.center(s.noclip ? 'Noclip on' : 'Noclip off', 0.6); }
+      for (const k of ['KeyT', 'KeyK']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
+    }
     if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); return; }
     // move
     const m = s.moveIn;
@@ -40,11 +47,13 @@ const Player = {
     if (m.sprint && m.f > 0) s.ads = false;
     // weapons
     for (let k = 1; k <= 5; k++) if (I.hit('Digit' + k)) s.switchSlot(k);
-    if (I.mouse.wheel) { const slots = [1, 2, 3, 4].filter(k => k === 4 ? Object.values(s.nades).some(n => n > 0) : s.weapons[k]); const cur = isNade(s.cur) ? 4 : WEAPONS[s.cur] ? WEAPONS[s.cur].slot : 1; let i = slots.indexOf(cur); i = (i + (I.mouse.wheel > 0 ? 1 : -1) + slots.length) % slots.length; s.switchSlot(slots[i]); }
+    for (const k of [6, 7]) if (I.hit('Digit' + k)) s.switchSlot(k);
+    if (I.mouse.wheel && !(Sandbox.on && Sandbox.wheelUsed(s))) { const slots = [1, 2, 3, 4, 5, 6, 7].filter(k => k === 4 ? Object.values(s.nades).some(n => n > 0) : k === 5 ? s.weapons[4] : s.weapons[k]); const cur = isNade(s.cur) ? 4 : WEAPONS[s.cur] ? (WEAPONS[s.cur].slot === 4 ? 5 : WEAPONS[s.cur].slot) : 1; let i = slots.indexOf(cur); i = (i + (I.mouse.wheel > 0 ? 1 : -1) + slots.length) % slots.length; s.switchSlot(slots[i]); }
     if (I.hit('KeyX') && s.last) s.switchTo(s.last);
-    if (I.hit('KeyR')) s.startReload();
+    if (I.hit('KeyR') && !(w && (w.type === 'physgun' || w.type === 'tool'))) s.startReload();
     if (I.hit('KeyF') && !isNade(s.cur)) this.inspectT = 2.6;
-    if (isNade(s.cur)) {
+    if (w && (w.type === 'physgun' || w.type === 'tool')) { if (s.drawT <= 0) Sandbox.useTool(s, 1 / 60); s.ads = false; }
+    else if (isNade(s.cur)) {
       if (s.drawT <= 0 && (I.mouse.leftPressed || I.mouse.rightPressed)) Game.throwNade(s, s.cur, I.mouse.leftPressed);
       s.ads = false;
     } else if (w) {
@@ -61,7 +70,7 @@ const Player = {
         else if (s.team === 'CT' && Game.bomb.state === 'planted') Game.startDefuse(s);
       }
     }
-    if (I.hit('KeyQ')) this.spot(s);
+    if (I.hit('KeyQ') && !Sandbox.on) this.spot(s);
     if (I.hit('KeyG')) this.gadget(s);
     if (I.hit('KeyB') && Game.mode.buy) UI.toggleBuy();
   },
@@ -138,38 +147,69 @@ Game.requestAmmo = function (s) {
 };
 
 /* ── viewmodel ─────────────────────────────────────────────────────────── */
+/* Where each kind of weapon sits in the view, and where the hands hold it
+   (in the gun's own space). Forearms run from the hands to elbows placed
+   below the screen edge, so you only ever see hands, sleeves and the gun. */
+const VM_POSE = {
+  rifle:    { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.042, -0.29], rel: [0.13, -0.3, 0.32], lel: [-0.17, -0.3, 0.02], ads: -0.3 },
+  smg:      { hip: [0.13, -0.14, -0.4], rot: [-0.045, 0.035, 0], rh: [0, -0.072, 0.075], lh: [0, -0.04, -0.2], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, 0.04], ads: -0.3 },
+  lmg:      { hip: [0.145, -0.155, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.075, 0.1], lh: [0, -0.045, -0.27], rel: [0.14, -0.3, 0.32], lel: [-0.18, -0.3, 0.02], ads: -0.3 },
+  sniper:   { hip: [0.14, -0.15, -0.44], rot: [-0.045, 0.03, 0], rh: [0, -0.075, 0.13], lh: [0, -0.05, -0.16], rel: [0.13, -0.3, 0.34], lel: [-0.17, -0.3, 0.06], ads: -0.3 },
+  shotgun:  { hip: [0.14, -0.145, -0.44], rot: [-0.045, 0.035, 0], rh: [0, -0.07, 0.09], lh: [0, -0.04, -0.34], rel: [0.13, -0.3, 0.3], lel: [-0.16, -0.3, -0.02], ads: -0.3, pump: true },
+  pistol:   { hip: [0.11, -0.125, -0.36], rot: [0, 0.05, 0], rh: [0.004, -0.06, 0.035], lh: [-0.02, -0.07, 0.025], rel: [0.1, -0.3, 0.26], lel: [-0.1, -0.3, 0.24], ads: -0.38 },
+  launcher: { hip: [0.13, -0.06, -0.22], rot: [0, 0.03, 0], rh: [0, -0.1, 0.02], lh: [0, -0.1, -0.2], rel: [0.13, -0.32, 0.26], lel: [-0.14, -0.32, -0.02], ads: -0.3 },
+  knife:    { hip: [0.11, -0.11, -0.26], rot: [0.15, -0.35, 0.35], rh: [0, 0, 0.05], rel: [0.12, -0.28, 0.25], ads: -0.26 },
+  nade:     { hip: [0.12, -0.11, -0.26], rot: [0.1, 0, 0.1], rh: [0, -0.02, 0.02], rel: [0.1, -0.28, 0.24], ads: -0.26 },
+  tool:     { hip: [0.13, -0.14, -0.4], rot: [0, 0.04, 0], rh: [0, -0.065, 0.05], lh: [0, -0.04, -0.12], rel: [0.12, -0.3, 0.28], lel: [-0.15, -0.3, 0.06], ads: -0.22 },
+};
+function limb(a, b, w, m) {
+  const d = new V3().subVectors(b, a), len = d.length();
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w, w * 0.9, len), m);
+  o.position.copy(a).addScaledVector(d, 0.5); o.quaternion.setFromUnitVectors(new V3(0, 0, 1), d.normalize());
+  return o;
+}
 class ViewModel {
   constructor() {
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 10);
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x666655, 1.8)); const d = new THREE.DirectionalLight(0xffffff, 1.6); d.position.set(1, 2, 1); this.scene.add(d);
+    this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.01, 10);
+    this.scene.add(new THREE.HemisphereLight(0xfff4e8, 0x4a4a44, 1.6)); const d = new THREE.DirectionalLight(0xffffff, 1.8); d.position.set(0.6, 1.4, 0.8); this.scene.add(d);
+    const r = new THREE.DirectionalLight(0x9ab8ff, 0.5); r.position.set(-1, 0.2, -0.5); this.scene.add(r);
     this.root = new THREE.Group(); this.scene.add(this.root);
-    this.key = null; this.gun = null; this.hands = null; this.kick = 0; this.lastShot = -1; this.sway = { x: 0, y: 0 }; this.third = false; this.slash = 0; this.team = null;
+    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot('rgba(255,210,120,1)', 'rgba(255,120,20,0)'), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    this.flash.visible = false; this.scene.add(this.flash);
+    this.key = null; this.gun = null; this.kick = 0; this.lastShot = -1; this.sway = { x: 0, y: 0 }; this.third = false; this.slash = 0; this.flashT = 0; this.pumpT = 0;
   }
   resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); }
   visible() { const s = Game.local; return s && s.alive && !this.third && !(s.w && s.w.scope && s.adsT > 0.85); }
   rebuild(s) {
-    const it = isNade(s.cur) ? null : s.skinItem(s.cur);
-    const key = s.cur + ':' + (it ? it.uid || it.skinId + it.seed : '') + s.team;
+    const it = isNade(s.cur) ? null : s.skinItem(s.cur), att = s.attach && s.attach[s.cur];
+    const key = s.cur + ':' + (it ? it.uid || it.skinId + it.seed : '') + s.team + attSig(att);
     if (key === this.key) return; this.key = key;
     this.root.clear();
-    const st = TEAM_STYLE[s.team], G = lam(st.glove), U = lam(st.uniform);
+    const st = TEAM_STYLE[s.team] || TEAM_STYLE.CT, G = lam(st.glove), U = lam(st.uniform), C = lam(st.accent);
+    const w = WEAPONS[s.cur];
     if (isNade(s.cur)) {
       const col = s.cur === 'frag' ? '#3a4a2a' : s.cur === 'flash' ? '#b8b8b8' : '#5a6a7a';
-      this.gun = new THREE.Group(); const n = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 10), lam(col)); this.gun.add(n); this.gun.add(bx(0.012, 0.03, 0.012, lam('#999'), 0.015, 0.055, 0));
-      this.gun.userData.muzzle = new THREE.Object3D(); this.gun.add(this.gun.userData.muzzle);
-    } else this.gun = buildGun(s.cur, it);
-    const w = WEAPONS[s.cur], long = w && !['pistol', 'knife'].includes(w.type);
-    // hands with sleeves
-    const hands = new THREE.Group();
-    const rh = new THREE.Group(); rh.add(bx(0.05, 0.055, 0.09, G, 0, 0, 0)); rh.add(bx(0.06, 0.06, 0.2, U, 0.01, -0.02, 0.14)); rh.position.set(0.005, -0.07, 0.07); rh.rotation.set(-0.5, 0.25, 0); hands.add(rh);
-    const lh = new THREE.Group(); lh.add(bx(0.05, 0.045, 0.09, G, 0, 0, 0)); lh.add(bx(0.06, 0.06, 0.22, U, -0.01, -0.03, 0.14)); lh.position.set(-0.015, long ? -0.045 : -0.075, long ? -0.24 : 0.05); lh.rotation.set(-0.6, long ? -0.7 : 0.2, 0); hands.add(lh);
-    this.gun.add(hands); this.root.add(this.gun);
-    const scale = w && ['rifle', 'lmg', 'sniper', 'shotgun', 'launcher'].includes(w.type) ? 0.78 : w && w.type === 'smg' ? 0.85 : 1;
-    this.gun.scale.setScalar(scale);
-    this.hip = w && w.type === 'knife' ? new V3(0.2, -0.2, -0.38) : w && w.type === 'pistol' ? new V3(0.15, -0.16, -0.42) : isNade(s.cur) ? new V3(0.2, -0.2, -0.38) : new V3(0.16, -0.17, -0.5);
-    const sightY = (w && w.type === 'pistol' ? -0.055 : w && w.type === 'sniper' ? -0.078 : -0.072) * scale;
-    this.adsPos = new V3(0, sightY, w && w.type === 'pistol' ? -0.36 : -0.34);
+      this.gun = new THREE.Group(); this.gun.add(new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.085, 12), lam(col))); this.gun.add(bx(0.012, 0.028, 0.012, lam('#999'), 0.014, 0.05, 0));
+      this.gun.userData.muzzle = new THREE.Object3D(); this.gun.add(this.gun.userData.muzzle); this.gun.userData.sight = { y: 0 };
+    } else this.gun = buildGun(s.cur, it, att);
+    const type = isNade(s.cur) ? 'nade' : w.type === 'physgun' ? 'tool' : w.type;
+    const P = this.pose = VM_POSE[type] || VM_POSE.rifle, L = w && w.type === 'smg' ? 0.72 : 1;
+    const hand = (p, el) => {
+      const h = new THREE.Group(), a = new V3(...p), e = new V3(...el);
+      const glove = bx(0.044, 0.04, 0.07, G); glove.position.copy(a); h.add(glove);
+      const cuff = a.clone().lerp(e, 0.16); h.add(limb(a.clone().lerp(e, 0.05), cuff, 0.034, C));
+      h.add(limb(cuff, e, 0.042, U));
+      return h;
+    };
+    const lhp = P.lh && (this.gun.userData.leftGrip ? [0, this.gun.userData.leftGrip.y, this.gun.userData.leftGrip.z] : P.lh);
+    this.gun.add(hand(P.rh, P.rel));
+    if (lhp) { this.leftHand = hand(lhp, P.lel); this.gun.add(this.leftHand); } else this.leftHand = null;
+    this.root.add(this.gun);
+    this.hip = new V3(...P.hip); this.hipRot = new THREE.Euler(...P.rot);
+    const sy = this.gun.userData.sight || { y: 0.06 };
+    this.adsPos = new V3(-(sy.x || 0), -sy.y, P.ads);
+    this.laser = this.gun.userData.laser || null;
   }
   muzzleWorld(out) {
     if (!this.gun) return out.copy(Game.camera.position);
@@ -180,23 +220,39 @@ class ViewModel {
     if (!s || !s.alive || this.third) return;
     this.rebuild(s);
     const w = s.w, g = this.gun; if (!g) return;
-    if (s.lastShot !== this.lastShot) { this.lastShot = s.lastShot; this.kick = 1; if (w && w.type === 'knife') this.slash = 1; }
-    this.kick = Math.max(0, this.kick - dt * (w && w.type === 'sniper' ? 4 : 12)); this.slash = Math.max(0, this.slash - dt * 4);
-    this.sway.x = lerp(this.sway.x, clamp(-Input.mouse.dx * 0.0006, -0.04, 0.04), 1 - Math.exp(-dt * 10));
-    this.sway.y = lerp(this.sway.y, clamp(Input.mouse.dy * 0.0006, -0.04, 0.04), 1 - Math.exp(-dt * 10));
-    const hs = Math.hypot(s.vel.x, s.vel.z), bobA = Math.min(hs / 5, 1.3) * (s.grounded ? 1 : 0.2) * (1 - s.adsT * 0.85);
-    const bx_ = Math.sin(s.walkPhase * 1) * 0.012 * bobA, by = -Math.abs(Math.cos(s.walkPhase * 1)) * 0.012 * bobA;
-    const p = new V3().lerpVectors(this.hip, this.adsPos, s.adsT);
-    let rx = 0, ry = 0, rz = 0, oy = 0, oz = 0;
-    if (s.drawT > 0) { const k = clamp(s.drawT / 0.5, 0, 1); oy -= k * 0.25; rx -= k * 0.8; }
-    if (s.reloadT > 0 && w) { const q = 1 - s.reloadT / w.reload, k = Math.sin(q * Math.PI); oy -= 0.08 * k; rz += 0.55 * k; rx += 0.25 * k; }
-    if (s.boltT > 0 && w && w.bolt) { const k = Math.sin((1 - s.boltT / w.bolt) * Math.PI); rz += 0.3 * k; oy -= 0.03 * k; }
-    if (Player.inspectT > 0) { const q = 1 - Player.inspectT / 2.6, k = Math.sin(q * Math.PI); ry += 1.3 * k; rz += 0.35 * Math.sin(q * Math.PI * 2); oy += 0.02 * k; }
-    if (this.slash > 0) { const k = Math.sin((1 - this.slash) * Math.PI); ry -= 1.2 * k; rx -= 0.5 * k; }
-    if (s.moveIn.sprint && hs > 6 && Game.mode.sprint) { rz += 0.4; ry += 0.5; oy -= 0.05; }
-    const kickK = w && w.recoil ? Math.min(1.5, w.recoil) : 0.5;
-    g.position.set(p.x + bx_ + this.sway.x, p.y + by + this.sway.y + oy, p.z + this.kick * 0.04 * kickK + oz);
-    g.rotation.set(rx + this.kick * 0.06 * kickK, ry + this.sway.x * 2, rz);
-    if (Math.abs(this.camera.fov - (60 - s.adsT * 8)) > 0.01) { this.camera.fov = 60 - s.adsT * 8; this.camera.updateProjectionMatrix(); }
+    if (s.lastShot !== this.lastShot) {
+      this.lastShot = s.lastShot; this.kick = 1;
+      if (w && w.type === 'knife') this.slash = 1;
+      else if (w && w.mag) { this.flashT = w.suppressed ? 0.02 : 0.05; if (this.pose.pump || w.bolt) this.pumpT = 1; }
+    }
+    this.kick = Math.max(0, this.kick - dt * (w && w.type === 'sniper' ? 5 : 14)); this.slash = Math.max(0, this.slash - dt * 4); this.pumpT = Math.max(0, this.pumpT - dt * 2.2);
+    this.sway.x = lerp(this.sway.x, clamp(-Input.mouse.dx * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
+    this.sway.y = lerp(this.sway.y, clamp(Input.mouse.dy * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
+    const hs = Math.hypot(s.vel.x, s.vel.z), a = s.adsT, bobA = Math.min(hs / 5, 1.3) * (s.grounded ? 1 : 0.25) * (1 - a * 0.9);
+    const bx_ = Math.sin(s.walkPhase) * 0.009 * bobA, by = -Math.abs(Math.cos(s.walkPhase)) * 0.008 * bobA;
+    const idle = Math.sin(Game.now * 1.6) * 0.0015 * (1 - a);
+    const p = new V3().lerpVectors(this.hip, this.adsPos, a);
+    let rx = lerp(this.hipRot.x, 0, a), ry = lerp(this.hipRot.y, 0, a), rz = lerp(this.hipRot.z, 0, a), oy = 0, oz = 0, ox = 0;
+    if (s.drawT > 0) { const k = clamp(s.drawT / 0.5, 0, 1); oy -= k * 0.2; rx -= k * 0.7; }
+    if (s.reloadT > 0 && w && w.reload) {
+      const q = 1 - s.reloadT / w.reload, k = Math.sin(q * Math.PI);
+      oy -= 0.05 * k; rz += 0.5 * k; rx += 0.18 * k; ox -= 0.02 * k;
+      if (this.leftHand) this.leftHand.position.y = -Math.sin(clamp(q * 2, 0, 1) * Math.PI) * 0.08;   // hand drops to swap the mag
+      if (g.userData.mag) g.userData.mag.visible = !(q > 0.25 && q < 0.55);
+    } else { if (this.leftHand) this.leftHand.position.y = 0; if (g.userData.mag) g.userData.mag.visible = true; }
+    if (this.pumpT > 0 && this.leftHand && this.pose.pump) this.leftHand.position.z = Math.sin(this.pumpT * Math.PI) * 0.06;
+    if (this.pumpT > 0 && w && w.bolt) { const k = Math.sin(this.pumpT * Math.PI); rz += 0.2 * k; oy -= 0.015 * k; }
+    if (Player.inspectT > 0) { const q = 1 - Player.inspectT / 2.6, k = Math.sin(q * Math.PI); ry += 1.1 * k; rz += 0.4 * Math.sin(q * Math.PI * 2); ox -= 0.03 * k; oy += 0.02 * k; }
+    if (this.slash > 0) { const k = Math.sin((1 - this.slash) * Math.PI); ry -= 1.1 * k; rx -= 0.4 * k; ox -= 0.05 * k; }
+    if (s.moveIn.sprint && hs > 6 && Game.mode.sprint) { rz += 0.35; ry += 0.55; oy -= 0.04; ox -= 0.02; }
+    const kickK = w && w.recoil ? Math.min(1.4, 0.4 + w.recoil * 0.5) : 0.5, ak = 1 - a * 0.6;
+    g.position.set(p.x + (bx_ + this.sway.x) * (1 - a * 0.7) + ox, p.y + by + idle + this.sway.y * (1 - a * 0.7) + oy, p.z + this.kick * 0.035 * kickK * ak + oz);
+    g.rotation.set(rx + this.kick * 0.05 * kickK * ak, ry + this.sway.x * 1.5, rz);
+    const fov = 62 - a * 10;
+    if (Math.abs(this.camera.fov - fov) > 0.01) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
+    // muzzle flash sprite
+    this.flashT -= dt;
+    if (this.flashT > 0) { g.updateMatrixWorld(true); g.userData.muzzle.getWorldPosition(this.flash.position); this.flash.scale.setScalar((w && w.suppressed ? 0.05 : 0.14) * rand(0.8, 1.2)); this.flash.material.rotation = rand(0, TAU); this.flash.visible = true; }
+    else this.flash.visible = false;
   }
 }

@@ -46,6 +46,7 @@ const Game = {
       this.addSoldier(Object.assign({}, r, { ctrl }));
     }
     this.local = this.byId(cfg.localId);
+    if (this.local) this.local.attach = Inv.data.attach;   // live: gunsmith edits apply next time you draw
     this.view = new ViewModel(this);
     if (this.mode.vehicles) World.vehicleSpawns.forEach((v, i) => this.vehicles.push(new Vehicle('v' + i, v.team, v)));
     this.bomb = { state: 'none' };
@@ -55,24 +56,28 @@ const Game = {
       buildFlagModels();
     }
     if (this.mode.id === 'tdm') this.tdm = { kills: { T: 0, CT: 0 }, timeLeft: this.mode.timeLimit };
+    if (this.mode.id === 'sandbox') Sandbox.start(); else Sandbox.on = false;
+    // NPCs from a running sandbox arrive in the roster as puppets
+    for (const r of cfg.roster) if (r.npc) { const s = this.byId(r.id); if (s) { s.npc = r.npc; if (s.ctrl === 'bot') s.brain = r.npc === 'zombie' ? new ZombieBrain(s) : r.npc === 'citizen' ? new CitizenBrain(s) : r.npc === 'dummy' ? new IdleBrain(s) : new Brain(s); } }
     this.soldiers.forEach(s => { s.money = 800; s.buildModel(this.scene); });
     this.running = true; this.paused = false;
     HUD.onMatchStart();
     if (this.authority()) {
       if (this.mode.id === 'defuse') this.startRound(true);
+      else if (this.mode.id === 'sandbox') { this.round = { phase: 'live', timeLeft: 0 }; this.soldiers.forEach(s => this.respawn(s)); }
       else { this.round = { phase: 'live', timeLeft: this.mode.timeLimit || 0 }; this.soldiers.forEach(s => { if (s.ctrl !== 'local' && s.ctrl !== 'remote') this.respawn(s); else s.respawnT = 0; }); if (this.local) HUD.showDeploy(true); }
     } else {
       this.round = { phase: this.mode.id === 'defuse' ? 'freeze' : 'live', t: 0, timeLeft: this.mode.roundTime || 0 };
       this.bomb = { state: this.mode.id === 'defuse' ? 'carried' : 'none' };
-      if (this.local) { this.local.alive = false; this.local.respawnT = 0; this.local.resetLoadout(this.local.team); if (this.mode.respawn) HUD.showDeploy(true); }
+      if (this.local) { this.local.alive = false; this.local.respawnT = 0; this.local.resetLoadout(this.local.team); if (this.mode.respawn && this.mode.id !== 'sandbox') HUD.showDeploy(true); }
     }
   },
   /* people first, then each team is filled with bots; the host shares this list */
   prepareRoster(cfg) {
     if (cfg.roster) return cfg.roster;
-    const size = cfg.teamSize || MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
+    const size = cfg.teamSize != null ? cfg.teamSize : MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, att: p.att || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
     const names = shuffle(BOT_NAMES.slice()); let ni = 0;
-    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {} }); n++; } }
+    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
     return cfg.roster = roster;
   },
   addSoldier(p) {
@@ -83,6 +88,7 @@ const Game = {
   },
   removeSoldier(id) { const s = this.byId(id); if (!s) return; if (s.model) this.scene.remove(s.model); this.soldiers = this.soldiers.filter(x => x !== s); this.map.delete(id); },
   stop() {
+    if (Sandbox.on) Sandbox.stop();
     this.running = false; Input.clear();
     if (document.pointerLockElement) document.exitPointerLock();
   },
@@ -94,6 +100,8 @@ const Game = {
     s.alive = true; s.hp = 100; s.deadT = 0; s.blind = 0; s.lastDamage = -9; s.dmgBy = {}; s.vehicle = null; s.spawnProt = this.now + 2;
     if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; }
     if (this.mode.classes) this.giveClass(s);
+    else if (this.mode.id === 'sandbox' && !s.npc) Sandbox.loadout(s);
+    s.noclip = false;
     let p;
     if (where && where.flag != null) { const f = World.flags[where.flag]; p = World.nav.randomNear(f.x, f.z, 8); }
     else if (where && where.squad) { const L = this.byId(where.squad); p = L && L.alive ? World.nav.randomNear(L.pos.x, L.pos.z, 3) : null; }
@@ -235,7 +243,9 @@ const Game = {
       for (const s of this.soldiers) {
         if (!s.alive && !this.matchOver && s.ctrl !== 'local') {
           s.respawnT = (s.respawnT ?? M.respawnTime) - dt;
+          if (s.npc) { if (s.deadT > 12) Sandbox.emit({ e: 'npcdel', id: s.id }); continue; }   // NPCs stay dead; bodies clear up
           if (s.respawnT <= 0 && s.ctrl === 'bot') { s.respawnT = undefined; this.respawn(s); }
+          if (s.respawnT <= 0 && s.ctrl === 'remote' && this.mode.id === 'sandbox') { s.respawnT = undefined; this.respawn(s); }
         }
         if (s.alive && M.regen && this.now - s.lastDamage > 5 && s.hp < 100) s.hp = Math.min(100, s.hp + 14 * dt);
       }
@@ -341,7 +351,7 @@ const Game = {
   reportVehicleHit(att, v, dmg, weapon) { if (this.authority()) v.damage(dmg, att); else if (att.ctrl === 'local') Net.send({ t: 'vhit', v: v.id, d: dmg }); },
   damage(v, dmg, att, weapon, zone = 'chest', from) {
     if (!this.authority() || !v.alive) return;
-    if (att && att !== v && att.team === v.team) return; // no friendly fire
+    if (att && att !== v && att.team === v.team && !(this.mode.id === 'sandbox' && (v.npc || att.npc))) return; // no friendly fire (sandbox NPCs are fair game)
     if (v.spawnProt && this.now < v.spawnProt && att && att !== v) return;
     let hp = dmg;
     const armored = this.mode.armor && v.armor > 0 && zone !== 'legs' && (zone !== 'head' || v.helmet);
@@ -385,7 +395,7 @@ const Game = {
     if (v && v === this.local) {
       HUD.died(a, ev.w, ev.hs);
       this.spectate = a && a !== v ? a : null;
-      if (this.mode.respawn) setTimeout(() => { if (this.running && !this.local.alive && !this.matchOver) HUD.showDeploy(true); }, 2500);
+      if (this.mode.respawn && this.mode.id !== 'sandbox') setTimeout(() => { if (this.running && !this.local.alive && !this.matchOver) HUD.showDeploy(true); }, 2500);
     }
   },
   explosion(p, dmg, radius, owner, weapon) {
@@ -399,6 +409,7 @@ const Game = {
       this.damage(s, dmg * f, owner, weapon, 'chest');
     }
     for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p); if (d < radius + 1.5) v.damage(dmg * 2.2 * (1 - d / (radius + 1.5)), owner); }
+    if (Phys.active) { Phys.blast(p, radius * 1.6, 10); for (const q of Phys.props.slice()) if (q.def.explosive && dist3(new V3(q.x, q.y, q.z), p) < radius) Phys.damage(q, dmg, owner); }
   },
   flashbang(p, owner) {
     for (const s of this.soldiers) {
@@ -410,7 +421,7 @@ const Game = {
       const facing = clamp((f.dot(to) + 0.35) / 1.35, 0, 1), dist = 1 - d / 32;
       const t = (0.4 + 4.2 * facing * facing) * (0.35 + 0.65 * dist);
       if (t > s.blind) { s.blind = t; s.blindMax = t; }
-      if (s.ctrl === 'bot' && t > 1.5 && owner && owner.team !== s.team) this.cmd[s.team].say(s, "I'm flashed!", 1);
+      if (s.ctrl === 'bot' && t > 1.5 && owner && owner.team !== s.team) this.cmd[s.team] && this.cmd[s.team].say(s, "I'm flashed!", 1);
     }
   },
   noise(src, radius) { if (!this.authority()) return; for (const s of this.soldiers) if (s.ctrl === 'bot' && s.alive && s.team !== src.team) s.brain.hear(src, radius); },
@@ -432,6 +443,11 @@ const Game = {
   spawnRocket(s, pos, dir, local) { const r = new Rocket(s, pos, dir); this.rockets.push(r); if (local) Net.rocket(s, pos, dir); },
   rayVehicles(o, d, maxT) { let best = maxT, hit = null; for (const v of this.vehicles) { if (!v.alive) continue; const t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, v.box()); if (t >= 0 && t < best) { best = t; hit = v; } } return hit ? { v: hit, t: best } : null; },
   onShot(s, end, eye) { Net.shot(s, end); },
+  /* a bullet hit a sandbox prop: push it, maybe set it off */
+  propHit(s, p, point, dir, dmg) {
+    const a = { op: 'phit', id: p.id, p: [point.x, point.y, point.z], d: [dir.x, dir.y, dir.z], f: Math.min(40, dmg * 0.25), dmg };
+    if (this.authority()) { a.by = s.id; Sandbox.run(a); } else if (s.ctrl === 'local') Net.send({ t: 'sbx', a });
+  },
 
   /* ── vehicles ── */
   tryEnterVehicle(s) {
@@ -478,6 +494,7 @@ const Game = {
     for (let i = this.rockets.length - 1; i >= 0; i--) { this.rockets[i].update(dt); if (this.rockets[i].done) this.rockets.splice(i, 1); }
     const viewer = this.local && this.local.alive ? this.local : null;
     for (const s of this.soldiers) s.syncModel(dt, this.local ? this.local.team : null, viewer && !this.view.third ? viewer : null);
+    if (Sandbox.on) { Phys.step(dt); Sandbox.update(dt); }
     FX.update(dt);
     if (World.flags.length) updateFlagModels();
     Net.update(dt);

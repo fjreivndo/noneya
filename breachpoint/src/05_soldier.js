@@ -15,6 +15,7 @@ class Soldier {
     this.hp = 100; this.armor = 0; this.helmet = false; this.kit = false; this.alive = false; this.money = 800;
     this.kills = 0; this.deaths = 0; this.assists = 0; this.score = 0; this.dmgBy = {}; this.mvps = 0;
     this.weapons = { 1: null, 2: null, 3: 'knife', 4: null }; this.ammo = {}; this.nades = { frag: 0, flash: 0, smoke: 0 };
+    this.attach = o.att || {};
     this.cur = 'knife'; this.last = null; this.fireCd = 0; this.reloadT = 0; this.drawT = 0; this.boltT = 0;
     this.recoilIdx = 0; this.lastShot = -9; this.punchX = 0; this.punchY = 0; this.ads = false; this.adsT = 0;
     this.blind = 0; this.blindMax = 0; this.spottedUntil = 0; this.lastDamage = -9; this.lastHurtDir = 0;
@@ -23,7 +24,15 @@ class Soldier {
     this.model = null; this.tag = null; this.deadT = 0; this.gadgetCd = 0; this.medkits = 0;
     this.net = { tx: 0, ty: 0, tz: 0, tyaw: 0, tpitch: 0 };
   }
-  get w() { return WEAPONS[this.cur] || null; }
+  get w() { return this.stat(this.cur); }
+  /* this soldier's version of a gun, with their attachments applied */
+  stat(id) {
+    const b = WEAPONS[id]; if (!b) return null;
+    const a = this.attach && this.attach[id], key = attSig(a);
+    const c = this._stat || (this._stat = {});
+    if (!c[id] || c[id].key !== key) c[id] = { key, w: modWeapon(b, a) };
+    return c[id].w;
+  }
   get height() { return lerp(PHYS.standH, PHYS.crouchH, this.crouch); }
   get eyeY() { return this.pos.y + this.height - 0.12; }
   eye(out = new V3()) { if (this.vehicle) return this.vehicle.seatPos(out, this); return out.set(this.pos.x, this.eyeY, this.pos.z); }
@@ -33,7 +42,7 @@ class Soldier {
     if (isNade(this.cur)) s = PHYS.walk * 0.98;
     if (this.crouch > 0.5) s *= 0.36; else if (this.moveIn.walk) s *= 0.52; else if (this.moveIn.sprint && this.moveIn.f > 0 && !this.ads) s *= 1.38;
     if (this.ads) s *= 0.7;
-    return s;
+    return s * (this.speedK || 1);
   }
   /* ── inventory ── */
   resetLoadout(side) {
@@ -41,7 +50,7 @@ class Soldier {
     this.ammo = {}; this.nades = { frag: 0, flash: 0, smoke: 0 };
     this.fillAmmo(this.weapons[2]); this.cur = this.weapons[2]; this.drawT = 0.4;
   }
-  fillAmmo(id) { const w = WEAPONS[id]; if (w && w.mag) this.ammo[id] = { mag: w.mag, res: w.reserve }; }
+  fillAmmo(id) { const w = this.stat(id); if (w && w.mag) this.ammo[id] = { mag: w.mag, res: w.reserve }; }
   give(id) {
     if (isNade(id)) { this.nades[id] = Math.min(GRENADES[id].max, this.nades[id] + 1); return; }
     const w = WEAPONS[id]; this.weapons[w.slot] = id; this.fillAmmo(id); this.switchTo(id);
@@ -58,6 +67,7 @@ class Soldier {
   switchSlot(slot) {
     if (slot === 4) { const order = ['frag', 'flash', 'smoke'], avail = order.filter(n => this.nades[n] > 0); if (!avail.length) return; const i = avail.indexOf(this.cur); this.switchTo(avail[(i + 1) % avail.length]); return; }
     if (slot === 5) { if (this.weapons[4]) this.switchTo(this.weapons[4]); return; }
+    if (slot >= 6) { if (this.weapons[slot]) this.switchTo(this.weapons[slot]); return; }
     this.switchTo(this.weapons[slot]);
   }
   bestWeapon() { return this.weapons[1] || this.weapons[2] || 'knife'; }
@@ -85,7 +95,7 @@ class Soldier {
   }
   spread() {
     const w = this.w; if (!w) return 0;
-    let sp = w.type === 'sniper' ? (this.ads && this.adsT > 0.8 ? w.spread : w.hipSpread) : w.spread * (this.ads ? 0.6 : 1);
+    let sp = w.type === 'sniper' ? (this.ads && this.adsT > 0.8 ? w.spread : w.hipSpread) : w.spread * (this.ads ? 0.6 : (w.hipK || 1));
     const hs = Math.hypot(this.vel.x, this.vel.z), frac = hs / (PHYS.walk * w.speed);
     if (frac > 0.34) sp += w.moveSpread * Math.pow(frac, 1.4) * (this.ads ? 0.6 : 1);
     if (!this.grounded) sp += 0.14;
@@ -96,6 +106,11 @@ class Soldier {
   /* ── movement ── */
   move(dt) {
     const m = this.moveIn;
+    if (this.noclip) { // fly where you look, through everything
+      const f = this.forward(new V3()), r = new V3(Math.cos(this.yaw), 0, -Math.sin(this.yaw)), sp = m.sprint ? 30 : 11;
+      const v = f.multiplyScalar(m.f).add(r.multiplyScalar(m.s)); if (m.jump) v.y += 1; if (m.crouch) v.y -= 1;
+      this.vel.copy(v.multiplyScalar(sp)); this.pos.addScaledVector(this.vel, dt); this.pos.y = Math.max(0, this.pos.y); this.grounded = false; this.crouch = 0; return;
+    }
     const wantCrouch = m.crouch ? 1 : 0;
     if (wantCrouch < this.crouch && !World.bodyFree(this.pos.x, this.pos.y, this.pos.z, PHYS.radius, PHYS.standH)) { /* no room to stand */ }
     else this.crouch = lerp(this.crouch, wantCrouch, 1 - Math.exp(-dt * 14));
@@ -141,7 +156,8 @@ class Soldier {
     if (!M.visible) return;
     if (this.vehicle) { this.vehicle.seatPos(M.position, this); M.position.y = this.vehicle.pos.y + 0.35; M.rotation.y = this.vehicle.yaw; }
     else { M.position.copy(this.pos); M.rotation.y = this.yaw; }
-    const it = this.skinItem(this.cur); setSoldierGun(M, isNade(this.cur) ? 'knife' : (this.cur || 'knife'), it);
+    const gid = isNade(this.cur) || !WEAPONS[this.cur] ? 'knife' : this.cur;
+    setSoldierGun(M, gid, this.skinItem(gid), this.attach && this.attach[gid]);
     if (!this.alive) {
       this.deadT += dt; u.body.rotation.x = lerp(u.body.rotation.x, -Math.PI / 2, 1 - Math.exp(-dt * 8)); u.body.position.y = lerp(u.body.position.y, 0.2, 1 - Math.exp(-dt * 8));
       this.tag.visible = false; return;
@@ -210,6 +226,7 @@ function fireWeapon(s, now, recoilControl = 0) {
     const range = 300;
     let wt = World.raycast(eye.x, eye.y, eye.z, _d.x, _d.y, _d.z, range); const wallN = { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz };
     if (wt < 0) wt = range;
+    const ph = Phys.active ? Phys.ray(eye, _d, wt) : null; if (ph) { wt = ph.t; wallN.x = ph.n.x; wallN.y = ph.n.y; wallN.z = ph.n.z; }
     const sh = raySoldiers(eye, _d, wt, s, Game.soldiers);
     let vehHit = null;
     if (!sh) vehHit = Game.rayVehicles(eye, _d, wt);
@@ -221,13 +238,16 @@ function fireWeapon(s, now, recoilControl = 0) {
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
       FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
     } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * 0.15, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
-    else if (wt < range) { FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e); }
+    else if (wt < range) {
+      FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e);
+      if (ph && (s.ctrl === 'local' || s.ctrl === 'bot')) Game.propHit(s, ph.p, _e, _d, w.dmg);
+    }
     shotEnds.push(_e.clone());
   }
   // muzzle position for tracers: use the view model when it's ours
   const mz = s.ctrl === 'local' && Game.view && !Game.view.third ? Game.view.muzzleWorld(_mz) : _mz.copy(eye).add(new V3(0, -0.15, 0));
-  if (!(s.ctrl === 'local' && s.ads && w.scope)) for (const e of shotEnds) if (Math.random() < (pellets > 1 ? 0.3 : 0.7)) FX.tracer(mz, e);
-  FX.muzzle(mz);
+  if (!(s.ctrl === 'local' && s.ads && w.scope) && !w.suppressed) for (const e of shotEnds) if (Math.random() < (pellets > 1 ? 0.3 : 0.7)) FX.tracer(mz, e);
+  if (!w.suppressed) FX.muzzle(mz);
   Sfx.play('shot', eye, { w });
   Game.noise(s, w.suppressed ? 15 : 45 + (w.sound || 1) * 20);
   Game.onShot(s, shotEnds[0], eye);
@@ -294,7 +314,8 @@ class Rocket {
     let t = World.raycast(this.pos.x, this.pos.y, this.pos.z, this.dir.x, this.dir.y, this.dir.z, step);
     const sh = raySoldiers(this.pos, this.dir, t >= 0 ? t : step, this.owner, Game.soldiers);
     const vh = Game.rayVehicles(this.pos, this.dir, t >= 0 ? t : step);
-    if (sh) t = sh.t; else if (vh) t = vh.t;
+    const ph = Phys.active ? Phys.ray(this.pos, this.dir, t >= 0 ? t : step) : null;
+    if (sh) t = sh.t; else if (vh) t = vh.t; else if (ph) t = ph.t;
     if (t >= 0 || this.t > 5) { this.pos.addScaledVector(this.dir, Math.max(0, t - 0.1)); return this.explode(); }
     this.pos.addScaledVector(this.dir, step);
     this.mesh.position.copy(this.pos); this.mesh.lookAt(this.pos.x + this.dir.x, this.pos.y + this.dir.y, this.pos.z + this.dir.z); this.mesh.rotateX(Math.PI / 2);
@@ -321,7 +342,7 @@ class Vehicle {
     this.yaw -= this.steer * dt * clamp(this.speed / 6, -1.2, 1.2) * 0.9;
   }
   physics(dt) {
-    if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { this.reset(); Game.broadcastVehicle(this); } return; }
+    if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
     this.vel.set(-Math.sin(this.yaw) * this.speed, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed);
     const before = this.speed; const r = moveBody(this.pos, this.vel, dt, 1.25, 1.7, true);
     if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority()) this.damage(Math.abs(before) * 3, null); this.speed *= -0.25; }

@@ -81,7 +81,12 @@ const HUD = {
     this.fpsAcc += dt; this.fpsN++; if (this.fpsAcc > 0.5) { this.fps = Math.round(this.fpsN / this.fpsAcc); this.fpsAcc = 0; this.fpsN = 0; E.fps.textContent = Settings.showFps ? this.fps + ' fps' : ''; }
     E.hp.textContent = Math.max(0, Math.ceil(L.hp)); E.hpbar.style.width = clamp(L.hp, 0, 100) + '%'; E.hpbar.style.background = L.hp > 50 ? '#e8e8e8' : L.hp > 25 ? '#ffb030' : '#ff4040';
     E.armor.textContent = Game.mode.armor ? `🛡 ${Math.ceil(L.armor)}${L.helmet ? ' +H' : ''}${L.kit ? ' · kit' : ''}` : (Game.mode.classes ? CLASSES[L.cls].name + (L.medkits ? ` · ✚${L.medkits}` : '') + (L.ammoBoxes ? ` · ▣${L.ammoBoxes}` : '') : '');
-    if (isNade(L.cur)) { E.ammo.textContent = L.nades[L.cur]; E.ammores.textContent = ''; E.wname.textContent = GRENADES[L.cur].name + '  ·  LMB throw  RMB lob'; }
+    if (w && (w.type === 'physgun' || w.type === 'tool')) {
+      E.ammo.textContent = ''; E.ammores.textContent = ''; E.stattrak.textContent = '';
+      const T = TOOLS[Sandbox.opts.tool];
+      E.wname.innerHTML = w.type === 'physgun' ? 'Physics Gun · <small>LMB grab · wheel distance · E+mouse rotate · RMB freeze · R unfreeze</small>'
+        : `Tool Gun: <b>${T.name}</b>${Sandbox.pick ? ' (1 picked)' : ''} · <small>LMB ${T.lmb} · RMB ${T.rmb} · Q to change</small>`;
+    } else if (isNade(L.cur)) { E.ammo.textContent = L.nades[L.cur]; E.ammores.textContent = ''; E.wname.textContent = GRENADES[L.cur].name + '  ·  LMB throw  RMB lob'; }
     else if (w) {
       const a = L.ammo[L.cur]; E.ammo.textContent = a ? a.mag : '∞'; E.ammores.textContent = a ? '/ ' + a.res : '';
       const it = L.skinItem(L.cur); E.wname.textContent = w.name + (it ? ' | ' + SKINS[it.skinId].name.replace(/^.*\| /, '') : '') + (L.reloadT > 0 ? '  · reloading' : '');
@@ -108,6 +113,9 @@ const HUD = {
         el.querySelector('span').style.width = Math.abs(f.prog) * 100 + '%'; el.querySelector('span').style.background = f.prog > 0 ? TEAM_STYLE.CT.color : TEAM_STYLE.T.color;
         el.classList.toggle('here', L.alive && dist2(L.pos.x, L.pos.z, f.x, f.z) < f.radius);
       }
+    } else if (M.id === 'sandbox') {
+      E.scT.textContent = ''; E.scCT.textContent = ''; E.timer.textContent = 'SANDBOX'; E.timer.classList.remove('bomb', 'freeze');
+      E.rinfo.textContent = `${Phys.props.length} props · ${Game.soldiers.filter(s => s.npc && s.alive).length} NPCs · Q spawn menu · Z undo · V noclip`;
     } else {
       E.scT.textContent = Game.tdm.kills.T; E.scCT.textContent = Game.tdm.kills.CT; E.timer.textContent = fmtTime(Game.tdm.timeLeft); E.rinfo.textContent = `First to ${M.killTarget} kills`;
       E.timer.classList.remove('bomb', 'freeze');
@@ -117,7 +125,7 @@ const HUD = {
     this.hitT -= dt; E.hitm.style.opacity = clamp(this.hitT / 0.2, 0, 1);
     E.flash.style.opacity = L.blind > 0 ? clamp(L.blind / Math.min(1.5, L.blindMax || 1), 0, 1) : 0;
     const scoped = L.alive && w && w.scope && L.adsT > 0.85; E.scope.classList.toggle('hidden', !scoped);
-    E.xh.classList.toggle('hidden', !L.alive || scoped || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L));
+    E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L));
     if (L.alive && w && !scoped) { const g = Settings.xhGap + L.spread() * 900; E.xh.querySelectorAll('i').forEach((i, k) => { const s = Settings.xhSize; if (k === 0) i.style.left = (-g - s) + 'px'; if (k === 1) i.style.left = g + 'px'; if (k === 2) i.style.top = (-g - s) + 'px'; if (k === 3) i.style.top = g + 'px'; }); }
     E.vign.style.opacity = L.alive ? clamp((50 - L.hp) / 50, 0, 0.8) : 0;
     this.drawDamage(dt);
@@ -201,8 +209,9 @@ const HUD = {
   },
   renderBoard() {
     const E = this.el.board; E.classList.remove('hidden'); const L = Game.local;
+    if (Game.mode.id === 'sandbox') { E.innerHTML = `<div class="bt-top">Sandbox · ${World.def.name}${Net.role !== 'off' ? ' · room ' + escapeHtml(Net.code) : ''}</div><table><tr><th>Player</th><th>K</th><th>D</th></tr>${Game.soldiers.filter(s => !s.npc).map(s => `<tr class="${s === L ? 'me' : ''}"><td style="color:${TEAM_STYLE[s.team].color}">${escapeHtml(s.name)}</td><td>${s.kills}</td><td>${s.deaths}</td></tr>`).join('')}</table>`; return; }
     const table = team => {
-      const rows = Game.soldiers.filter(s => s.team === team).sort((a, b) => b.score - a.score || b.kills - a.kills);
+      const rows = Game.soldiers.filter(s => s.team === team && !s.npc).sort((a, b) => b.score - a.score || b.kills - a.kills);
       return `<div class="bt-h" style="color:${TEAM_STYLE[team].color}">${TEAM_STYLE[team].name} ${Game.mode.id === 'defuse' ? '· ' + Game.score[team] : Game.mode.id === 'conquest' ? '· ' + Math.ceil(Game.tickets[team]) + ' tickets' : '· ' + Game.tdm.kills[team]}</div>
       <table><tr><th>Name</th><th>K</th><th>A</th><th>D</th><th>Score</th>${Game.mode.buy && L && L.team === team ? '<th>$</th>' : ''}</tr>` +
         rows.map(s => `<tr class="${s === L ? 'me' : ''} ${s.alive ? '' : 'dead'}"><td>${s.isBot ? '<i>BOT</i> ' : ''}${escapeHtml(s.name)}${'★'.repeat(Math.min(5, s.mvps))}${Game.bomb.carrier === s.id && L && L.team === 'T' && team === 'T' ? ' 💣' : ''}</td><td>${s.kills}</td><td>${s.assists}</td><td>${s.deaths}</td><td>${s.score}</td>${Game.mode.buy && L && L.team === team ? '<td>$' + s.money + '</td>' : ''}</tr>`).join('') + '</table>';

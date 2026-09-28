@@ -20,71 +20,102 @@ function skinMat(weaponId, item) {
   if (t) return new THREE.MeshLambertMaterial({ map: t });
   return lam(DEFAULT_FINISH[weaponId] || '#333');
 }
-function buildGun(weaponId, item) {
-  const g = new THREE.Group(), w = WEAPONS[weaponId], S = skinMat(weaponId, item), D = lam('#1c1d1f'), M = lam('#3a3c40');
+/* Guns are modelled pointing down -Z with the grip at the origin. Each one
+   records where its sights, rail, under-barrel mount, muzzle and magazine
+   are, so attachments snap on and the viewmodel can aim down the sights. */
+function buildGun(weaponId, item, att) {
+  const g = new THREE.Group(), w = WEAPONS[weaponId], S = skinMat(weaponId, item), D = lam('#1c1d1f'), M = lam('#3a3c40'), K = lam('#101112');
   const muzzle = new THREE.Object3D(); g.add(muzzle);
   const knifeType = item && SKINS[item.skinId] ? SKINS[item.skinId].knife : null;
+  const U = g.userData; U.sight = { y: 0.06 }; U.rail = null; U.under = null; U.mag = null; U.muzzle = muzzle;
+  const add = o => (g.add(o), o);
+  const post = (x, y, z, h) => add(bx(0.005, h, 0.006, K, x, y + h / 2, z));
   switch (w.type) {
     case 'pistol': {
-      const big = w.heavyPistol ? 1.25 : 1;
-      g.add(bx(0.034 * big, 0.04 * big, 0.2 * big, S, 0, 0.02, -0.02));
-      g.add(bx(0.03, 0.03, 0.14, D, 0, -0.005, -0.0));
-      const gr = bx(0.03, 0.11, 0.05, S, 0, -0.06, 0.06); gr.rotation.x = -0.25; g.add(gr);
-      muzzle.position.set(0, 0.02, -0.13 * big);
+      const k = w.heavyPistol ? 1.2 : 1;
+      add(bx(0.03 * k, 0.032 * k, 0.19 * k, S, 0, 0.016 * k, -0.035 * k));             // slide
+      add(bx(0.028 * k, 0.022 * k, 0.15 * k, D, 0, -0.01 * k, -0.03 * k));             // frame
+      add(bx(0.006, 0.006, 0.04, M, 0.012 * k, 0.02 * k, -0.02));                       // ejection port
+      const gr = add(bx(0.028 * k, 0.105 * k, 0.045 * k, D, 0, -0.06 * k, 0.03 * k)); gr.rotation.x = -0.22;
+      add(bx(0.012, 0.02, 0.03, K, 0, -0.026 * k, -0.005));                              // trigger guard
+      post(-0.007, 0.032 * k, 0.05 * k, 0.008); post(0.007, 0.032 * k, 0.05 * k, 0.008); // rear notch
+      post(0, 0.032 * k, -0.12 * k, 0.008);                                              // front post
+      U.sight = { y: 0.032 * k + 0.0065 }; U.rail = { y: 0.032 * k, z: -0.01 }; U.mag = gr; U.magBase = { y: -0.115 * k, z: 0.045 * k };
+      muzzle.position.set(0, 0.016 * k, -0.13 * k);
       break;
     }
     case 'rifle': case 'smg': case 'lmg': {
-      const L = w.type === 'smg' ? 0.7 : 1, lmg = w.type === 'lmg';
-      g.add(bx(0.05, 0.08, 0.38 * L, S, 0, 0, 0));
-      g.add(bx(0.055, 0.062, 0.22 * L, S, 0, 0.004, -0.29 * L));
-      g.add(cyl(0.012, 0.3 * L, D, 0, 0.012, -0.5 * L));
-      g.add(bx(0.045, 0.08, 0.22 * L, S, 0, -0.02, 0.28 * L));
-      g.add(bx(0.02, 0.025, 0.12, D, 0, 0.055, 0.02));
-      const grip = bx(0.03, 0.09, 0.04, D, 0, -0.08, 0.1 * L); grip.rotation.x = -0.3; g.add(grip);
-      if (lmg) { g.add(bx(0.09, 0.09, 0.12, M, 0.02, -0.08, -0.06)); g.add(bx(0.01, 0.12, 0.01, D, 0.02, -0.06, -0.52)); g.add(bx(0.01, 0.12, 0.01, D, -0.02, -0.06, -0.52)); }
-      else if (weaponId === 'p90') { g.add(bx(0.045, 0.03, 0.26, S, 0, 0.058, -0.06)); }
-      else { const mag = bx(0.034, 0.15, 0.07, weaponId === 'ak47' ? S : D, 0, -0.1, -0.08 * L); mag.rotation.x = weaponId === 'ak47' ? 0.35 : 0.1; g.add(mag); }
-      muzzle.position.set(0, 0.012, -0.66 * L);
+      const L = w.type === 'smg' ? 0.72 : 1, lmg = w.type === 'lmg', ak = weaponId === 'ak47', p90 = weaponId === 'p90';
+      add(bx(0.05, 0.07, 0.36 * L, S, 0, 0, -0.02));                                    // receiver
+      add(bx(0.056, 0.058, 0.24 * L, S, 0, -0.002, -0.31 * L));                         // handguard
+      for (let i = 0; i < 4; i++) add(bx(0.058, 0.006, 0.012, K, 0, 0.025, -0.22 * L - i * 0.05 * L)); // vents
+      add(cyl(0.011, 0.24 * L, D, 0, 0.008, -0.54 * L));                                // barrel
+      add(bx(0.045, 0.072, 0.24 * L, S, 0, -0.016, 0.28 * L));                          // stock
+      add(bx(0.05, 0.085, 0.02, K, 0, -0.02, 0.4 * L));                                 // butt pad
+      const grip = add(bx(0.03, 0.085, 0.04, D, 0, -0.07, 0.09 * L)); grip.rotation.x = -0.28;
+      add(bx(0.012, 0.022, 0.035, K, 0, -0.045, 0.045 * L));                            // trigger guard
+      add(bx(0.008, 0.01, 0.02, M, 0.028, 0.018, 0.02));                                // charging handle
+      if (!ak && !p90) add(bx(0.022, 0.01, 0.22 * L, K, 0, 0.04, -0.03));               // picatinny rail
+      if (p90) add(bx(0.045, 0.028, 0.26, S, 0, 0.049, -0.06));
+      // irons: rear aperture on the receiver, front post near the muzzle
+      post(-0.008, 0.035, 0.1 * L, 0.024); post(0.008, 0.035, 0.1 * L, 0.024);
+      add(bx(0.02, 0.012, 0.012, K, 0, 0.041, -0.58 * L)); post(0, 0.047, -0.58 * L, 0.014);
+      U.sight = { y: 0.058 }; U.rail = { y: 0.045, z: -0.02 }; U.under = { y: -0.031, z: -0.3 * L };
+      if (lmg) { U.mag = add(bx(0.085, 0.085, 0.11, M, 0.02, -0.075, -0.07)); add(bx(0.008, 0.11, 0.008, D, 0.02, -0.075, -0.5)); add(bx(0.008, 0.11, 0.008, D, -0.02, -0.075, -0.5)); U.under = null; U.magBase = { y: -0.12, z: -0.07 }; }
+      else if (!p90) { const mag = add(bx(0.032, 0.14, 0.065, ak ? S : D, 0, -0.1, -0.085 * L)); mag.rotation.x = ak ? 0.32 : 0.1; U.mag = mag; U.magBase = { y: -0.17, z: -0.07 * L }; }
+      muzzle.position.set(0, 0.008, -0.66 * L);
       break;
     }
     case 'sniper': {
-      g.add(bx(0.05, 0.075, 0.46, S, 0, 0, 0));
-      g.add(cyl(0.014, 0.55, D, 0, 0.01, -0.5));
-      g.add(bx(0.045, 0.1, 0.28, S, 0, -0.02, 0.34));
-      g.add(cyl(0.025, 0.3, M, 0, 0.075, -0.02, 10));
-      g.add(cyl(0.032, 0.05, D, 0, 0.075, -0.18, 10)); g.add(cyl(0.03, 0.05, D, 0, 0.075, 0.12, 10));
-      g.add(bx(0.03, 0.09, 0.05, D, 0, -0.08, 0.12));
-      g.add(bx(0.034, 0.08, 0.06, D, 0, -0.07, -0.08));
-      muzzle.position.set(0, 0.01, -0.78);
+      add(bx(0.05, 0.068, 0.44, S, 0, 0, -0.02));
+      add(cyl(0.014, 0.52, D, 0, 0.01, -0.5));
+      add(bx(0.045, 0.095, 0.28, S, 0, -0.018, 0.33));
+      add(bx(0.05, 0.1, 0.02, K, 0, -0.02, 0.47));
+      add(cyl(0.022, 0.3, M, 0, 0.078, -0.02, 12));
+      add(cyl(0.03, 0.06, D, 0, 0.078, -0.19, 12)); add(cyl(0.027, 0.05, D, 0, 0.078, 0.13, 12));
+      add(bx(0.012, 0.03, 0.03, K, 0, 0.05, -0.1)); add(bx(0.012, 0.03, 0.03, K, 0, 0.05, 0.06));
+      const gr = add(bx(0.03, 0.085, 0.045, D, 0, -0.07, 0.12)); gr.rotation.x = -0.28;
+      add(bx(0.012, 0.012, 0.04, M, 0.03, 0.02, 0.1));                                   // bolt handle
+      U.mag = add(bx(0.034, 0.06, 0.07, D, 0, -0.055, -0.07)); U.magBase = { y: -0.09, z: -0.07 };
+      U.sight = { y: 0.078 };
+      muzzle.position.set(0, 0.01, -0.77);
       break;
     }
     case 'shotgun': {
-      g.add(bx(0.05, 0.07, 0.3, S, 0, 0, 0));
-      g.add(cyl(0.016, 0.55, D, 0, 0.02, -0.4)); g.add(cyl(0.014, 0.45, M, 0, -0.015, -0.35));
-      g.add(bx(0.055, 0.05, 0.14, S, 0, -0.018, -0.35));
-      g.add(bx(0.045, 0.085, 0.26, S, 0, -0.02, 0.26));
-      muzzle.position.set(0, 0.02, -0.68);
+      add(bx(0.05, 0.068, 0.3, S, 0, 0, -0.02));
+      add(cyl(0.016, 0.55, D, 0, 0.018, -0.42)); add(cyl(0.013, 0.42, M, 0, -0.014, -0.36));
+      add(bx(0.056, 0.048, 0.15, S, 0, -0.016, -0.34));                                  // pump
+      add(bx(0.045, 0.08, 0.26, S, 0, -0.02, 0.25)); add(bx(0.05, 0.09, 0.02, K, 0, -0.022, 0.38));
+      const gr = add(bx(0.03, 0.08, 0.04, D, 0, -0.065, 0.08)); gr.rotation.x = -0.3;
+      post(0, 0.034, -0.68, 0.008);                                                        // bead
+      add(bx(0.02, 0.006, 0.12, K, 0, 0.037, 0.0));                                      // receiver rib
+      U.sight = { y: 0.041 }; U.rail = { y: 0.04, z: 0.0 }; U.under = { y: -0.04, z: -0.34 }; U.pump = true;
+      muzzle.position.set(0, 0.018, -0.7);
       break;
     }
     case 'launcher': {
-      g.add(cyl(0.045, 0.9, S, 0, 0, -0.1, 10));
-      const war = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 8), lam('#5a6a3a')); war.rotation.x = -Math.PI / 2; war.position.set(0, 0, -0.65); g.add(war);
-      g.add(bx(0.03, 0.1, 0.04, D, 0, -0.08, 0.05)); g.add(bx(0.03, 0.1, 0.04, D, 0, -0.08, -0.15));
-      muzzle.position.set(0, 0, -0.7);
+      add(cyl(0.042, 0.9, S, 0, 0, -0.12, 12));
+      const war = add(new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.22, 10), lam('#5a6a3a'))); war.rotation.x = -Math.PI / 2; war.position.set(0, 0, -0.67);
+      add(bx(0.03, 0.1, 0.04, D, 0, -0.08, 0.02)); add(bx(0.03, 0.09, 0.04, D, 0, -0.075, -0.18));
+      add(bx(0.01, 0.04, 0.03, K, -0.045, 0.045, -0.05)); post(-0.045, 0.065, -0.35, 0.01);
+      U.sight = { y: 0.072, x: -0.045 };
+      muzzle.position.set(0, 0, -0.76);
       break;
     }
     case 'knife': {
       const kt = knifeType || 'default';
-      const handle = bx(0.028, 0.03, 0.12, D, 0, 0, 0.06); g.add(handle);
-      if (kt === 'talon') { const b1 = bx(0.008, 0.035, 0.1, S, 0, 0.02, -0.04); b1.rotation.x = 0.5; g.add(b1); const b2 = bx(0.008, 0.03, 0.08, S, 0, 0.055, -0.1); b2.rotation.x = 1.2; g.add(b2); g.add(new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 6, 12), M).translateZ(0.13)); }
-      else if (kt === 'flipwing') { g.add(bx(0.008, 0.032, 0.17, S, 0, 0.004, -0.085)); g.add(bx(0.03, 0.034, 0.12, M, 0.004, 0, 0.06)); }
-      else if (kt === 'spike') { g.add(bx(0.008, 0.035, 0.2, S, 0, 0.006, -0.1)); g.add(bx(0.06, 0.012, 0.012, M, 0, 0, 0)); }
-      else { g.add(bx(0.008, 0.035, 0.15, S, 0, 0.006, -0.075)); g.add(bx(0.05, 0.01, 0.012, M, 0, 0, 0)); }
+      add(bx(0.026, 0.03, 0.11, D, 0, 0, 0.055));
+      if (kt === 'talon') { const b1 = add(bx(0.007, 0.034, 0.1, S, 0, 0.02, -0.04)); b1.rotation.x = 0.5; const b2 = add(bx(0.007, 0.03, 0.08, S, 0, 0.055, -0.1)); b2.rotation.x = 1.2; add(new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 6, 12), M)).position.z = 0.12; }
+      else if (kt === 'flipwing') { add(bx(0.007, 0.03, 0.17, S, 0, 0.004, -0.085)); add(bx(0.03, 0.034, 0.12, M, 0.004, 0, 0.055)); }
+      else if (kt === 'spike') { add(bx(0.007, 0.034, 0.2, S, 0, 0.006, -0.1)); add(bx(0.06, 0.012, 0.012, M, 0, 0, 0)); }
+      else { add(bx(0.007, 0.034, 0.15, S, 0, 0.006, -0.075)); add(bx(0.05, 0.01, 0.012, M, 0, 0, 0)); }
       muzzle.position.set(0, 0, -0.18);
       break;
     }
+    default: if (w.build) w.build(g, S); break;   // sandbox tools bring their own model
   }
-  g.userData.muzzle = muzzle;
+  U.muzzle = muzzle;
+  if (att && typeof addAttachments === 'function') addAttachments(g, weaponId, att);
   return g;
 }
 
@@ -118,11 +149,11 @@ function buildSoldierModel(team) {
   root.userData = { body, legL, legR, upper, head, arms, gunMount, gunId: null, skinKey: null };
   return root;
 }
-function setSoldierGun(model, weaponId, item) {
-  const u = model.userData, key = weaponId + ':' + (item ? item.skinId + item.seed : '');
+function setSoldierGun(model, weaponId, item, att) {
+  const u = model.userData, key = weaponId + ':' + (item ? item.skinId + item.seed : '') + attSig(att);
   if (u.skinKey === key) return; u.skinKey = key;
   u.gunMount.clear();
-  const g = buildGun(weaponId, item); g.scale.setScalar(1.25); u.gunMount.add(g); u.gun = g;
+  const g = buildGun(weaponId, item, att); g.scale.setScalar(1.25); u.gunMount.add(g); u.gun = g;
 }
 
 /* ── jeep ──────────────────────────────────────────────────────────────── */

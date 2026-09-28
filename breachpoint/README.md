@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.0.html     the game (built, self-contained, works offline)
+Breachpoint v1.1.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.0.html
+build.js                  npm install && node build.js  →  Breachpoint v1.1.html
 ```
 
 ## Modes
@@ -18,6 +18,60 @@ build.js                  npm install && node build.js  →  Breachpoint v1.0.ht
 | **Defuse** | Dustyard | 5v5 rounds, first to 7, sides swap at 6. Buy menu, economy with loss bonus, bomb plant/defuse, kits, armor, one life per round. |
 | **Conquest** | Ridgeline | Up to 16v16 on a 220 m valley. Five flags, tickets that bleed, four classes, squad spawns, jeeps, RPGs. |
 | **Team Deathmatch** | either | Respawns, classes, first to 50. |
+| **Sandbox** | Flatgrass (or any map) | Garry's Mod-style: spawn props, NPCs, weapons and jeeps, then build with the physics gun and tool gun. |
+
+## Sandbox
+
+Press **Q** for the spawn menu. It has these tabs:
+
+- **Props:** 23 physics props, including crates, barrels, planks, sheets,
+  concrete, furniture, a car wreck, balls and the melon.
+- **Entities:** explosive barrels, health kits, ammo crates, balloons,
+  dynamite and lights.
+- **NPCs:** Aegis and Vanta soldiers (pick their weapon and skill), zombies,
+  citizens and target dummies.
+- **Weapons:** everything in the game, with your skins and attachments on.
+- **Vehicles:** jeeps.
+- **Tools** and **Options.**
+
+Things spawn where you're aiming.
+
+- **Physics gun (6).** Grab props or NPCs and move them. The mouse wheel
+  sets distance, and holding **E** while moving the mouse rotates. **RMB**
+  freezes in place and **R** unfreezes.
+- **Tool gun (7):**
+  - **Remover:** deletes things; RMB strips their constraints.
+  - **Weld:** joins two things rigidly.
+  - **Rope:** ties two points; RMB makes a tight rope.
+  - **Balloon:** lift is set in kg it can carry.
+  - **Thruster:** hold **T** to fire.
+  - **Dynamite:** press **K** to blow it.
+  - **Light, Color, Material** (wood, metal, concrete, glass, glow, chrome…),
+    **Scale** and **Freezer.**
+- **Z** undoes your last spawn. **V** toggles noclip.
+- **NPC behavior.** Soldiers of your faction follow you and fight with you.
+  The other faction hunts you. Zombies go for anything alive. Citizens run
+  from gunfire and zombies. Dummies stand there and take it.
+- **Physics.** Props use cannon-es. Bullets push them and explosions throw
+  them. You can stand on props and shove the light ones.
+- **Multiplayer.** Sandbox works in multiplayer too. The host runs the
+  physics and everyone builds in the same world; people who join late get
+  the whole build.
+
+## Attachments
+
+Open **Armory → Gunsmith**. Unlock an attachment once with credits, and it
+fits every gun it's compatible with. Each gun has four slots:
+
+| slot | options |
+|---|---|
+| Optic | Red Dot, Holographic, 4x ACOG. You aim through the actual reticle. |
+| Muzzle | Suppressor (quiet, no tracer, bots hear you from much closer), Compensator (−30% horizontal recoil) |
+| Underbarrel | Vertical Grip (−22% vertical recoil), Laser (−35% hip spread, projects a visible dot) |
+| Magazine | Extended Mag (+50% capacity, slower reload) |
+
+The stat bars show what each change does. Other players see your
+attachments, and bots carry random kits outside Defuse.
 
 ## The AI
 
