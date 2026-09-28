@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.1.html     the game (built, self-contained, works offline)
+Breachpoint v1.2.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.1.html
+build.js                  npm install && node build.js  →  Breachpoint v1.2.html
 ```
 
 ## Modes
@@ -48,6 +48,20 @@ Things spawn where you're aiming.
   - **Dynamite:** press **K** to blow it.
   - **Light, Color, Material** (wood, metal, concrete, glass, glow, chrome…),
     **Scale** and **Freezer.**
+- **More tools (1.2):**
+  - **Elastic:** a bungee between two points.
+  - **Wheel:** hold **U** to drive and **J** to reverse. Weld a frame and add
+    four wheels to build a car.
+  - **Hoverball:** holds a prop at a height; move it with the physgun.
+  - **Lamp:** a spotlight; **L** toggles it.
+  - **Emitter:** smoke, sparks, fire, steam or confetti; **O** toggles it.
+  - **Ignite:** sets props on fire. Fire hurts, spreads to wood and sets off
+    explosive barrels.
+  - **Duplicator:** right-click copies a whole welded build; left-click
+    pastes it; Z undoes a paste in one go.
+  - **Physical props:** heavy, light, bouncy, ice, or zero-g.
+  - **Trail.**
+- Tool gun and physgun reach is now about 450 m.
 - **Z** undoes your last spawn. **V** toggles noclip.
 - **NPC behavior.** Soldiers of your faction follow you and fight with you.
   The other faction hunts you. Zombies go for anything alive. Citizens run
@@ -57,6 +71,53 @@ Things spawn where you're aiming.
 - **Multiplayer.** Sandbox works in multiplayer too. The host runs the
   physics and everyone builds in the same world; people who join late get
   the whole build.
+
+## Weapons
+
+There are 27 in all. New in 1.2:
+- **Pistols:** Five-SeveN, Tec-9, .357 Magnum.
+- **SMGs:** MAC-10, UMP-45.
+- **Shotgun:** XM1014 auto shotgun.
+- **Rifles:** Galil and FAMAS (3-round burst), AUG (built-in scope).
+- **Sniper:** Auto-Sniper.
+- **Specials:**
+  - **Minigun:** spins up before it fires; hold RMB to keep it spinning.
+  - **Crossbow:** silent, and bolts drop over distance and stick where they land.
+  - **M79:** lobs explosive grenades in an arc.
+
+The new guns are in the Defuse buy menu, as class alternatives in Conquest
+and Team Deathmatch (the deploy screen), and in the sandbox spawn menu. The
+**Arsenal Case** has skins for them.
+
+**Range.** Each weapon type now has an effective range: full damage up
+close, tapering to a floor.
+
+| type | full damage to | floor | floor reached at |
+|---|---|---|---|
+| Pistols | 15 m | 45% | 45 m |
+| SMGs | 18 m | 40% | 55 m |
+| Shotguns | 6 m | 8% | 24 m |
+| Rifles | 40 m | 62% | 130 m |
+| LMGs | 35 m | 60% | 120 m |
+
+Snipers don't fall off.
+
+Bots won't waste ammo beyond their gun's range; they close in instead.
+Distant targets also take longer for them to react to.
+
+Two new settings:
+- **View distance** stretches the fog, which now starts much farther out on
+  Ridgeline and Flatgrass.
+- **Bot sight distance** sets how far bots notice you.
+
+## Medkits
+
+Press **H** to use a medkit: it heals 50 HP over 2 seconds.
+- Everyone spawns with one in Conquest, TDM and Sandbox, and Assault gets two.
+- In Defuse you can buy one for $400.
+- In Conquest and TDM the dead drop health packs and ammo that anyone can
+  pick up. Hurt bots go for the packs and use their medkits in cover.
+- Sandbox also has medkit pickups and health, armor and ammo stations.
 
 ## Attachments
 

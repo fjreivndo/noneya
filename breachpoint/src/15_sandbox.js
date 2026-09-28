@@ -175,7 +175,7 @@ function buildFlatgrass() {
   World.spawns.CT = []; World.spawns.T = [];
   for (let i = 0; i < 8; i++) { World.spawns.CT.push({ x: -6 + i * 1.8, z: 30, yaw: 0 }); World.spawns.T.push({ x: -6 + i * 1.8, z: 34, yaw: 0 }); }
   World.zones.push({ name: 'The Construct', x0: -12, z0: -38, x1: 12, z1: -22 }, { name: 'Spawn', x0: -15, z0: 25, x1: 15, z1: 40 });
-  World.skyColor = 0x8fc0ee; World.fog = [0xc8dcee, 80, 300]; World.sun = 0xfff6e8;
+  World.skyColor = 0x8fc0ee; World.fog = [0xc8dcee, 150, 600]; World.sun = 0xfff6e8;
 }
 MAPS.flatgrass = { name: 'Flatgrass', build: buildFlatgrass, modes: ['sandbox'], desc: 'Big open field and a building. Made for building things.' };
 MODES.sandbox = { id: 'sandbox', name: 'Sandbox', headMult: 2.5, armor: false, teamSize: 0, respawn: true, respawnTime: 2, regen: true, sprint: true, maps: ['flatgrass', 'dustyard', 'ridgeline'] };
@@ -242,7 +242,7 @@ const Sandbox = {
     s.fillAmmo('p2000'); s.cur = 'physgun'; s.drawT = 0.3;
   },
   /* where the player is looking: world, prop or soldier */
-  trace(s, maxD = 200) {
+  trace(s, maxD = 450) {
     const o = s.eye(new V3()), d = s.forward(new V3());
     let t = World.raycast(o.x, o.y, o.z, d.x, d.y, d.z, maxD); const n = new V3(World.hit.nx, World.hit.ny, World.hit.nz); if (t < 0) t = maxD;
     const ph = Phys.ray(o, d, t); if (ph) { t = ph.t; n.copy(ph.n); }
@@ -256,7 +256,7 @@ const Sandbox = {
   },
   /* place something so it rests on the surface you're aiming at */
   spawnPoint(s, radius) {
-    const tr = this.trace(s, 60), p = tr.kind === 'none' ? s.eye(new V3()).addScaledVector(s.forward(new V3()), 6) : tr.p;
+    const tr = this.trace(s, 250), p = tr.kind === 'none' ? s.eye(new V3()).addScaledVector(s.forward(new V3()), 8) : tr.p;
     return p.clone().addScaledVector(tr.n.lengthSq() ? tr.n : new V3(0, 1, 0), radius + 0.05);
   },
 
@@ -450,12 +450,12 @@ const Sandbox = {
     const I = Input;
     if (s.cur === 'physgun') {
       if (I.mouse.leftPressed && !this.myHold) {
-        const tr = this.trace(s, 120);
+        const tr = this.trace(s, 450);
         if (tr.kind === 'prop') { this.myHold = { id: tr.prop.id, local: Phys.worldToLocal(tr.prop, tr.p), dist: tr.t }; this.exec({ op: 'grab', id: tr.prop.id, local: this.myHold.local, target: [tr.p.x, tr.p.y, tr.p.z] }); Sfx.play('ui'); }
         else if (tr.kind === 'npc' && tr.s.npc) { this.myHold = { sid: tr.s.id, dist: tr.t }; this.exec({ op: 'grab', sid: tr.s.id, target: [tr.p.x, tr.p.y, tr.p.z] }); }
       }
       if (this.myHold) {
-        if (I.mouse.wheel) this.myHold.dist = clamp(this.myHold.dist - I.mouse.wheel * 0.8, 1.2, 120);
+        if (I.mouse.wheel) this.myHold.dist = clamp(this.myHold.dist - I.mouse.wheel * Math.max(0.8, this.myHold.dist * 0.08), 1.2, 450);
         const T = s.eye(new V3()).addScaledVector(s.forward(new V3()), this.myHold.dist);
         let rot = null;
         if (I.down('KeyE') && (I.mouse.dx || I.mouse.dy)) {

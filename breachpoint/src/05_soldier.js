@@ -19,6 +19,7 @@ class Soldier {
     this.cur = 'knife'; this.last = null; this.fireCd = 0; this.reloadT = 0; this.drawT = 0; this.boltT = 0;
     this.recoilIdx = 0; this.lastShot = -9; this.punchX = 0; this.punchY = 0; this.ads = false; this.adsT = 0;
     this.blind = 0; this.blindMax = 0; this.spottedUntil = 0; this.lastDamage = -9; this.lastHurtDir = 0;
+    this.meds = 0; this.healT = 0; this.spin = 0; this.spinT = -9; this.burstLeft = 0;
     this.cls = 'assault'; this.squad = null; this.vehicle = null; this.walkPhase = 0; this.stepT = 0;
     this.moveIn = { f: 0, s: 0, jump: false, crouch: false, walk: false, sprint: false };
     this.model = null; this.tag = null; this.deadT = 0; this.gadgetCd = 0; this.medkits = 0;
@@ -81,6 +82,10 @@ class Soldier {
   /* ── timers, called every frame for local and bot soldiers ── */
   tickWeapon(dt, now) {
     this.fireCd -= dt; this.drawT -= dt; this.boltT -= dt; this.gadgetCd -= dt;
+    // minigun barrels spin up while the trigger is held, and wind down after
+    const sw = this.w; if (sw && sw.spinup) this.spin = clamp(this.spin + (now - this.spinT < 0.15 ? dt / sw.spinup : -dt / (sw.spinup * 1.5)), 0, 1); else this.spin = 0;
+    // medkit: heal over two seconds (the authority owns the real HP)
+    if (this.healT > 0) { this.healT -= dt; if (Game.authority()) this.hp = Math.min(100, this.hp + 25 * dt); }
     if (this.reloadT > 0) {
       this.reloadT -= dt;
       if (this.reloadT <= 0) { const w = this.w, a = this.ammo[this.cur]; if (w && a) { const need = w.mag - a.mag, take = Math.min(need, a.res); a.mag += take; a.res -= take; } }
@@ -203,6 +208,8 @@ function fireWeapon(s, now, recoilControl = 0) {
   if (w.type === 'knife') return knifeAttack(s, now);
   const a = s.ammo[s.cur]; if (!a) return false;
   if (a.mag <= 0) { if (s.ctrl === 'local') Sfx.play('empty'); s.fireCd = 0.2; if (!s.startReload() && s.ctrl === 'bot') s.switchTo(s.weapons[2] || 'knife'); return false; }
+  if (w.spinup) { s.spinT = now; if (s.spin < 1) return false; }
+  if (s.healT > 0) return false;
   a.mag--; s.fireCd = 60 / w.rpm; s.lastShot = now;
   if (w.bolt) { s.boltT = w.bolt; }
   const eye = s.eye(_o);
@@ -214,7 +221,7 @@ function fireWeapon(s, now, recoilControl = 0) {
   const shotEnds = [];
   if (w.projectile) {
     const cp = Math.cos(basePitch); _d.set(-Math.sin(baseYaw) * cp, Math.sin(basePitch), -Math.cos(baseYaw) * cp);
-    Game.spawnRocket(s, eye.clone().addScaledVector(_d, 0.8), _d.clone(), true);
+    Game.spawnRocket(s, eye.clone().addScaledVector(_d, 0.8), _d.clone(), true, s.cur);
     s.fireCd = 60 / w.rpm; Sfx.play('shot', eye, { w });
     if (a.mag <= 0 && a.res > 0) s.startReload();
     return true;
@@ -223,7 +230,7 @@ function fireWeapon(s, now, recoilControl = 0) {
     const r = Math.sqrt(Math.random()) * sp, th = Math.random() * TAU;
     const yaw = baseYaw + Math.cos(th) * r, pitch = basePitch + Math.sin(th) * r, cp = Math.cos(pitch);
     _d.set(-Math.sin(yaw) * cp, Math.sin(pitch), -Math.cos(yaw) * cp);
-    const range = 300;
+    const range = w.pellets ? 60 : 400;
     let wt = World.raycast(eye.x, eye.y, eye.z, _d.x, _d.y, _d.z, range); const wallN = { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz };
     if (wt < 0) wt = range;
     const ph = Phys.active ? Phys.ray(eye, _d, wt) : null; if (ph) { wt = ph.t; wallN.x = ph.n.x; wallN.y = ph.n.y; wallN.z = ph.n.z; }
@@ -233,7 +240,7 @@ function fireWeapon(s, now, recoilControl = 0) {
     const endT = sh ? sh.t : vehHit ? vehHit.t : wt;
     _e.copy(eye).addScaledVector(_d, endT);
     if (sh) {
-      const falloff = Math.pow(w.falloff, sh.t / 12.5);
+      const falloff = rangeMult(w, sh.t);
       const mult = { head: Game.mode.headMult, chest: 1, stomach: 1.25, legs: 0.75 }[sh.zone];
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
       FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
@@ -306,23 +313,39 @@ function throwVelocity(s, strong) {
   return f.multiplyScalar(sp).add(new V3(0, strong ? 2.2 : 3.2, 0)).add(s.vel.clone().multiplyScalar(0.8));
 }
 
+/* Anything that flies instead of hitting instantly: RPG rockets, M79
+   grenades (a real arc), crossbow bolts (stick where they land). */
 class Rocket {
-  constructor(owner, pos, dir) { this.owner = owner; this.pos = pos; this.dir = dir; this.t = 0; this.done = false; this.mesh = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.4, 6), lam('#5a6a3a')); this.mesh.rotation.x = -Math.PI / 2; Game.scene.add(this.mesh); }
+  constructor(owner, pos, dir, wid = 'rpg') {
+    this.owner = owner; this.pos = pos; this.w = WEAPONS[wid] || WEAPONS.rpg; this.wid = this.w.id; this.vel = dir.clone().multiplyScalar(this.w.projectile); this.dir = dir; this.t = 0; this.done = false;
+    if (this.w.type === 'bow') { this.mesh = new THREE.Group(); this.mesh.add(cyl(0.008, 0.45, lam('#c8b890'))); this.mesh.add(bx(0.03, 0.002, 0.05, lam('#c83a2a'), 0, 0, 0.2)); }
+    else this.mesh = this.w.id === 'm79' ? new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), lam('#4a5a2a')) : new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.4, 6), lam('#5a6a3a'));
+    Game.scene.add(this.mesh);
+  }
   update(dt) {
-    this.t += dt; const sp = WEAPONS.rpg.projectile, step = sp * dt;
-    this.dir.y -= 0.05 * dt; this.dir.normalize();
+    if (this.stuck) { this.stuck -= dt; if (this.stuck <= 0) { this.done = true; Game.scene.remove(this.mesh); } return; }
+    this.t += dt; this.vel.y -= (this.w.gravity || 0) * dt;
+    const sp = this.vel.length(), step = sp * dt; this.dir.copy(this.vel).multiplyScalar(1 / sp);
     let t = World.raycast(this.pos.x, this.pos.y, this.pos.z, this.dir.x, this.dir.y, this.dir.z, step);
     const sh = raySoldiers(this.pos, this.dir, t >= 0 ? t : step, this.owner, Game.soldiers);
     const vh = Game.rayVehicles(this.pos, this.dir, t >= 0 ? t : step);
     const ph = Phys.active ? Phys.ray(this.pos, this.dir, t >= 0 ? t : step) : null;
     if (sh) t = sh.t; else if (vh) t = vh.t; else if (ph) t = ph.t;
-    if (t >= 0 || this.t > 5) { this.pos.addScaledVector(this.dir, Math.max(0, t - 0.1)); return this.explode(); }
-    this.pos.addScaledVector(this.dir, step);
-    this.mesh.position.copy(this.pos); this.mesh.lookAt(this.pos.x + this.dir.x, this.pos.y + this.dir.y, this.pos.z + this.dir.z); this.mesh.rotateX(Math.PI / 2);
+    if (t >= 0 || this.t > 6) {
+      this.pos.addScaledVector(this.dir, Math.max(0, t - 0.1));
+      if (this.w.explosive) return this.explode();
+      // a bolt: hurt whoever it hit, then stay stuck in the wall for a while
+      if (sh && (this.owner.ctrl === 'local' || (this.owner.ctrl === 'bot' && Game.authority()))) Game.reportHit(this.owner, sh.s, this.w.dmg * { head: 2, chest: 1, stomach: 1.1, legs: 0.7 }[sh.zone], sh.zone, this.wid, this.pos);
+      if (ph && !sh && (this.owner.ctrl === 'local' || this.owner.ctrl === 'bot')) Game.propHit(this.owner, ph.p, this.pos, this.dir, 60);
+      Sfx.play('impact', this.pos); this.stuck = sh ? 0.01 : 12; this.orient(); return;
+    }
+    this.pos.addScaledVector(this.dir, step); this.orient();
+    if (this.w.type === 'bow') return;
     FX.emit('big', this.pos.x, this.pos.y, this.pos.z, 1, 0.3, [0.5, 0.5, 0.5], 0.8, 0.5, 0.3);
-    FX.emit('add', this.pos.x, this.pos.y, this.pos.z, 2, 1, [1, 0.6, 0.2], 0.1, 0, 0.5);
+    if (this.w.id === 'rpg') FX.emit('add', this.pos.x, this.pos.y, this.pos.z, 2, 1, [1, 0.6, 0.2], 0.1, 0, 0.5);
   }
-  explode() { this.done = true; Game.scene.remove(this.mesh); FX.explosion(this.pos); Sfx.play('explode', this.pos); Game.explosion(this.pos, WEAPONS.rpg.dmg, WEAPONS.rpg.radius, this.owner, 'rpg'); }
+  orient() { this.mesh.position.copy(this.pos); this.mesh.quaternion.setFromUnitVectors(this.w.type === 'bow' ? new V3(0, 0, -1) : new V3(0, 1, 0), this.dir); }
+  explode() { this.done = true; Game.scene.remove(this.mesh); FX.explosion(this.pos); Sfx.play('explode', this.pos); Game.explosion(this.pos, this.w.dmg, this.w.radius, this.owner, this.wid); }
 }
 
 /* ── vehicles ──────────────────────────────────────────────────────────── */

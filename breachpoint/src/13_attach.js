@@ -17,7 +17,7 @@ const ATTACH = {
   extmag:      { slot: 'mag', name: 'Extended Mag', price: 320, desc: '+50% magazine, +15% reload time.', types: ['rifle', 'smg', 'pistol', 'lmg', 'sniper'] },
 };
 function attachAllowed(wid, aid) {
-  const w = WEAPONS[wid], a = ATTACH[aid]; if (!w || !a) return false;
+  const w = WEAPONS[wid], a = ATTACH[aid]; if (!w || !a || w.special) return false;
   if (!a.types.includes(w.type)) return false;
   if (aid === 'extmag' && wid === 'p90') return false;
   if (a.slot === 'under' && w.type === 'pistol' && aid !== 'laser') return false;

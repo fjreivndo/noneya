@@ -352,7 +352,7 @@ function buildDustyard() {
     { site: 'mid', pos: P(21, 8), look: P(21, 20) },
     { site: 'B', pos: P(5, 9), look: P(5, 16) }, { site: 'B', pos: P(10, 10), look: P(5, 14) },
   ];
-  World.skyColor = 0x9ec4e8; World.fog = [0xd8c8a8, 40, 140]; World.sun = 0xfff1d6;
+  World.skyColor = 0x9ec4e8; World.fog = [0xd8c8a8, 60, 220]; World.sun = 0xfff1d6;
 }
 
 /* Ridgeline: a Battlefield-sized field with five villages to fight over. */
@@ -419,7 +419,7 @@ function buildRidgeline() {
   road(-2.5, -100, 2.5, 100); road(-70, -2.5, 70, 2.5);
   flags.forEach(f => { World.flags.push(Object.assign({ owner: null, prog: 0, radius: 11 }, f)); World.zones.push({ name: f.name + ' ' + f.label, x0: f.x - 16, z0: f.z - 16, x1: f.x + 16, z1: f.z + 16 }); });
   World.zones.push({ name: 'Aegis HQ', x0: -30, z0: 84, x1: 30, z1: 110 }, { name: 'Vanta HQ', x0: -30, z0: -110, x1: 30, z1: -84 });
-  World.skyColor = 0xa8c8e8; World.fog = [0xbfd0dc, 60, 260]; World.sun = 0xfff4e0;
+  World.skyColor = 0xa8c8e8; World.fog = [0xbfd0dc, 110, 460]; World.sun = 0xfff4e0;
 }
 
 const MAPS = {

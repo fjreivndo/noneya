@@ -89,7 +89,7 @@ const Phys = {
   addConstraint(c) {
     c.id = c.id || 'c' + (this.nextId++);
     this.constraints.push(c);
-    if (c.type === 'rope' || c.type === 'balloon') {
+    if (c.type === 'rope' || c.type === 'balloon' || c.type === 'elastic') {
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
       c.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: c.type === 'balloon' ? 0xdddddd : 0x6a4a2a })); c.line.frustumCulled = false; Game.scene.add(c.line);
       this.ropes.push(c);
@@ -118,13 +118,39 @@ const Phys = {
     if (!this.active) return;
     const auth = Game.authority();
     if (auth && this.world) {
+      /* fixed 60 Hz ticks, our own loop: cannon clears applied forces after
+         every internal step, so ropes, thrusters and balloons must be
+         re-applied each tick or they'd only act on the first one */
+      this.acc = Math.min((this.acc || 0) + dt, 4 / 60);
+      while (this.acc >= 1 / 60) {
+        this.acc -= 1 / 60;
+        for (const p of this.props) if (p.body) { const b = p.body; p.x = b.position.x; p.y = b.position.y; p.z = b.position.z; p.q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w); }
+        this.applyForces();
+        for (const f of this.forceHooks) f();
+        this.world.step(1 / 60);
+      }
+      for (const p of this.props) {
+        if (!p.body) continue; const b = p.body;
+        p.x = b.position.x; p.y = b.position.y; p.z = b.position.z; p.q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w);
+        if (p.y < -50) { Sandbox.removeEntity(p.id); continue; }
+      }
+    } else {
+      for (const p of this.props) if (p.net) { const k = 1 - Math.exp(-dt * 15); p.x = lerp(p.x, p.net[0], k); p.y = lerp(p.y, p.net[1], k); p.z = lerp(p.z, p.net[2], k); p.q.slerp(_q.set(p.net[3], p.net[4], p.net[5], p.net[6]), k); }
+    }
+    this.afterStep(dt);
+  },
+  forceHooks: [],
+  /* cannon wants force/impulse points relative to the body's centre */
+  rel(body, w) { return new CANNON.Vec3(w.x - body.position.x, w.y - body.position.y, w.z - body.position.z); },
+  applyForces() {
+    {
       // ropes: soft max-length springs; thrusters, balloons: forces
       for (const c of this.constraints) {
         if (c.type === 'rope' || c.type === 'balloon') {
           const A = this.anchor(c.a, c.la), B = this.anchor(c.b, c.lb), d = B.clone().sub(A), L = d.length();
           if (L > c.len && L > 0.001) {
             d.multiplyScalar(1 / L); const stretch = L - c.len, k = 60 * stretch;
-            const pull = (p, anchor, dir) => { if (!p || !p.body || p.frozen) return; const f = new CANNON.Vec3(dir.x * k * p.body.mass, dir.y * k * p.body.mass, dir.z * k * p.body.mass); p.body.applyForce(f, new CANNON.Vec3(anchor.x, anchor.y, anchor.z)); p.body.velocity.scale(0.98, p.body.velocity); p.body.wakeUp(); };
+            const pull = (p, anchor, dir) => { if (!p || !p.body || p.frozen) return; const f = new CANNON.Vec3(dir.x * k * p.body.mass, dir.y * k * p.body.mass, dir.z * k * p.body.mass); p.body.applyForce(f, Phys.rel(p.body, anchor)); p.body.velocity.scale(0.98, p.body.velocity); p.body.wakeUp(); };
             pull(c.a, A, d); pull(c.b, B, d.clone().negate());
             if (c.type === 'balloon' && c.a && c.a.body && c.a.body.velocity.y > 5) c.a.body.velocity.y = 5;
           }
@@ -134,23 +160,17 @@ const Phys = {
         if (!p.body || p.frozen) continue;
         if (p.def.lift) { // lift in kg, fading out high in the sky so balloons don't leave the map
           const f = p.def.lift * (p.liftK || 1) * clamp((120 - p.y) / 40, 0, 1) + p.body.mass * -this.gravity;
-          p.body.applyForce(new CANNON.Vec3(0, f, 0), p.body.position); p.body.wakeUp();
+          p.body.applyForce(new CANNON.Vec3(0, f, 0)); p.body.wakeUp();
           if (p.body.velocity.y > 5) p.body.velocity.y = 5;   // balloons drift up, they don't launch
         }
         if (p.thrusters) for (const t of p.thrusters) if (t.on) {
           const A = this.anchor(p, t.at), dir = new V3(...t.dir).applyQuaternion(p.q).multiplyScalar(t.force);
-          p.body.applyForce(new CANNON.Vec3(dir.x, dir.y, dir.z), new CANNON.Vec3(A.x, A.y, A.z)); p.body.wakeUp();
+          p.body.applyForce(new CANNON.Vec3(dir.x, dir.y, dir.z), Phys.rel(p.body, A)); p.body.wakeUp();
         }
       }
-      this.world.step(1 / 60, dt, 4);
-      for (const p of this.props) {
-        if (!p.body) continue; const b = p.body;
-        p.x = b.position.x; p.y = b.position.y; p.z = b.position.z; p.q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w);
-        if (p.y < -50) { Sandbox.removeEntity(p.id); continue; }
-      }
-    } else {
-      for (const p of this.props) if (p.net) { const k = 1 - Math.exp(-dt * 15); p.x = lerp(p.x, p.net[0], k); p.y = lerp(p.y, p.net[1], k); p.z = lerp(p.z, p.net[2], k); p.q.slerp(_q.set(p.net[3], p.net[4], p.net[5], p.net[6]), k); }
     }
+  },
+  afterStep(dt) {
     this.dyn.length = 0;
     for (const p of this.props) {
       this.syncMesh(p);
@@ -202,7 +222,7 @@ const Phys = {
   /* shoot / hit a prop: push it, and damage breakables */
   impulse(p, point, dir, force) {
     if (!p || !p.body || p.frozen) return;
-    p.body.applyImpulse(new CANNON.Vec3(dir.x * force, dir.y * force, dir.z * force), new CANNON.Vec3(point.x, point.y, point.z)); p.body.wakeUp();
+    p.body.applyImpulse(new CANNON.Vec3(dir.x * force, dir.y * force, dir.z * force), Phys.rel(p.body, point)); p.body.wakeUp();
   },
   damage(p, dmg, att, point) {
     if (!Game.authority() || !p || p.dead) return;
@@ -215,7 +235,7 @@ const Phys = {
       if (!p.body || p.frozen) continue;
       const d = new V3(p.x - pos.x, p.y - pos.y + 0.3, p.z - pos.z), L = d.length(); if (L > radius) continue;
       const f = power * (1 - L / radius); d.normalize();
-      p.body.applyImpulse(new CANNON.Vec3(d.x * f * Math.min(p.body.mass, 80), d.y * f * Math.min(p.body.mass, 80), d.z * f * Math.min(p.body.mass, 80)), p.body.position); p.body.wakeUp();
+      p.body.applyImpulse(new CANNON.Vec3(d.x * f * Math.min(p.body.mass, 80), d.y * f * Math.min(p.body.mass, 80), d.z * f * Math.min(p.body.mass, 80))); p.body.wakeUp();
     }
   },
 };

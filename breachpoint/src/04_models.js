@@ -14,7 +14,7 @@ function bx(w, h, d, m, x = 0, y = 0, z = 0) { const o = new THREE.Mesh(new THRE
 function cyl(r, len, m, x = 0, y = 0, z = 0, seg = 8) { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, seg), m); o.rotation.x = Math.PI / 2; o.position.set(x, y, z); return o; }
 
 /* ── guns ──────────────────────────────────────────────────────────────── */
-const DEFAULT_FINISH = { ak47: '#6b4a2b', m4a4: '#2e3236', scar: '#8a7a5a', awp: '#3d5a3a', ssg: '#3a3f44', m249: '#34383c', mp9: '#2a2c2e', p90: '#3a3c3a', nova: '#5a4028', glock: '#2a2c2e', p2000: '#2e3032', deagle: '#9a9a9a', rpg: '#4a5a3a', knife: '#8a9096' };
+const DEFAULT_FINISH = { ak47: '#6b4a2b', m4a4: '#2e3236', scar: '#8a7a5a', awp: '#3d5a3a', ssg: '#3a3f44', m249: '#34383c', mp9: '#2a2c2e', p90: '#3a3c3a', nova: '#5a4028', glock: '#2a2c2e', p2000: '#2e3032', deagle: '#9a9a9a', rpg: '#4a5a3a', knife: '#8a9096', fiveseven: '#3a3c40', tec9: '#2a2a2a', magnum: '#b8b8b8', mac10: '#2a2c2e', ump45: '#3a3c3a', xm1014: '#2a2c2e', galil: '#5a4a30', famas: '#3a3f44', aug: '#4a5a3a', minigun: '#34383c', autosniper: '#2e3236', crossbow: '#5a4028', m79: '#6a5030' };
 function skinMat(weaponId, item) {
   const t = item ? skinTexture(item) : null;
   if (t) return new THREE.MeshLambertMaterial({ map: t });
@@ -40,12 +40,23 @@ function buildGun(weaponId, item, att) {
       add(bx(0.012, 0.02, 0.03, K, 0, -0.026 * k, -0.005));                              // trigger guard
       post(-0.007, 0.032 * k, 0.05 * k, 0.008); post(0.007, 0.032 * k, 0.05 * k, 0.008); // rear notch
       post(0, 0.032 * k, -0.12 * k, 0.008);                                              // front post
+      if (w.revolver) { add(cyl(0.024, 0.045, M, 0, 0.005, -0.005, 8)).rotation.x = Math.PI / 2; add(cyl(0.008, 0.1, D, 0, 0.022, -0.1)); }
       U.sight = { y: 0.032 * k + 0.0065 }; U.rail = { y: 0.032 * k, z: -0.01 }; U.mag = gr; U.magBase = { y: -0.115 * k, z: 0.045 * k };
       muzzle.position.set(0, 0.016 * k, -0.13 * k);
       break;
     }
     case 'rifle': case 'smg': case 'lmg': {
-      const L = w.type === 'smg' ? 0.72 : 1, lmg = w.type === 'lmg', ak = weaponId === 'ak47', p90 = weaponId === 'p90';
+      if (weaponId === 'minigun') { // six barrels on a spinning drum, carried from the hip
+        add(bx(0.11, 0.12, 0.3, S, 0, -0.01, 0.02)); add(bx(0.13, 0.13, 0.12, M, 0.08, -0.07, 0.02));
+        const spin = new THREE.Group(); spin.position.set(0, 0, -0.35); g.add(spin);
+        for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; spin.add(cyl(0.011, 0.55, D, Math.cos(a) * 0.03, Math.sin(a) * 0.03, -0.1)); }
+        spin.add(cyl(0.045, 0.03, M, 0, 0, 0.1, 12)); spin.add(cyl(0.045, 0.03, M, 0, 0, -0.33, 12));
+        const h = add(bx(0.03, 0.03, 0.2, K, 0, 0.09, 0.0)); h.rotation.x = 0.1;
+        const gr = add(bx(0.03, 0.09, 0.04, D, 0, -0.1, 0.12)); gr.rotation.x = -0.28;
+        U.spin = spin; U.sight = { y: 0.085 }; U.mag = null; muzzle.position.set(0, 0, -0.72);
+        break;
+      }
+      const L = w.L || (w.type === 'smg' ? 0.72 : 1), lmg = w.type === 'lmg', ak = weaponId === 'ak47' || weaponId === 'galil', p90 = weaponId === 'p90';
       add(bx(0.05, 0.07, 0.36 * L, S, 0, 0, -0.02));                                    // receiver
       add(bx(0.056, 0.058, 0.24 * L, S, 0, -0.002, -0.31 * L));                         // handguard
       for (let i = 0; i < 4; i++) add(bx(0.058, 0.006, 0.012, K, 0, 0.025, -0.22 * L - i * 0.05 * L)); // vents
@@ -61,6 +72,7 @@ function buildGun(weaponId, item, att) {
       post(-0.008, 0.035, 0.1 * L, 0.024); post(0.008, 0.035, 0.1 * L, 0.024);
       add(bx(0.02, 0.012, 0.012, K, 0, 0.041, -0.58 * L)); post(0, 0.047, -0.58 * L, 0.014);
       U.sight = { y: 0.058 }; U.rail = { y: 0.045, z: -0.02 }; U.under = { y: -0.031, z: -0.3 * L };
+      if (w.builtinScope) { add(bx(0.02, 0.02, 0.06, K, 0, 0.048, -0.02)); add(cyl(0.02, 0.14, M, 0, 0.074, -0.02, 12)); const r = add(new THREE.Mesh(new THREE.RingGeometry(0.004, 0.005, 16), new THREE.MeshBasicMaterial({ color: 0x111111 }))); r.position.set(0, 0.074, 0.051); r.rotation.y = Math.PI; U.sight = { y: 0.074 }; U.rail = null; }
       if (lmg) { U.mag = add(bx(0.085, 0.085, 0.11, M, 0.02, -0.075, -0.07)); add(bx(0.008, 0.11, 0.008, D, 0.02, -0.075, -0.5)); add(bx(0.008, 0.11, 0.008, D, -0.02, -0.075, -0.5)); U.under = null; U.magBase = { y: -0.12, z: -0.07 }; }
       else if (!p90) { const mag = add(bx(0.032, 0.14, 0.065, ak ? S : D, 0, -0.1, -0.085 * L)); mag.rotation.x = ak ? 0.32 : 0.1; U.mag = mag; U.magBase = { y: -0.17, z: -0.07 * L }; }
       muzzle.position.set(0, 0.008, -0.66 * L);
@@ -93,7 +105,24 @@ function buildGun(weaponId, item, att) {
       muzzle.position.set(0, 0.018, -0.7);
       break;
     }
+    case 'bow': {
+      add(bx(0.04, 0.05, 0.5, S, 0, 0, -0.05));                                           // stock
+      const limbL = add(bx(0.3, 0.018, 0.03, S, -0.15, 0.015, -0.3)); limbL.rotation.y = 0.35;
+      const limbR = add(bx(0.3, 0.018, 0.03, S, 0.15, 0.015, -0.3)); limbR.rotation.y = -0.35;
+      const str = new THREE.LineBasicMaterial({ color: 0xdddddd }), sg = new THREE.BufferGeometry().setFromPoints([new V3(-0.29, 0.015, -0.2), new V3(0, 0.02, -0.08), new V3(0.29, 0.015, -0.2)]); add(new THREE.Line(sg, str));
+      const bolt = add(cyl(0.006, 0.36, lam('#c8b890'), 0, 0.03, -0.24)); U.bolt = bolt;
+      add(cyl(0.012, 0.12, M, 0, 0.06, -0.04, 10)); U.sight = { y: 0.06 };
+      const gr = add(bx(0.03, 0.08, 0.04, D, 0, -0.06, 0.1)); gr.rotation.x = -0.3;
+      muzzle.position.set(0, 0.03, -0.44);
+      break;
+    }
     case 'launcher': {
+      if (weaponId === 'm79') {
+        add(cyl(0.03, 0.34, S, 0, 0.01, -0.25, 12)); add(bx(0.05, 0.06, 0.12, D, 0, -0.005, -0.03));
+        add(bx(0.045, 0.08, 0.26, lam('#7a5a36'), 0, -0.02, 0.15)); const gr = add(bx(0.03, 0.08, 0.04, D, 0, -0.06, 0.03)); gr.rotation.x = -0.3;
+        add(bx(0.02, 0.03, 0.01, K, 0, 0.055, -0.06)); post(0, 0.04, -0.4, 0.012);
+        U.sight = { y: 0.052 }; muzzle.position.set(0, 0.01, -0.43); break;
+      }
       add(cyl(0.042, 0.9, S, 0, 0, -0.12, 12));
       const war = add(new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.22, 10), lam('#5a6a3a'))); war.rotation.x = -Math.PI / 2; war.position.set(0, 0, -0.67);
       add(bx(0.03, 0.1, 0.04, D, 0, -0.08, 0.02)); add(bx(0.03, 0.09, 0.04, D, 0, -0.075, -0.18));

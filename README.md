@@ -1,4 +1,4 @@
-> **Also in this repo:** [`breachpoint/`](breachpoint/) — a browser FPS (CS-style Defuse + Battlefield-style Conquest, squad AI, multiplayer, crates & skins). Open `breachpoint/Breachpoint v1.1.html`.
+> **Also in this repo:** [`breachpoint/`](breachpoint/) — a browser FPS (CS-style Defuse + Battlefield-style Conquest, squad AI, multiplayer, crates & skins). Open `breachpoint/Breachpoint v1.2.html`.
 
 # Hollowreach Desktop
 

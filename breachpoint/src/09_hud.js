@@ -92,7 +92,7 @@ const HUD = {
       const it = L.skinItem(L.cur); E.wname.textContent = w.name + (it ? ' | ' + SKINS[it.skinId].name.replace(/^.*\| /, '') : '') + (L.reloadT > 0 ? '  · reloading' : '');
       E.stattrak.textContent = it && it.st ? 'StatTrak™ ' + String(it.kills).padStart(5, '0') : '';
     }
-    E.nades.textContent = ['frag', 'flash', 'smoke'].map(n => L.nades[n] ? { frag: 'HE', flash: 'FL', smoke: 'SM' }[n] + (L.nades[n] > 1 ? '×' + L.nades[n] : '') : '').filter(Boolean).join(' ');
+    E.nades.textContent = ['frag', 'flash', 'smoke'].map(n => L.nades[n] ? { frag: 'HE', flash: 'FL', smoke: 'SM' }[n] + (L.nades[n] > 1 ? '×' + L.nades[n] : '') : '').filter(Boolean).concat(L.meds ? ['✚' + (L.meds > 1 ? '×' + L.meds : '') + ' (H)'] : []).join(' ');
     E.money.textContent = '$' + L.money;
     // top bar
     const M = Game.mode;
@@ -134,6 +134,8 @@ const HUD = {
     if (L.planting && L.planting.t != null) prog = ['Planting…', 1 - L.planting.t / Game.mode.plantTime];
     const B = Game.bomb;
     if (B.defuser === L.id) prog = ['Defusing…', 1 - B.progress / (B.progressMax || 10)];
+    if (L.healT > 0) prog = ['Healing…', 1 - L.healT / 2];
+    if (w && w.spinup && L.spin > 0 && L.spin < 1) prog = ['Spinning up', L.spin];
     if (B.localDefuse) prog = ['Defusing…', 1 - B.localDefuse.t / (L.kit ? Game.mode.kitTime : Game.mode.defuseTime)];
     E.prog.classList.toggle('hidden', !prog); if (prog) { E.progtxt.textContent = prog[0]; E.progbar.style.width = clamp(prog[1], 0, 1) * 100 + '%'; }
     // hints
@@ -224,9 +226,17 @@ const HUD = {
     if (!on) { UI.lock(); return; }
     if (document.pointerLockElement) document.exitPointerLock();
     const L = Game.local;
-    d.innerHTML = `<h2>Deploy</h2><div class="classes">${Object.entries(CLASSES).map(([k, c]) => `<div class="cls ${L.cls === k ? 'sel' : ''}" data-c="${k}"><b>${c.name}</b><small>${WEAPONS[c.primary[L.team]].name} · ${WEAPONS[c.secondary].name}</small><p>${c.desc}</p></div>`).join('')}</div>
+    L.pickW = L.pickW || null; L.pickG = L.pickG || null;
+    const wopts = c => [c.primary[L.team]].concat(c.options || []), gopts = c => c.gadgets || [];
+    d.innerHTML = `<h2>Deploy</h2><div class="classes">${Object.entries(CLASSES).map(([k, c]) => `<div class="cls ${L.cls === k ? 'sel' : ''}" data-c="${k}"><b>${c.name}</b><small>${WEAPONS[c.secondary].name}</small><p>${c.desc}</p>
+      <div class="wpick">${wopts(c).map(w => `<button class="${(L.cls === k && (L.pickW || c.primary[L.team]) === w) ? 'on' : ''}" data-w="${w}" data-c="${k}">${WEAPONS[w].name}</button>`).join('')}</div>
+      ${gopts(c).length ? `<div class="wpick">${gopts(c).map(w => `<button class="${(L.cls === k && (L.pickG || 'rpg') === w) ? 'on' : ''}" data-g="${w}" data-c="${k}">${WEAPONS[w].name}</button>`).join('')}</div>` : ''}</div>`).join('')}</div>
       <div class="spawns" id="spawnlist"></div><button id="deployBtn" class="btn big">Deploy</button><div id="deployT" class="muted"></div>`;
-    d.querySelectorAll('.cls').forEach(el => el.onclick = () => { L.cls = el.dataset.c; d.querySelectorAll('.cls').forEach(x => x.classList.toggle('sel', x === el)); Sfx.play('ui'); });
+    d.querySelectorAll('.cls').forEach(el => el.onclick = e => {
+      const c = el.dataset.c; if (L.cls !== c) { L.pickW = null; L.pickG = null; } L.cls = c;
+      const b = e.target.closest('button'); if (b && b.dataset.w) L.pickW = b.dataset.w === CLASSES[c].primary[L.team] ? null : b.dataset.w; if (b && b.dataset.g) L.pickG = b.dataset.g;
+      Sfx.play('ui'); this.showDeploy(true);
+    });
     this.deployWhere = null; this.deploySig = '';
     $('deployBtn').onclick = () => this.deploy();
     this.updateDeploy();
@@ -248,7 +258,7 @@ const HUD = {
     const L = Game.local; if (!L || L.alive || (L.respawnT || 0) > 0) return;
     const where = this.deployWhere ? this.deployWhere.where : null;
     if (Game.authority()) { Game.respawn(L, where); L.respawnT = null; this.showDeploy(false); HUD.onSpawn(); }
-    else Net.send({ t: 'deploy', where, cls: L.cls });
+    else Net.send({ t: 'deploy', where, cls: L.cls, pw: L.pickW, pg: L.pickG });
     Sfx.play('ui');
   },
 };

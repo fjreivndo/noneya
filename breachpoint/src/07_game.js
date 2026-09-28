@@ -23,7 +23,7 @@ const Game = {
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     r.setPixelRatio(Math.min(devicePixelRatio, 1.5)); r.setSize(innerWidth, innerHeight); r.outputColorSpace = THREE.SRGBColorSpace; r.autoClear = false;
     document.getElementById('view').appendChild(r.domElement);
-    this.camera = new THREE.PerspectiveCamera(Settings.fov, innerWidth / innerHeight, 0.05, 600);
+    this.camera = new THREE.PerspectiveCamera(Settings.fov, innerWidth / innerHeight, 0.05, 2000);
     addEventListener('resize', () => { r.setSize(innerWidth, innerHeight); this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); if (this.view) this.view.resize(); });
   },
 
@@ -34,10 +34,11 @@ const Game = {
     loadMap(cfg.map, this.scene);
     this.scene.background = new THREE.Color(World.skyColor);
     this.scene.fog = new THREE.Fog(World.fog[0], World.fog[1], World.fog[2]);
+    this.applyViewDist();
     this.scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x8a7a60, 1.35));
     const sun = new THREE.DirectionalLight(World.sun, 2.2); sun.position.set(40, 80, 25); this.scene.add(sun);
     FX.init(this.scene);
-    this.soldiers = []; this.map.clear(); this.nades = []; this.rockets = []; this.vehicles = []; this.shotsOut = [];
+    this.soldiers = []; this.map.clear(); this.nades = []; this.rockets = []; this.vehicles = []; this.shotsOut = []; this.pickups = [];
     this.score = { T: 0, CT: 0 }; this.lossStreak = { T: 0, CT: 0 }; this.matchOver = false; this.now = 0; this.earned = 0; this.killsThisMatch = 0;
     this.cmd = { T: new Commander('T'), CT: new Commander('CT') };
     if (!cfg.roster) this.prepareRoster(cfg);
@@ -79,6 +80,11 @@ const Game = {
     const names = shuffle(BOT_NAMES.slice()); let ni = 0;
     for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
     return cfg.roster = roster;
+  },
+  /* the View distance setting stretches the map's fog */
+  applyViewDist() {
+    if (!this.scene || !this.scene.fog || !World.fog) return;
+    const k = Settings.viewDist || 1; this.scene.fog.near = World.fog[1] * k; this.scene.fog.far = World.fog[2] * k;
   },
   addSoldier(p) {
     const s = new Soldier(p); s.isBot = !!p.isBot || p.ctrl === 'bot';
@@ -131,9 +137,13 @@ const Game = {
   giveClass(s) {
     const c = CLASSES[s.cls] || CLASSES.assault;
     s.weapons = { 1: null, 2: null, 3: 'knife', 4: null }; s.ammo = {}; s.nades = { frag: 0, flash: 0, smoke: 0 };
-    s.weapons[1] = c.primary[s.team]; s.fillAmmo(s.weapons[1]); s.weapons[2] = c.secondary; s.fillAmmo(c.secondary);
+    // class weapon choice: the default, or one of the class's alternatives (bots pick at random)
+    if (s.isBot && s.pickW === undefined) { s.pickW = chance(0.45) && c.options ? pick(c.options) : null; s.pickG = c.gadgets ? pick(c.gadgets) : null; }
+    const pw = s.pickW && c.options && c.options.includes(s.pickW) ? s.pickW : c.primary[s.team];
+    s.weapons[1] = pw; s.fillAmmo(pw); s.weapons[2] = c.secondary; s.fillAmmo(c.secondary);
     for (const n in c.nades) s.nades[n] = c.nades[n];
-    if (c.gadget === 'rpg' && this.mode.vehicles) { s.weapons[4] = 'rpg'; s.fillAmmo('rpg'); }
+    if (c.gadget === 'rpg') { const g = s.pickG && c.gadgets.includes(s.pickG) ? s.pickG : this.mode.vehicles ? 'rpg' : 'm79'; s.weapons[4] = g; s.fillAmmo(g); }
+    s.meds = c.gadget === 'medkit' ? 2 : 1;
     s.medkits = c.gadget === 'medkit' ? 2 : 0; s.ammoBoxes = c.gadget === 'ammo' ? 2 : 0;
     s.cur = s.weapons[1]; s.drawT = 0.5; s.armor = 0; s.helmet = false;
   },
@@ -381,6 +391,7 @@ const Game = {
     for (const id in v.dmgBy) { const a = this.byId(id); if (a && a !== att && a.team !== v.team && v.dmgBy[id] >= 40) { a.assists++; a.score += 1; } }
     if (this.mode.id === 'conquest') this.tickets[v.team] = Math.max(0, this.tickets[v.team] - 1);
     if (this.mode.respawn) v.respawnT = this.mode.respawnTime;
+    if ((this.mode.id === 'conquest' || this.mode.id === 'tdm') && !v.npc && chance(0.55)) this.addPickup(chance(0.7) ? 'hp' : 'ammo', v.pos);
     const ev = { t: 'kill', v: v.id, a: att ? att.id : null, w: weapon, hs: !!hs };
     this.onKillEvent(ev);
     Net.event(ev);
@@ -440,7 +451,40 @@ const Game = {
       if (s.team && s.isBot) this.radio(s.team, s.name, { frag: 'Frag out!', flash: 'Flashing!', smoke: 'Smoke out.' }[type]);
     }
   },
-  spawnRocket(s, pos, dir, local) { const r = new Rocket(s, pos, dir); this.rockets.push(r); if (local) Net.rocket(s, pos, dir); },
+  spawnRocket(s, pos, dir, local, wid) { const r = new Rocket(s, pos, dir, wid); this.rockets.push(r); if (local) Net.rocket(s, pos, dir, r.wid); },
+  /* health packs and ammo dropped by the dead (Conquest / TDM) */
+  pickups: [],
+  addPickup(kind, pos, id) {
+    if (!id) { if (!this.authority()) return; id = 'k' + uid(5); }
+    const g = new THREE.Group(), hp = kind === 'hp';
+    g.add(bx(0.32, 0.16, 0.24, lam(hp ? '#f0f0f0' : '#4a5a2a'))); if (hp) { g.add(bx(0.2, 0.01, 0.06, lam('#d01818'), 0, 0.085, 0)); g.add(bx(0.06, 0.01, 0.2, lam('#d01818'), 0, 0.085, 0)); } else g.add(bx(0.1, 0.02, 0.18, lam('#c8a040'), 0, 0.09, 0));
+    const i = World.nav.nearest(pos.x, pos.z), p = i >= 0 ? new V3(World.nav.cx(i), 0.1, World.nav.cz(i)) : new V3(pos.x, 0.1, pos.z);
+    g.position.copy(p); this.scene.add(g);
+    this.pickups.push({ id, kind, pos: p, mesh: g, t: 0 });
+    if (this.authority()) Net.event({ t: 'pk', op: 'add', id, kind, p: [p.x, p.y, p.z] });
+  },
+  removePickup(id) { const k = this.pickups.find(x => x.id === id); if (!k) return; this.scene.remove(k.mesh); this.pickups = this.pickups.filter(x => x !== k); if (this.authority()) Net.event({ t: 'pk', op: 'del', id }); },
+  updatePickups(dt) {
+    for (const k of this.pickups.slice()) {
+      k.t += dt; k.mesh.rotation.y += dt * 1.5; k.mesh.position.y = 0.15 + Math.sin(k.t * 3) * 0.05;
+      if (!this.authority()) continue;
+      if (k.t > 45) { this.removePickup(k.id); continue; }
+      for (const s of this.soldiers) {
+        if (!s.alive || dist2(s.pos.x, s.pos.z, k.pos.x, k.pos.z) > 1.1) continue;
+        if (k.kind === 'hp') { if (s.hp >= 100) continue; s.hp = Math.min(100, s.hp + 35); }
+        else { if (s.ctrl === 'local' || s.ctrl === 'bot') { for (const id in s.ammo) { const w = s.stat(id); s.ammo[id].res = Math.min(w.reserve * 1.5, s.ammo[id].res + w.mag); } if (s.ctrl === 'local') HUD.center('Ammo +', 0.8); } else { const pr = Net.peerOf(s.id); if (pr) Net.to(pr.id, { t: 'ev', e: { t: 'ammo', s: s.id } }); } }
+        if (s.ctrl === 'local') Sfx.play('ui');
+        this.removePickup(k.id); break;
+      }
+    }
+  },
+  /* medkit: two seconds of healing, one kit */
+  useMed(s) {
+    if (!s.alive || s.meds <= 0 || s.healT > 0 || s.hp >= 100) return false;
+    s.meds--; s.healT = 2; Sfx.play('reload', s.pos);
+    if (!this.authority() && s.ctrl === 'local') Net.send({ t: 'med' });
+    return true;
+  },
   rayVehicles(o, d, maxT) { let best = maxT, hit = null; for (const v of this.vehicles) { if (!v.alive) continue; const t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, v.box()); if (t >= 0 && t < best) { best = t; hit = v; } } return hit ? { v: hit, t: best } : null; },
   onShot(s, end, eye) { Net.shot(s, end); },
   /* a bullet hit a sandbox prop: push it, maybe set it off */
@@ -495,6 +539,7 @@ const Game = {
     const viewer = this.local && this.local.alive ? this.local : null;
     for (const s of this.soldiers) s.syncModel(dt, this.local ? this.local.team : null, viewer && !this.view.third ? viewer : null);
     if (Sandbox.on) { Phys.step(dt); Sandbox.update(dt); }
+    if (this.pickups.length) this.updatePickups(dt);
     FX.update(dt);
     if (World.flags.length) updateFlagModels();
     Net.update(dt);

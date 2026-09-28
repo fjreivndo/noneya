@@ -42,7 +42,7 @@ const Settings = Object.assign({
   name: 'Player' + randi(100, 999),
   sens: 1.0, fov: 85, vol: 0.55, diff: 'normal',
   xhColor: '#4dff88', xhSize: 6, xhGap: 4, xhDot: false,
-  showFps: false,
+  showFps: false, viewDist: 1, botSight: 1,
 }, Store.get('settings', {}));
 function saveSettings() { Store.set('settings', Settings); if (Sfx.master) Sfx.master.gain.value = Settings.vol; }
 

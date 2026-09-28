@@ -138,7 +138,8 @@ const Net = {
       case 'vhit': { const v = Game.vehicles.find(x => x.id === m.v); if (v) v.damage(Math.min(+m.d || 0, 60), s); break; }
       case 'fire': if (s) { const e = new V3(m.e[0], m.e[1], m.e[2]); this.showShot(s, e, m.w); this.shotsOut.push([s.id, +m.e[0].toFixed(2), +m.e[1].toFixed(2), +m.e[2].toFixed(2)]); Game.noise(s, 60); } break;
       case 'nade': if (s) { Game.throwNade(s, m.ty, true, { pos: new V3(...m.p), vel: new V3(...m.v), id: m.id }); this.toAll({ t: 'nade', ty: m.ty, p: m.p, v: m.v, o: s.id, id: m.id }, id); } break;
-      case 'rkt': if (s) { Game.spawnRocket(s, new V3(...m.p), new V3(...m.d), false); this.toAll({ t: 'rkt', p: m.p, d: m.d, o: s.id }, id); } break;
+      case 'rkt': if (s) { Game.spawnRocket(s, new V3(...m.p), new V3(...m.d), false, m.w); this.toAll({ t: 'rkt', p: m.p, d: m.d, o: s.id, w: m.w }, id); } break;
+      case 'med': if (s) { s.meds = Math.max(s.meds, 1); Game.useMed(s); } break;
       case 'buy': if (s) { const r = UI.applyBuy(s, m.item); if (r) this.to(id, { t: 'give', item: m.item, m: s.money, ar: s.armor, hm: s.helmet, kit: s.kit }); } break;
       case 'act': if (s) {
         if (m.k === 'plant') Game.startPlant(s);
@@ -146,7 +147,7 @@ const Net = {
         else if (m.k === 'cancel') { s.planting = null; if (Game.bomb.defuser === s.id) Game.bomb.defuser = null; }
         break;
       }
-      case 'deploy': if (s && !s.alive && (s.respawnT == null || s.respawnT <= 0.6) && !Game.matchOver) { if (CLASSES[m.cls]) s.cls = m.cls; Game.respawn(s, m.where); } break;
+      case 'deploy': if (s && !s.alive && (s.respawnT == null || s.respawnT <= 0.6) && !Game.matchOver) { if (CLASSES[m.cls]) s.cls = m.cls; s.pickW = m.pw || null; s.pickG = m.pg || null; Game.respawn(s, m.where); } break;
       case 'spot': { const e = Game.byId(m.e); if (e && s) Game.markSpotted(e, s.team, Math.min(10, +m.d || 6)); break; }
       case 'gadget': if (s) { if (m.k === 'heal') Game.requestHeal(s); else Game.requestAmmo(s); } break;
       case 'seat': { const v = Game.vehicles.find(x => x.id === m.id); if (v && s) { this.applySeat(v, m); this.toAll({ t: 'seat', id: v.id, d: m.d, p: m.p }, id); } break; }
@@ -211,9 +212,9 @@ const Net = {
       case 'radio': HUD.radio(m.f, m.x); break;
       case 'chat': HUD.chat(m.n, m.x, m.team); break;
       case 'dmg': { const L = Game.local; if (!L) break; L.hp = m.hp; L.armor = m.ar; L.lastDamage = Game.now; HUD.hurt(m.a ? { x: m.a[0], z: m.a[1] } : null, m.d); break; }
-      case 'give': { const L = Game.local; if (!L) break; if (WEAPONS[m.item] || isNade(m.item)) L.give(m.item); L.money = m.m; L.armor = m.ar; L.helmet = m.hm; L.kit = m.kit; Sfx.play('buy'); UI.refreshBuy(); break; }
+      case 'give': { const L = Game.local; if (!L) break; if (WEAPONS[m.item] || isNade(m.item)) L.give(m.item); if (m.item === 'medkit') L.meds++; L.money = m.m; L.armor = m.ar; L.helmet = m.hm; L.kit = m.kit; Sfx.play('buy'); UI.refreshBuy(); break; }
       case 'nade': { const o = Game.byId(m.o); if (o) Game.throwNade(o, m.ty, true, { pos: new V3(...m.p), vel: new V3(...m.v), id: m.id }); break; }
-      case 'rkt': { const o = Game.byId(m.o); if (o) Game.spawnRocket(o, new V3(...m.p), new V3(...m.d), false); break; }
+      case 'rkt': { const o = Game.byId(m.o); if (o) Game.spawnRocket(o, new V3(...m.p), new V3(...m.d), false, m.w); break; }
       case 'seat': { const v = Game.vehicles.find(x => x.id === m.id); if (v) this.applySeat(v, m); break; }
       case 'ctrl': { const s = Game.byId(m.id); if (s) { s.name = m.name; s.isBot = true; } break; }
       case 'rosterDel': {
@@ -279,6 +280,7 @@ const Net = {
       }
       case 'flag': if (Game.local) { const f = World.flags.find(x => x.name === e.f); if (f) f.owner = e.o; if (e.o === Game.local.team) Sfx.play('capture'); } break;
       case 'veh': { const v = Game.vehicles.find(x => x.id === e.id); if (v) { if (!e.alive && v.alive) { v.alive = false; FX.explosion(v.pos.clone().setY(1)); Sfx.play('explode', v.pos); v.model.visible = false; for (const s of [v.driver, v.passenger]) if (s) Game.exitVehicle(s, true); } else if (e.alive && !v.alive) v.reset(); v.hp = e.hp; } break; }
+      case 'pk': if (e.op === 'add') Game.addPickup(e.kind, new V3(...e.p), e.id); else Game.removePickup(e.id); break;
       case 'ammo': { const s = Game.byId(e.s), L = Game.local; if (s && L && L.alive && L.team === s.team && dist2(L.pos.x, L.pos.z, s.pos.x, s.pos.z) < 6) { for (const id in L.ammo) { const w = WEAPONS[id]; L.ammo[id].res = Math.min(w.reserve * 1.5, L.ammo[id].res + w.mag * 2); } HUD.center('Ammo resupplied', 1); } break; }
     }
   },
@@ -288,7 +290,7 @@ const Net = {
     s.pos.set(m.p[0], m.p[1], m.p[2]); s.net.tx = m.p[0]; s.net.ty = m.p[1]; s.net.tz = m.p[2]; s.yaw = s.net.tyaw = m.yaw; s.pitch = 0;
     if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; }
     if (s === Game.local) {
-      const L = m.lo; s.weapons = L.w; s.ammo = {}; for (const k in L.w) if (L.w[k]) s.fillAmmo(L.w[k]); s.nades = L.n; s.armor = L.ar; s.helmet = L.hm; s.kit = L.kit; s.cls = L.cls; s.medkits = L.mk || 0; s.ammoBoxes = L.ab || 0;
+      const L = m.lo; s.weapons = L.w; s.ammo = {}; for (const k in L.w) if (L.w[k]) s.fillAmmo(L.w[k]); s.nades = L.n; s.meds = L.md || 0; s.armor = L.ar; s.helmet = L.hm; s.kit = L.kit; s.cls = L.cls; s.medkits = L.mk || 0; s.ammoBoxes = L.ab || 0;
       s.cur = Sandbox.on ? 'physgun' : s.bestWeapon(); s.drawT = 0.4; s.vel.set(0, 0, 0); s.respawnT = null; s.planting = null;
       HUD.showDeploy(false); HUD.onSpawn();
     }
@@ -331,13 +333,13 @@ const Net = {
     const msg = { t: 'nade', ty: n.type, p: [n.pos.x, n.pos.y, n.pos.z], v: [n.vel.x, n.vel.y, n.vel.z], o: n.owner.id, id: n.id };
     if (this.role === 'host') this.toAll(msg); else if (this.role === 'client') this.send(msg);
   },
-  rocket(s, p, d) { const msg = { t: 'rkt', p: [p.x, p.y, p.z], d: [d.x, d.y, d.z], o: s.id }; if (this.role === 'host') this.toAll(msg); else if (this.role === 'client') this.send(msg); },
+  rocket(s, p, d, w) { const msg = { t: 'rkt', p: [p.x, p.y, p.z], d: [d.x, d.y, d.z], o: s.id, w }; if (this.role === 'host') this.toAll(msg); else if (this.role === 'client') this.send(msg); },
   event(e) { if (this.role === 'host') this.toAll({ t: 'ev', e }); },
   radio(team, from, text) { if (this.role !== 'host') return; for (const p of this.peers.values()) { const s = Game.byId(p.sid); if (s && s.team === team) this.to(p.id, { t: 'radio', f: from, x: text }); } },
   onDamage(v, hp, att, zone) { if (this.role !== 'host' || v.ctrl !== 'remote') return; const p = this.peerOf(v.id); if (p) this.to(p.id, { t: 'dmg', hp: v.hp, ar: v.armor, d: hp, a: att ? [att.pos.x, att.pos.z] : null }); },
   onSpawn(s) {
     if (this.role !== 'host') return;
-    const lo = { w: s.weapons, n: s.nades, ar: s.armor, hm: s.helmet, kit: s.kit, cls: s.cls, mk: s.medkits, ab: s.ammoBoxes };
+    const lo = { w: s.weapons, n: s.nades, md: s.meds, ar: s.armor, hm: s.helmet, kit: s.kit, cls: s.cls, mk: s.medkits, ab: s.ammoBoxes };
     this.toAll({ t: 'spawn', id: s.id, p: [+s.pos.x.toFixed(2), +s.pos.y.toFixed(2), +s.pos.z.toFixed(2)], yaw: s.yaw, lo });
   },
   broadcastRound(k, data = {}) {

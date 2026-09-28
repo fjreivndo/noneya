@@ -272,14 +272,14 @@ const UI = {
     const S = Settings;
     const rng = (k, label, min, max, step) => `<label>${label} <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}</output></label>`;
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
-      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}
+      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
       <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>`;
     $('setForm').querySelectorAll('[data-k]').forEach(el => el.oninput = () => {
       const k = el.dataset.k; S[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
       if (el.nextElementSibling && el.nextElementSibling.tagName === 'OUTPUT') el.nextElementSibling.textContent = el.value;
-      saveSettings(); HUD.applyCrosshair(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
+      saveSettings(); HUD.applyCrosshair(); Game.applyViewDist(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
     });
   },
 
@@ -303,16 +303,16 @@ const UI = {
   buyItems(team) {
     const w = id => ({ id, name: WEAPONS[id].name, price: WEAPONS[id].price });
     return [
-      ['Pistols', [w(team === 'T' ? 'glock' : 'p2000'), w('deagle')]],
-      ['SMGs', [w('mp9'), w('p90')]],
-      ['Heavy', [w('nova'), w('m249')]],
-      ['Rifles', [w(team === 'T' ? 'ak47' : 'm4a4'), w('scar')]],
-      ['Snipers', [w('ssg'), w('awp')]],
-      ['Gear', [{ id: 'kevlar', name: 'Kevlar', price: 650 }, { id: 'helmet', name: 'Kevlar + Helmet', price: 1000 }].concat(team === 'CT' ? [{ id: 'kit', name: 'Defuse Kit', price: 400 }] : [])],
+      ['Pistols', [w(team === 'T' ? 'glock' : 'p2000'), w(team === 'T' ? 'tec9' : 'fiveseven'), w('deagle'), w('magnum')]],
+      ['SMGs', [w(team === 'T' ? 'mac10' : 'mp9'), w('ump45'), w('p90')]],
+      ['Heavy', [w('nova'), w('xm1014'), w('m249')]],
+      ['Rifles', [w(team === 'T' ? 'galil' : 'famas'), w(team === 'T' ? 'ak47' : 'm4a4'), w(team === 'T' ? 'scar' : 'aug')]],
+      ['Snipers', [w('ssg'), w('awp'), w('autosniper')]],
+      ['Gear', [{ id: 'kevlar', name: 'Kevlar', price: 650 }, { id: 'helmet', name: 'Kevlar + Helmet', price: 1000 }, { id: 'medkit', name: 'Medkit (H)', price: 400 }].concat(team === 'CT' ? [{ id: 'kit', name: 'Defuse Kit', price: 400 }] : [])],
       ['Grenades', [{ id: 'frag', name: 'HE Grenade', price: 300 }, { id: 'flash', name: 'Flashbang', price: 200 }, { id: 'smoke', name: 'Smoke', price: 300 }]],
     ];
   },
-  priceOf(id) { return WEAPONS[id] ? WEAPONS[id].price : GRENADES[id] ? GRENADES[id].price : EQUIP[id] ? (id === 'helmet' ? 1000 : EQUIP[id].price) : 0; },
+  priceOf(id) { return id === 'medkit' ? 400 : WEAPONS[id] ? WEAPONS[id].price : GRENADES[id] ? GRENADES[id].price : EQUIP[id] ? (id === 'helmet' ? 1000 : EQUIP[id].price) : 0; },
   applyBuy(s, id) {
     if (!this.canBuy(s)) return false;
     let price = this.priceOf(id); if (id === 'helmet' && s.armor >= 100) price = 350;
@@ -322,9 +322,10 @@ const UI = {
     else if (id === 'kevlar') { if (s.armor >= 100) return false; }
     else if (id === 'helmet') { if (s.helmet && s.armor >= 100) return false; }
     else if (id === 'kit') { if (s.kit || s.team !== 'CT') return false; }
+    else if (id === 'medkit') { if (s.meds >= 2) return false; }
     s.money -= price;
     if (WEAPONS[id] || GRENADES[id]) s.give(id);
-    else if (id === 'kevlar') s.armor = 100; else if (id === 'helmet') { s.armor = 100; s.helmet = true; } else if (id === 'kit') s.kit = true;
+    else if (id === 'kevlar') s.armor = 100; else if (id === 'helmet') { s.armor = 100; s.helmet = true; } else if (id === 'kit') s.kit = true; else if (id === 'medkit') s.meds++;
     return true;
   },
   toggleBuy(on) {
@@ -420,6 +421,11 @@ UI.renderSpawnMenu = function () {
       ${opt.includes('lift') ? `<label>Balloon lift (kg it can carry) <input type="range" id="optLift" min="2" max="150" step="1" value="${O.lift}"></label>` : ''}
       ${opt.includes('force') ? `<label>Thruster force <input type="range" id="optForce" min="200" max="6000" step="100" value="${O.force}"></label><p class="muted">Hold T to fire every thruster you placed.</p>` : ''}
       ${O.tool === 'dynamite' ? '<p class="muted">Press K to set off every charge you placed.</p>' : ''}
+      ${opt.includes('wspeed') ? `<label>Wheel speed <input type="range" id="optWspeed" min="2" max="40" step="1" value="${O.wspeed}"></label><p class="muted">Hold U to drive every wheel you placed, J to reverse. Put wheels on a welded frame to build a car.</p>` : ''}
+      ${opt.includes('effect') ? `<label>Effect</label><div class="mats">${Object.entries(EFFECTS).map(([k, n]) => `<button data-fx="${k}" class="${O.effect === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
+      ${opt.includes('physprop') ? `<label>Physics</label><div class="mats">${Object.entries(PHYSPROPS).filter(([k]) => k !== 'normal').map(([k, n]) => `<button data-pp="${k}" class="${O.physprop === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
+      ${O.tool === 'duplicator' ? `<p class="muted">${Sandbox.clip ? 'Clipboard: ' + Sandbox.clip.items.length + ' prop(s)' : 'Clipboard empty'}</p>` : ''}
+      ${O.tool === 'lamp' ? '<p class="muted">Press L to switch all your lamps on or off.</p>' : ''}${O.tool === 'emitter' ? '<p class="muted">Press O to switch your emitters on or off.</p>' : ''}
       <button class="btn" id="useTool">Use tool gun</button></div></div>`;
   } else html = `<div class="sp-opts"><label>Faction <select id="optFac"><option value="CT" ${O.faction === 'CT' ? 'selected' : ''}>Aegis</option><option value="T" ${O.faction === 'T' ? 'selected' : ''}>Vanta</option></select> <small class="muted">takes effect when you respawn</small></label>
     <label><input type="checkbox" id="optIgnore" ${O.ignorePlayers ? 'checked' : ''}> NPCs ignore players</label>
@@ -433,7 +439,9 @@ UI.renderSpawnMenu = function () {
   M.querySelectorAll('.swatches i').forEach(b => b.onclick = () => { O.color = b.dataset.c; Sandbox.saveOpts(); this.renderSpawnMenu(); });
   M.querySelectorAll('.mats button').forEach(b => b.onclick = () => { O.material = b.dataset.m; Sandbox.saveOpts(); this.renderSpawnMenu(); });
   const bind = (id, k, num) => { const e = $(id); if (e) e.oninput = () => { O[k] = num ? +e.value : e.value; Sandbox.saveOpts(); }; };
-  bind('toolColor', 'color'); bind('optSlack', 'slack', 1); bind('optLift', 'lift', 1); bind('optForce', 'force', 1); bind('npcW', 'npcWeapon'); bind('npcS', 'npcSkill');
+  bind('toolColor', 'color'); bind('optSlack', 'slack', 1); bind('optLift', 'lift', 1); bind('optForce', 'force', 1); bind('optWspeed', 'wspeed', 1); bind('npcW', 'npcWeapon');
+  M.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { O.effect = b.dataset.fx; Sandbox.saveOpts(); this.renderSpawnMenu(); });
+  M.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { O.physprop = b.dataset.pp; Sandbox.saveOpts(); this.renderSpawnMenu(); }); bind('npcS', 'npcSkill');
   if ($('npcW')) $('npcW').onchange = $('npcW').oninput; if ($('npcS')) $('npcS').onchange = $('npcS').oninput;
   if ($('useTool')) $('useTool').onclick = () => { if (L) L.switchTo('toolgun'); this.toggleSpawnMenu(false); };
   if ($('optFac')) $('optFac').onchange = e => { O.faction = e.target.value; Sandbox.saveOpts(); if (L && Net.role === 'off') { L.team = O.faction; L.buildModel(Game.scene); Game.view && (Game.view.key = null); } };

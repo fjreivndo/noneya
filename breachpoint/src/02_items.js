@@ -25,7 +25,35 @@ const WEAPONS = {
   m249:   { name: 'M249', slot: 1, type: 'lmg', dmg: 32, rpm: 750, mag: 100, reserve: 200, reload: 5.7, spread: 0.010, moveSpread: 0.11, recoil: 0.9, falloff: 0.97, pen: 0.8, price: 5200, kill: 300, speed: 0.8, sound: 1.1, zoom: 55, auto: true },
   rpg:    { name: 'RPG-7', slot: 4, type: 'launcher', dmg: 170, radius: 5.5, rpm: 30, mag: 1, reserve: 3, reload: 3.2, spread: 0.004, moveSpread: 0.04, recoil: 6, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.85, sound: 1.5, zoom: 50, projectile: 55 },
 };
+Object.assign(WEAPONS, {
+  // pistols
+  fiveseven:  { name: 'Five-SeveN', slot: 2, type: 'pistol', dmg: 32, rpm: 400, mag: 20, reserve: 100, reload: 2.2, spread: 0.009, moveSpread: 0.03, recoil: 0.9, falloff: 0.9, pen: 0.91, price: 500, kill: 300, speed: 1.0, sound: 0.6, zoom: 70, side: 'CT' },
+  tec9:       { name: 'Tec-9', slot: 2, type: 'pistol', dmg: 33, rpm: 500, mag: 18, reserve: 90, reload: 2.5, spread: 0.014, moveSpread: 0.025, recoil: 1.1, falloff: 0.85, pen: 0.9, price: 500, kill: 300, speed: 1.0, sound: 0.6, zoom: 70, side: 'T' },
+  magnum:     { name: '.357 Magnum', slot: 2, type: 'pistol', dmg: 86, rpm: 110, mag: 6, reserve: 24, reload: 2.8, spread: 0.004, moveSpread: 0.08, recoil: 3.8, falloff: 0.9, pen: 0.93, price: 850, kill: 300, speed: 0.96, sound: 1.5, zoom: 64, heavyPistol: true, revolver: true },
+  // SMGs
+  mac10:      { name: 'MAC-10', slot: 1, type: 'smg', dmg: 29, rpm: 800, mag: 30, reserve: 100, reload: 2.6, spread: 0.02, moveSpread: 0.02, recoil: 0.6, falloff: 0.8, pen: 0.575, price: 1050, kill: 600, speed: 0.97, sound: 0.6, zoom: 66, auto: true, side: 'T', L: 0.6 },
+  ump45:      { name: 'UMP-45', slot: 1, type: 'smg', dmg: 35, rpm: 666, mag: 25, reserve: 100, reload: 3.5, spread: 0.016, moveSpread: 0.024, recoil: 0.7, falloff: 0.85, pen: 0.65, price: 1200, kill: 600, speed: 0.95, sound: 0.7, zoom: 64, auto: true, L: 0.8 },
+  // shotgun
+  xm1014:     { name: 'XM1014', slot: 1, type: 'shotgun', dmg: 20, pellets: 6, rpm: 240, mag: 7, reserve: 32, reload: 3.5, spread: 0.045, moveSpread: 0.02, recoil: 2.4, falloff: 0.6, pen: 0.8, price: 2000, kill: 900, speed: 0.92, sound: 1.2, zoom: 68, auto: true },
+  // rifles
+  galil:      { name: 'Galil AR', slot: 1, type: 'rifle', dmg: 30, rpm: 666, mag: 35, reserve: 90, reload: 3.0, spread: 0.005, moveSpread: 0.1, recoil: 0.9, falloff: 0.98, pen: 0.775, price: 1800, kill: 300, speed: 0.89, sound: 0.95, zoom: 56, auto: true, side: 'T' },
+  famas:      { name: 'FAMAS', slot: 1, type: 'rifle', dmg: 30, rpm: 666, burst: 3, burstRpm: 1100, mag: 25, reserve: 90, reload: 3.3, spread: 0.004, moveSpread: 0.09, recoil: 0.8, falloff: 0.97, pen: 0.7, price: 2050, kill: 300, speed: 0.9, sound: 0.9, zoom: 56, side: 'CT' },
+  aug:        { name: 'AUG', slot: 1, type: 'rifle', dmg: 28, rpm: 600, mag: 30, reserve: 90, reload: 3.8, spread: 0.003, moveSpread: 0.085, recoil: 0.75, falloff: 0.98, pen: 0.9, price: 3300, kill: 300, speed: 0.88, sound: 0.9, zoom: 40, auto: true, side: 'CT', builtinScope: true },
+  // heavy
+  minigun:    { name: 'Minigun', slot: 1, type: 'lmg', dmg: 22, rpm: 1400, mag: 200, reserve: 400, reload: 7, spread: 0.018, moveSpread: 0.08, recoil: 0.35, falloff: 0.95, pen: 0.7, price: 0, kill: 300, speed: 0.72, sound: 0.9, zoom: 62, auto: true, spinup: 0.7, special: true },
+  autosniper: { name: 'Auto-Sniper', slot: 1, type: 'sniper', dmg: 80, rpm: 240, mag: 20, reserve: 90, reload: 3.1, spread: 0.002, hipSpread: 0.07, moveSpread: 0.12, recoil: 1.8, falloff: 0.99, pen: 0.82, price: 5000, kill: 300, speed: 0.78, sound: 1.3, zoom: 28, scope: true },
+  crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true },
+  m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 8, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
+});
+WEAPONS.rpg.gravity = 0.7; WEAPONS.rpg.explosive = true;
 for (const id in WEAPONS) WEAPONS[id].id = id;
+
+/* Effective range by weapon type: full damage up to r0 metres, tapering
+   to a floor at r1. Pistols and SMGs stop being lethal at a distance;
+   rifles hold up; snipers don't fall off. */
+const RANGE = { pistol: [15, 45, 0.45], smg: [18, 55, 0.4], shotgun: [6, 24, 0.08], rifle: [40, 130, 0.62], lmg: [35, 120, 0.6], sniper: [600, 700, 1], bow: [120, 250, 0.8], knife: [3, 3, 1], launcher: [999, 999, 1] };
+function weaponRange(w) { return w.range || RANGE[w.type] || [40, 120, 0.5]; }
+function rangeMult(w, d) { const r = weaponRange(w); if (d <= r[0]) return 1; if (d >= r[1]) return r[2]; return 1 - (d - r[0]) / (r[1] - r[0]) * (1 - r[2]); }
 const GRENADES = {
   frag:  { name: 'HE Grenade', price: 300, fuse: 1.6, max: 1 },
   flash: { name: 'Flashbang', price: 200, fuse: 1.5, max: 2 },
@@ -44,10 +72,10 @@ function recoilPattern(w, i) {
 
 /* ── classes (conquest) ────────────────────────────────────────────────── */
 const CLASSES = {
-  assault:  { name: 'Assault',  primary: { T: 'ak47', CT: 'm4a4' }, secondary: 'glock', nades: { frag: 1, flash: 1 }, gadget: 'medkit', desc: 'Rifle, medkit (G heals you and squadmates nearby).' },
-  engineer: { name: 'Engineer', primary: { T: 'p90', CT: 'mp9' }, secondary: 'p2000', nades: { frag: 1 }, gadget: 'rpg', desc: 'SMG and an RPG (slot 4) for vehicles and groups.' },
-  support:  { name: 'Support',  primary: { T: 'm249', CT: 'm249' }, secondary: 'p2000', nades: { smoke: 2, frag: 1 }, gadget: 'ammo', desc: 'LMG, smokes, ammo box (G refills everyone nearby).' },
-  recon:    { name: 'Recon',    primary: { T: 'ssg', CT: 'awp' }, secondary: 'deagle', nades: { flash: 1 }, gadget: 'spot', desc: 'Sniper. Spotting (Q) marks enemies for your whole team longer.' },
+  assault:  { name: 'Assault',  primary: { T: 'ak47', CT: 'm4a4' }, options: ['galil', 'famas', 'aug', 'scar'], secondary: 'glock', nades: { frag: 1, flash: 1 }, gadget: 'medkit', desc: 'Rifle, medic bag (G heals you and squadmates nearby).' },
+  engineer: { name: 'Engineer', primary: { T: 'p90', CT: 'mp9' }, options: ['ump45', 'mac10', 'xm1014'], secondary: 'p2000', nades: { frag: 1 }, gadget: 'rpg', gadgets: ['rpg', 'm79'], desc: 'SMG or shotgun, and an RPG or M79 (slot 5).' },
+  support:  { name: 'Support',  primary: { T: 'm249', CT: 'm249' }, options: ['minigun', 'nova'], secondary: 'p2000', nades: { smoke: 2, frag: 1 }, gadget: 'ammo', desc: 'LMG or minigun, smokes, ammo box (G refills everyone nearby).' },
+  recon:    { name: 'Recon',    primary: { T: 'ssg', CT: 'awp' }, options: ['autosniper', 'crossbow'], secondary: 'deagle', nades: { flash: 1 }, gadget: 'spot', desc: 'Sniper or crossbow. Spotting (Q) marks enemies for your whole team longer.' },
 };
 
 /* ── rarity, wear ──────────────────────────────────────────────────────── */
@@ -161,6 +189,25 @@ function defKnife(caseId, kt, name, pattern, pal, extra = {}) { return defSkin(c
   defKnife(N, 'spike', 'Neon Doppler', 'doppler', ['#ff3df0', '#1a003d', '#3df0ff', '#0a0020']);
   defKnife(N, 'flipwing', 'Prism Fade', 'fade', ['#3df0ff', '#ff3df0', '#ffd23d']);
   defKnife(N, 'talon', 'Sakura', 'web', ['#ffb8d8', '#8a1f4a']);
+
+  CASES.push({ id: 'arsenal', name: 'Arsenal Case', color: '#7dff4a', price: 150, desc: 'Finishes for the new guns: miniguns, crossbows and more.' });
+  const A = 'arsenal';
+  defSkin(A, 1, 'tec9', 'Hazard Stripe', 'stripes', ['#1a1a1a', '#ffd23d']);
+  defSkin(A, 1, 'fiveseven', 'Coolant', 'fade', ['#7dffd8', '#1a8aff']);
+  defSkin(A, 1, 'mac10', 'Toxic Mesh', 'mesh', ['#1a2a0a', '#7dff4a']);
+  defSkin(A, 1, 'ump45', 'Gunmetal Hex', 'hex', ['#3a3f44', '#8a9098']);
+  defSkin(A, 2, 'galil', 'Rust Belt', 'rust', ['#5a2a10', '#c86a2a', '#2a1508']);
+  defSkin(A, 2, 'xm1014', 'Bone Yard', 'marble', ['#e8e0d0', '#3a3025', '#b8a890']);
+  defSkin(A, 2, 'famas', 'Signal Flare', 'lines', ['#1a0a0a', '#ff4a2a']);
+  defSkin(A, 2, 'magnum', 'Snakeskin', 'scales', ['#2a3a1a', '#8ab04a', '#d8e08a']);
+  defSkin(A, 3, 'aug', 'Chameleon', 'aurora', ['#0a1a0a', '#4aff8a', '#2ad8ff', '#d8ff4a']);
+  defSkin(A, 3, 'crossbow', 'Hunter', 'camo', ['#4a3a20', '#2a2010', '#7a6a3a', '#1a1408']);
+  defSkin(A, 3, 'm79', 'Bubblegum', 'fade', ['#ff8ad8', '#8ad8ff']);
+  defSkin(A, 4, 'minigun', 'Overheat', 'flames', ['#1a0505', '#ff3a00', '#ffb000', '#ffffff']);
+  defSkin(A, 4, 'autosniper', 'Night Circuit', 'circuit', ['#05080f', '#3a8aff', '#ff3ad8']);
+  defSkin(A, 5, 'minigun', 'Gold Rush', 'doppler', ['#ffe066', '#b8860b', '#fff4c0', '#7a5a00']);
+  defKnife(A, 'spike', 'Emerald', 'doppler', ['#0aff6a', '#003d1a', '#6affb0', '#001a0a']);
+  defKnife(A, 'flipwing', 'Hazard', 'stripes', ['#1a1a1a', '#ffd23d']);
 })();
 const SKIN_LIST = Object.values(SKINS);
 const skinsIn = (caseId, rarity) => SKIN_LIST.filter(s => s.caseId === caseId && (rarity == null || s.rarity === rarity));
@@ -277,11 +324,11 @@ const Inv = {
   load() {
     this.data = Store.get('inv', null);
     if (!this.data) {
-      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0 }, keys: 2, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
+      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0, arsenal: 1 }, keys: 2, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
       // a starter so the armory isn't empty
       const s = this.newItem('ak47_safari_mesh'); this.data.items.push(s); this.data.equipped.ak47 = s.uid;
     }
-    this.data.cases = Object.assign({ ember: 0, glacier: 0, neon: 0 }, this.data.cases);
+    this.data.cases = Object.assign({ ember: 0, glacier: 0, neon: 0, arsenal: 0 }, this.data.cases);
     this.data.stats = Object.assign({ kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, this.data.stats);
     this.data.attach = this.data.attach || {}; this.data.unlocked = this.data.unlocked || ['reddot'];
     this.save();

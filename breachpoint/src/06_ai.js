@@ -12,10 +12,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const DIFF = {
-  easy:   { react: 0.62, err: 6.5, settle: 1.4, turn: 5,  recoil: 0.3,  head: 0.12, fov: 55, range: 42, label: 'Recruit' },
-  normal: { react: 0.40, err: 3.6, settle: 0.9, turn: 8,  recoil: 0.55, head: 0.3,  fov: 62, range: 60, label: 'Regular' },
-  hard:   { react: 0.27, err: 2.3, settle: 0.6, turn: 12, recoil: 0.75, head: 0.5,  fov: 66, range: 85, label: 'Veteran' },
-  elite:  { react: 0.18, err: 1.4, settle: 0.4, turn: 17, recoil: 0.9,  head: 0.68, fov: 70, range: 110, label: 'Elite' },
+  easy:   { react: 0.62, err: 6.5, settle: 1.4, turn: 5,  recoil: 0.3,  head: 0.12, fov: 55, range: 55, label: 'Recruit' },
+  normal: { react: 0.40, err: 3.6, settle: 0.9, turn: 8,  recoil: 0.55, head: 0.3,  fov: 62, range: 80, label: 'Regular' },
+  hard:   { react: 0.27, err: 2.3, settle: 0.6, turn: 12, recoil: 0.75, head: 0.5,  fov: 66, range: 110, label: 'Veteran' },
+  elite:  { react: 0.18, err: 1.4, settle: 0.4, turn: 17, recoil: 0.9,  head: 0.68, fov: 70, range: 140, label: 'Elite' },
 };
 const BOT_NAMES = ['Viper', 'Rook', 'Ghost', 'Kestrel', 'Nomad', 'Havoc', 'Onyx', 'Blitz', 'Saber', 'Wraith', 'Tango', 'Echo', 'Jinx', 'Maverick', 'Talon', 'Reaper', 'Specter', 'Cobra', 'Drift', 'Frost', 'Hex', 'Ranger', 'Slate', 'Vector', 'Zephyr', 'Bishop', 'Crow', 'Dagger', 'Fable', 'Grim', 'Hollow', 'Ion', 'Jackal', 'Knox', 'Lynx', 'Moth'];
 
@@ -284,7 +284,7 @@ class Brain {
     this.nadeCd = rand(4, 9); this.heard = null; this.role = 'entry'; this.support = false; this.home = null; this.lookYaw = 0; this.utilDone = false;
     this.coverT = 0; this.cover = null; this.planting = false; this.fakeShots = 0; this.prefire = null; this.lastSeenAny = -9;
   }
-  get d() { const base = DIFF[(Sandbox.on ? Sandbox.opts.npcSkill : Game.botDiff) || Settings.diff] || DIFF.normal; return Game.mode.id === 'conquest' ? Object.assign({}, base, { range: base.range * 1.6 }) : base; }
+  get d() { const base = DIFF[(Sandbox.on ? Sandbox.opts.npcSkill : Game.botDiff) || Settings.diff] || DIFF.normal; const k = (Game.mode.id === 'conquest' ? 1.5 : 1) * (Settings.botSight || 1); return k === 1 ? base : Object.assign({}, base, { range: base.range * k }); }
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
   enemies() { return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e)); }
@@ -330,7 +330,8 @@ class Brain {
   }
   acquire(e, dist) {
     const d = this.d; this.target = e;
-    this.reactT = d.react * rand(0.8, 1.35) * (this.s.blind > 0 ? 2 : 1);
+    // far-away targets take longer to recognise and react to
+    this.reactT = d.react * rand(0.8, 1.35) * (this.s.blind > 0 ? 2 : 1) * (1 + dist / 70);
     const mag = d.err * DEG * (1 + dist / 35) * rand(0.6, 1.3), a = rand(0, TAU);
     this.errX = Math.cos(a) * mag; this.errY = Math.sin(a) * mag * 0.6;
     this.aimHead = chance(d.head);
@@ -349,7 +350,10 @@ class Brain {
     this.nadeCd -= dt; this.coverT -= dt;
     if (Game.round && Game.round.phase === 'freeze') { this.lookAround(dt, null); return; }
     if (this.target && this.target.alive) this.combat(dt, now);
+    else if (s.hp < 60 && this.nearPack()) { this.target = null; this.moveTo(this.pack.pos, dt, false, false, true); this.lookAround(dt, null); }
     else { this.target = null; this.peace(dt, now); }
+    // patch up: in cover, or when nobody's shooting at us
+    if (s.meds > 0 && s.hp < 55 && s.healT <= 0 && (!this.target || (this.cover && dist2(s.pos.x, s.pos.z, this.cover.x, this.cover.z) < 1.5))) Game.useMed(s);
     // utility reload when calm
     const w = s.w, a = s.ammo[s.cur];
     if (!this.target && w && a && a.mag < w.mag * 0.45 && a.res > 0 && now - this.lastSeenAny > 2) s.startReload();
@@ -404,6 +408,8 @@ class Brain {
     }
     // fire
     if (!visible || this.reactT > 0 || !w) return;
+    // out of this gun's effective range: close the distance instead of wasting ammo
+    if (w.type !== 'sniper' && w.type !== 'bow' && !w.projectile && dist > weaponRange(w)[1] * 1.1) { this.moveTo(e.pos, dt, false); return; }
     const tol = size * 1.6 + (w.type === 'shotgun' ? 0.05 : 0) + (dist < 6 ? 0.08 : 0);
     if (yawErr + pitchErr > tol) return;
     if (w.type === 'sniper' && (s.adsT < 0.8 || Math.hypot(s.vel.x, s.vel.z) > 1.5)) return;
@@ -502,6 +508,12 @@ class Brain {
     }
     if (!noLook) this.lookAround(dt, look);
   }
+  /* a dropped health pack close enough to be worth the detour */
+  nearPack() {
+    const s = this.s; this.pack = null; let bd = 14;
+    for (const k of Game.pickups) if (k.kind === 'hp') { const d = dist2(k.pos.x, k.pos.z, s.pos.x, s.pos.z); if (d < bd) { bd = d; this.pack = k; } }
+    return !!this.pack;
+  }
   lastSeenRecent(t) { return Game.now - this.lastSeenAny < t; }
   lookAround(dt, look) {
     const s = this.s;
@@ -595,6 +607,7 @@ function botBuy(s, stance, isAwper) {
     if (s.money >= 1000 && (!s.helmet || s.armor < 60)) { s.money -= 1000; s.armor = 100; s.helmet = true; }
     buy('smoke', 300); buy('flash', 200); if (chance(0.6)) buy('frag', 300);
     if (side === 'CT' && s.money >= 400 && !s.kit) { s.money -= 400; s.kit = true; }
+    if (s.money >= 900 && s.meds < 1 && chance(0.4)) { s.money -= 400; s.meds++; }
   }
   s.switchTo(s.bestWeapon());
 }

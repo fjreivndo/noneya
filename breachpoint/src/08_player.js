@@ -36,7 +36,7 @@ const Player = {
       if (I.hit('KeyQ')) { UI.toggleSpawnMenu(true); return; }
       if (I.hit('KeyZ')) Sandbox.exec({ op: 'undo' });
       if (I.hit('KeyV')) { s.noclip = !s.noclip; s.vel.set(0, 0, 0); HUD.center(s.noclip ? 'Noclip on' : 'Noclip off', 0.6); }
-      for (const k of ['KeyT', 'KeyK']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
+      for (const k of ['KeyT', 'KeyK', 'KeyU', 'KeyJ', 'KeyL', 'KeyO']) { if (I.hit(k)) Sandbox.onKey(k, true); if (I.released[k]) Sandbox.onKey(k, false); }
     }
     if (s.vehicle && s.vehicle.driver === s) { if (I.hit('KeyE')) Game.tryEnterVehicle(s); return; }
     // move
@@ -57,8 +57,16 @@ const Player = {
       if (s.drawT <= 0 && (I.mouse.leftPressed || I.mouse.rightPressed)) Game.throwNade(s, s.cur, I.mouse.leftPressed);
       s.ads = false;
     } else if (w) {
-      const want = w.auto ? I.mouse.left : I.mouse.leftPressed;
-      if (want && !(m.sprint && m.f > 0 && Game.mode.sprint)) { if (fireWeapon(s, now, 0)) this.inspectT = 0; }
+      const blockedBySprint = m.sprint && m.f > 0 && Game.mode.sprint;
+      if (w.burst) { // three-round burst per click
+        if (I.mouse.leftPressed && s.burstLeft <= 0 && s.fireCd <= 0 && !blockedBySprint) s.burstLeft = w.burst;
+        if (s.burstLeft > 0 && fireWeapon(s, now, 0)) { s.burstLeft--; s.fireCd = s.burstLeft > 0 ? 60 / w.burstRpm : 0.3; this.inspectT = 0; }
+        if (s.ammo[s.cur] && s.ammo[s.cur].mag <= 0) s.burstLeft = 0;
+      } else {
+        const want = w.auto ? I.mouse.left : I.mouse.leftPressed;
+        if (want && !blockedBySprint) { if (fireWeapon(s, now, 0)) this.inspectT = 0; }
+      }
+      if (w.spinup && I.mouse.right) s.spinT = now;   // hold RMB to keep the barrels spinning
       if (w.type === 'knife') { if (I.mouse.rightPressed && s.fireCd <= 0) { s.fireCd = 0; const d0 = WEAPONS.knife.dmg; WEAPONS.knife.dmg = 65; fireWeapon(s, now, 0); WEAPONS.knife.dmg = d0; s.fireCd = 1.0; } s.ads = false; }
       else s.ads = I.mouse.right && s.drawT <= 0 && s.reloadT <= 0 && !(m.sprint && m.f > 0);
       if (w.mag && s.ammo[s.cur] && s.ammo[s.cur].mag === 0 && s.ammo[s.cur].res > 0 && s.fireCd <= 0 && s.reloadT <= 0) s.startReload();
@@ -72,6 +80,7 @@ const Player = {
     }
     if (I.hit('KeyQ') && !Sandbox.on) this.spot(s);
     if (I.hit('KeyG')) this.gadget(s);
+    if (I.hit('KeyH')) { if (!Game.useMed(s)) HUD.center(s.meds <= 0 ? 'No medkits' : s.hp >= 100 ? 'Already at full health' : 'Healing…', 0.8); }
     if (I.hit('KeyB') && Game.mode.buy) UI.toggleBuy();
   },
   vehicleInput() { const I = Input; return UI.blocking() ? { f: 0, s: 0, brake: true } : { f: (I.down('KeyW') ? 1 : 0) - (I.down('KeyS') ? 1 : 0), s: (I.down('KeyD') ? 1 : 0) - (I.down('KeyA') ? 1 : 0), brake: I.down('Space') }; },
@@ -177,6 +186,7 @@ class ViewModel {
     this.root = new THREE.Group(); this.scene.add(this.root);
     this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot('rgba(255,210,120,1)', 'rgba(255,120,20,0)'), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     this.flash.visible = false; this.scene.add(this.flash);
+    this.med = new THREE.Group(); this.med.add(bx(0.12, 0.08, 0.06, lam('#eeeeee'))); this.med.add(bx(0.07, 0.02, 0.062, lam('#d01818'))); this.med.add(bx(0.02, 0.07, 0.062, lam('#d01818'))); this.med.visible = false; this.scene.add(this.med);
     this.key = null; this.gun = null; this.kick = 0; this.lastShot = -1; this.sway = { x: 0, y: 0 }; this.third = false; this.slash = 0; this.flashT = 0; this.pumpT = 0;
   }
   resize() { this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); }
@@ -234,6 +244,10 @@ class ViewModel {
     const p = new V3().lerpVectors(this.hip, this.adsPos, a);
     let rx = lerp(this.hipRot.x, 0, a), ry = lerp(this.hipRot.y, 0, a), rz = lerp(this.hipRot.z, 0, a), oy = 0, oz = 0, ox = 0;
     if (s.drawT > 0) { const k = clamp(s.drawT / 0.5, 0, 1); oy -= k * 0.2; rx -= k * 0.7; }
+    if (g.userData.spin) g.userData.spin.rotation.z += s.spin * dt * 45;
+    if (g.userData.bolt) g.userData.bolt.visible = !!(s.ammo[s.cur] && s.ammo[s.cur].mag > 0 && s.reloadT <= 0);
+    this.med.visible = s.healT > 0;
+    if (s.healT > 0) { const k = Math.sin(clamp((2 - s.healT) / 2, 0, 1) * Math.PI); oy -= 0.25; this.med.position.set(0.02, -0.16 + k * 0.06, -0.3); this.med.rotation.set(0.4, -0.3 + k * 0.4, 0.1); }
     if (s.reloadT > 0 && w && w.reload) {
       const q = 1 - s.reloadT / w.reload, k = Math.sin(q * Math.PI);
       oy -= 0.05 * k; rz += 0.5 * k; rx += 0.18 * k; ox -= 0.02 * k;
