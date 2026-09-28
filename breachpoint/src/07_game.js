@@ -10,6 +10,7 @@ const MODES = {
   tdm: { id: 'tdm', name: 'Team Deathmatch', headMult: 3, armor: false, killTarget: 50, timeLimit: 600, teamSize: 6, respawn: true, respawnTime: 3, regen: true, sprint: true, classes: true, maps: ['dustyard', 'ridgeline'] },
 };
 
+const EXPLOSION_SCALE = 2; // every blast reaches twice as far as its listed radius (the C4 is already huge)
 const Game = {
   scene: null, renderer: null, camera: null, running: false, paused: false, now: 0, soldiers: [], map: new Map(), local: null,
   cmd: {}, mode: MODES.defuse, cfg: null, round: null, bomb: {}, nades: [], rockets: [], vehicles: [], score: { T: 0, CT: 0 }, tickets: { T: 0, CT: 0 },
@@ -430,6 +431,7 @@ const Game = {
   },
   explosion(p, dmg, radius, owner, weapon) {
     if (!this.authority()) return;
+    if (weapon !== 'bomb') radius *= EXPLOSION_SCALE;
     for (const s of this.soldiers) {
       if (!s.alive) continue;
       const d = Math.hypot(s.pos.x - p.x, s.pos.y + 0.9 - p.y, s.pos.z - p.z); if (d > radius) continue;

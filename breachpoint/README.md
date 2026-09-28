@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.5.html     the game (built, self-contained, works offline)
+Breachpoint v1.6.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.5.html
+build.js                  npm install && node build.js  →  Breachpoint v1.6.html
 ```
 
 ## Modes
@@ -73,13 +73,18 @@ Things spawn where you're aiming.
   the whole build.
 
 
+## New in v1.6
+
+- **Explosions reach twice as far** (grenades, launchers, tank shells, dynamite, barrels, vehicle wrecks), with a bigger fireball. The C4 is unchanged.
+- **Tanks are tougher:** 2600 HP, about 10 RPG hits, and bullets barely scratch them.
+
 ## New in v1.5
 
 - **Damage cooldown:** after taking a hit, further hits are ignored for 0.1 s, so bursts and focus fire can't delete you instantly. Every pellet of one shotgun blast still counts. Adjustable in Settings (0 to 0.5 s, 0 = off); in multiplayer the host's value applies.
 
 ## New in v1.4
 
-- **Tanks** in Conquest (one per side) and the Sandbox spawn menu.
+- **Tanks** in Conquest (one per side) and the Sandbox spawn menu. 2600 HP since v1.6 (about 10 RPG hits).
 - **Prices:** everything bought with credits (cases, keys, bundles, attachment unlocks) costs 3× more; skin sell values are 3× too. In-match Defuse prices are unchanged.
 - **Scopes:** sniper, 4x ACOG, AUG and crossbow get full-screen reticles; iron sights and red dots block much less of the view.
 

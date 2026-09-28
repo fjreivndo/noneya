@@ -4,6 +4,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.6', date: 'Sep 2026', title: 'Bigger blasts, tougher tanks', items: [
+    ['Change', 'Every explosion (grenades, RPG, M79, crossbow bolts, tank shells, dynamite, barrels, blown-up vehicles) now reaches twice as far, with a bigger fireball to match. The C4 was already huge and is unchanged.'],
+    ['Fix', 'Tanks died too easily. They now have 2600 HP (was 1300), about 10 RPG hits, and shrug off bullets even more.'],
+  ] },
   { v: '1.5', date: 'Sep 2026', title: 'Damage cooldown', items: [
     ['New', 'Damage cooldown: after you take a hit, further hits are ignored for a moment (0.1 s by default), so fast bursts and multiple shooters cannot delete you instantly. Every pellet of a single shotgun blast still counts.'],
     ['New', 'Damage cooldown setting (0 to 0.5 s, 0 turns it off). In multiplayer the host\'s setting applies.'],

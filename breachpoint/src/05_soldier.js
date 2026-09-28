@@ -353,7 +353,7 @@ class Rocket {
    and carry a cannon aimed wherever the driver looks. */
 const VKIND = {
   jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
-  tank: { name: 'Tank', hp: 1300, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.012, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
+  tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
 };
 WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
 class Vehicle {

@@ -305,7 +305,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.5';
+const VERSION = '1.6';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -1616,10 +1616,10 @@ const FX = {
     this.emit('norm', p.x, p.y, p.z, 4, 1.5, [0.55, 0.5, 0.42], 0.6, -2, 0.6, n);
   },
   explosion(p) {
-    this.emit('add', p.x, p.y + 0.3, p.z, 70, 11, [1, 0.6, 0.2], 0.5, -4, 1);
-    this.emit('big', p.x, p.y + 0.5, p.z, 26, 3, [0.25, 0.23, 0.2], 1.6, 1, 1);
-    this.emit('norm', p.x, p.y + 0.2, p.z, 40, 9, [0.35, 0.3, 0.25], 1.0, -12, 1);
-    this.flashLight.position.set(p.x, p.y + 1, p.z); this.flashLight.intensity = 60; this.flashLight.distance = 18; this.flashT = 0.25;
+    this.emit('add', p.x, p.y + 0.3, p.z, 90, 16, [1, 0.6, 0.2], 0.5, -4, 1);
+    this.emit('big', p.x, p.y + 0.5, p.z, 34, 4.5, [0.25, 0.23, 0.2], 1.6, 1, 1);
+    this.emit('norm', p.x, p.y + 0.2, p.z, 50, 13, [0.35, 0.3, 0.25], 1.0, -12, 1);
+    this.flashLight.position.set(p.x, p.y + 1, p.z); this.flashLight.intensity = 60; this.flashLight.distance = 30; this.flashT = 0.25;
   },
   muzzle(p) { this.emit('add', p.x, p.y, p.z, 3, 1.5, [1, 0.75, 0.3], 0.05, 0, 0.5); this.flashLight.position.set(p.x, p.y, p.z); this.flashLight.intensity = Math.max(this.flashLight.intensity, 8); this.flashLight.distance = 6; this.flashT = Math.max(this.flashT, 0.04); },
   smoke(p, dur = 18) {
@@ -2025,7 +2025,7 @@ class Rocket {
    and carry a cannon aimed wherever the driver looks. */
 const VKIND = {
   jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
-  tank: { name: 'Tank', hp: 1300, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.012, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
+  tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
 };
 WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
 class Vehicle {
@@ -2729,6 +2729,7 @@ const MODES = {
   tdm: { id: 'tdm', name: 'Team Deathmatch', headMult: 3, armor: false, killTarget: 50, timeLimit: 600, teamSize: 6, respawn: true, respawnTime: 3, regen: true, sprint: true, classes: true, maps: ['dustyard', 'ridgeline'] },
 };
 
+const EXPLOSION_SCALE = 2; // every blast reaches twice as far as its listed radius (the C4 is already huge)
 const Game = {
   scene: null, renderer: null, camera: null, running: false, paused: false, now: 0, soldiers: [], map: new Map(), local: null,
   cmd: {}, mode: MODES.defuse, cfg: null, round: null, bomb: {}, nades: [], rockets: [], vehicles: [], score: { T: 0, CT: 0 }, tickets: { T: 0, CT: 0 },
@@ -3149,6 +3150,7 @@ const Game = {
   },
   explosion(p, dmg, radius, owner, weapon) {
     if (!this.authority()) return;
+    if (weapon !== 'bomb') radius *= EXPLOSION_SCALE;
     for (const s of this.soldiers) {
       if (!s.alive) continue;
       const d = Math.hypot(s.pos.x - p.x, s.pos.y + 0.9 - p.y, s.pos.z - p.z); if (d > radius) continue;
@@ -6012,6 +6014,10 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.6', date: 'Sep 2026', title: 'Bigger blasts, tougher tanks', items: [
+    ['Change', 'Every explosion (grenades, RPG, M79, crossbow bolts, tank shells, dynamite, barrels, blown-up vehicles) now reaches twice as far, with a bigger fireball to match. The C4 was already huge and is unchanged.'],
+    ['Fix', 'Tanks died too easily. They now have 2600 HP (was 1300), about 10 RPG hits, and shrug off bullets even more.'],
+  ] },
   { v: '1.5', date: 'Sep 2026', title: 'Damage cooldown', items: [
     ['New', 'Damage cooldown: after you take a hit, further hits are ignored for a moment (0.1 s by default), so fast bursts and multiple shooters cannot delete you instantly. Every pellet of a single shotgun blast still counts.'],
     ['New', 'Damage cooldown setting (0 to 0.5 s, 0 turns it off). In multiplayer the host\'s setting applies.'],

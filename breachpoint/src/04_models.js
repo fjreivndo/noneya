@@ -274,10 +274,10 @@ const FX = {
     this.emit('norm', p.x, p.y, p.z, 4, 1.5, [0.55, 0.5, 0.42], 0.6, -2, 0.6, n);
   },
   explosion(p) {
-    this.emit('add', p.x, p.y + 0.3, p.z, 70, 11, [1, 0.6, 0.2], 0.5, -4, 1);
-    this.emit('big', p.x, p.y + 0.5, p.z, 26, 3, [0.25, 0.23, 0.2], 1.6, 1, 1);
-    this.emit('norm', p.x, p.y + 0.2, p.z, 40, 9, [0.35, 0.3, 0.25], 1.0, -12, 1);
-    this.flashLight.position.set(p.x, p.y + 1, p.z); this.flashLight.intensity = 60; this.flashLight.distance = 18; this.flashT = 0.25;
+    this.emit('add', p.x, p.y + 0.3, p.z, 90, 16, [1, 0.6, 0.2], 0.5, -4, 1);
+    this.emit('big', p.x, p.y + 0.5, p.z, 34, 4.5, [0.25, 0.23, 0.2], 1.6, 1, 1);
+    this.emit('norm', p.x, p.y + 0.2, p.z, 50, 13, [0.35, 0.3, 0.25], 1.0, -12, 1);
+    this.flashLight.position.set(p.x, p.y + 1, p.z); this.flashLight.intensity = 60; this.flashLight.distance = 30; this.flashT = 0.25;
   },
   muzzle(p) { this.emit('add', p.x, p.y, p.z, 3, 1.5, [1, 0.75, 0.3], 0.05, 0, 0.5); this.flashLight.position.set(p.x, p.y, p.z); this.flashLight.intensity = Math.max(this.flashLight.intensity, 8); this.flashLight.distance = 6; this.flashT = Math.max(this.flashT, 0.04); },
   smoke(p, dur = 18) {
