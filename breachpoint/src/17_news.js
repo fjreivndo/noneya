@@ -4,6 +4,17 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.9', date: 'Sep 2026', title: 'Ragdolls and a lot more wiring', items: [
+    ['New', 'Ragdolls: bodies go limp when they die, get thrown by the hit (explosions throw them far), tumble down stairs and land on props. Explosions shove bodies already on the ground. Settings can turn them off.'],
+    ['New', 'Wiring inputs: keypad (code lock), key input (bind any free key), laser tripwire, damage sensor, prop sensor, toggle button, random.'],
+    ['New', 'Wiring logic: NAND, NOR, pulse, and a set/reset latch.'],
+    ['New', 'Numbers: counter, constant, adder, comparator, number display and a text screen. Wires now carry numbers; anything non-zero counts as on.'],
+    ['New', 'Wiring outputs: turret, speaker (8 sounds), forcefield, lift, spawner (props or NPCs) and thumper.'],
+    ['New', 'Latches, counters and comparators take their first input on the left half and the second on the right half.'],
+    ['New', 'Wire colours, an option to only show wires while holding the tool gun, and a Debugger tool that reads out any part.'],
+    ['New', 'Typing a keypad code, a screen text or a value opens a small box in game.'],
+    ['Change', 'The Wiring tab is split into Inputs, Logic, Numbers and Outputs.'],
+  ] },
   { v: '1.8', date: 'Sep 2026', title: 'Sharper guns, tank crews and blood', items: [
     ['Change', 'Guns are much more accurate: about 60% less spread, half the movement inaccuracy and 40% less recoil (shotguns and snipers a bit less). Jumping hurts accuracy half as much.'],
     ['Change', 'Launchers are rarer: only Engineers carry them, the RPG has 2 rockets and the M79 5 grenades, ammo boxes no longer refill launchers, and only about 1 in 7 bots per team plays Engineer. Tanks no longer melt.'],

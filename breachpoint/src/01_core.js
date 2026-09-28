@@ -6,7 +6,7 @@
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.8';
+const VERSION = '1.9';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -42,7 +42,7 @@ const Settings = Object.assign({
   name: 'Player' + randi(100, 999),
   sens: 1.0, fov: 85, vol: 0.55, diff: 'normal',
   xhColor: '#4dff88', xhSize: 6, xhGap: 4, xhDot: false,
-  showFps: false, viewDist: 1, botSight: 1, dmgCooldown: 0.1, xhStyle: 'cross', cursor: 'themed', blood: true,
+  showFps: false, viewDist: 1, botSight: 1, dmgCooldown: 0.1, xhStyle: 'cross', cursor: 'themed', blood: true, ragdoll: true,
 }, Store.get('settings', {}));
 function saveSettings() { Store.set('settings', Settings); if (Sfx.master) Sfx.master.gain.value = Settings.vol; }
 

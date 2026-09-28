@@ -197,7 +197,7 @@ const Phys = {
     let best = maxT, hit = null, nrm = null;
     const lo = new V3(), ld = new V3(), iq = new THREE.Quaternion();
     for (const p of this.props) {
-      if (p === skip || p.def.noRay) continue;
+      if (p === skip || p.def.noRay || p.ghost) continue;
       const cx = p.x - o.x, cy = p.y - o.y, cz = p.z - o.z, rad = p.def.radius * p.scale + 0.5;
       const tc = cx * d.x + cy * d.y + cz * d.z; if (tc < -rad || tc > best + rad) continue;
       const px = cx - d.x * tc, py = cy - d.y * tc, pz = cz - d.z * tc; if (px * px + py * py + pz * pz > rad * rad) continue;

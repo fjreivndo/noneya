@@ -139,8 +139,7 @@ function setLightOn(p, on) {
 
 /* ── wiring ────────────────────────────────────────────────────────────── */
 const Wiring = {
-  t: 0,
-  inputs() { const m = new Map(); for (const c of Phys.constraints) if (c.type === 'wire' && c.a && c.b) { let l = m.get(c.b); if (!l) m.set(c.b, l = []); l.push(c.a); } return m; },
+  t: 0, extra: {},   // more part kinds register their logic here: (p, {L, W, on, any, now}) => { v, n }
   wired(p) { return Phys.constraints.some(c => c.type === 'wire' && c.b === p); },
   plateHit(p) {
     const b = Object.assign({}, Phys.aabb(p));
@@ -153,11 +152,13 @@ const Wiring = {
   /* authority: work out every output from last tick's outputs, then publish the changes */
   tick() { for (let i = 0; i < 8 && this.step(); i++); },   // settle chains of gates in one tick (loops still oscillate, one step per pass)
   step() {
-    const now = Game.now, ins = this.inputs(), changes = [];
+    const now = Game.now, changes = [], ins = new Map(), wires = new Map();
+    for (const c of Phys.constraints) if (c.type === 'wire' && c.a && c.b) { let l = ins.get(c.b), w = wires.get(c.b); if (!l) { ins.set(c.b, l = []); wires.set(c.b, w = []); } l.push(c.a); w.push({ p: c.a, left: !!(c.lb && c.lb[0] < 0) }); }
     for (const p of Phys.props) {
-      const d = p.def, L = ins.get(p), on = L ? L.filter(x => x.sig).length : 0, any = on > 0;
-      let v;
-      switch (d.logic) {
+      const d = p.def, L = ins.get(p), W = wires.get(p), on = L ? L.filter(x => x.sig).length : 0, any = on > 0;
+      let v, n;
+      if (d.logic && this.extra[d.logic]) { const r = this.extra[d.logic](p, { L, W, on, any, now }); v = r.v; n = r.n; }
+      else switch (d.logic) {
         case 'button': v = now < (p.pressT || 0); break;
         case 'switch': v = !!p.manual; break;
         case 'plate': v = this.plateHit(p); break;
@@ -171,13 +172,14 @@ const Wiring = {
         case 'flipflop': { if (any && !p.ffLast) p.ff = !p.ff; p.ffLast = any; v = !!p.ff; break; }
         default:
           if (L) v = any;
-          else if (d.light) v = p.manual !== false;
+          else if (d.light || d.field) v = p.manual !== false;
           else if (d.door) v = !!p.manual;
           else v = false;
       }
-      if (v !== !!p.sig) changes.push([p, v]);
+      v = !!v;
+      if (v !== !!p.sig || (n !== undefined && n !== p.num)) changes.push([p, v, n]);
     }
-    for (const [p, v] of changes) Sandbox.emit({ e: 'sig', id: p.id, v });
+    for (const [p, v, n] of changes) Sandbox.emit(n === undefined ? { e: 'sig', id: p.id, v } : { e: 'sig', id: p.id, v, n });
     return changes.length > 0;
   },
   /* every machine: what a signal looks like, and (authority) what it does */
@@ -187,7 +189,7 @@ const Wiring = {
     if (u.cap) u.cap.position.y = v ? 0.03 : 0.045;
     if (u.lever) u.lever.rotation.x = v ? -0.5 : 0.5;
     if (p.def.light) setLightOn(p, v);
-    for (const c of Phys.constraints) if (c.type === 'wire' && c.a === p && c.line) c.line.material.color.set(v ? 0x3aff6a : 0x8a2a2a);
+    for (const c of Phys.constraints) if (c.type === 'wire' && c.a === p && c.line) c.line.material.color.copy(wireColor(c, v));
     if (wired) {
       if (p.lamps) for (const l of p.lamps) { l.on = v; l.light.visible = v; l.lens.material.color.set(v ? l.color : '#222'); }
       if (p.emitters) for (const e of p.emitters) e.on = v;
@@ -200,6 +202,8 @@ const Wiring = {
     if (p.def.dynamite && v && !was) { const pos = new V3(p.x, p.y, p.z); Sandbox.removeEntity(p.id); Sandbox.explode(pos, p.def.explosive * p.scale, 6 * Math.sqrt(p.scale), Game.byId(p.own)); }
   },
 };
+
+function wireColor(c, on) { if (!c.col) return new THREE.Color(on ? 0x3aff6a : 0x8a2a2a); const k = new THREE.Color(c.col); return on ? k : k.multiplyScalar(0.3); }
 
 /* ── doors ─────────────────────────────────────────────────────────────── */
 function doorTick(p, dt) {
@@ -215,6 +219,7 @@ function doorTick(p, dt) {
     const H = new V3(-h[0] * s, 0, 0).applyQuaternion(Q).add(C), R = new THREE.Quaternion().setFromAxisAngle(Y_AXIS.clone().applyQuaternion(Q), D.dir * e * Math.PI / 2);
     pos = C.clone().sub(H).applyQuaternion(R).add(H); q = R.multiply(Q);
   } else if (p.def.door === 'slide') pos = C.clone().addScaledVector(new V3(1, 0, 0).applyQuaternion(Q), h[0] * 2 * s * 0.95 * e);
+  else if (p.def.door === 'piston') pos = C.clone().addScaledVector(Y_AXIS.clone().applyQuaternion(Q), (p.def.travel || 2.5) * s * e);
   else pos = C.clone().addScaledVector(Y_AXIS.clone().applyQuaternion(Q), h[1] * 2 * s * 0.92 * e);
   p.x = pos.x; p.y = pos.y; p.z = pos.z; p.q.copy(q);
   if (p.body) { p.body.position.set(pos.x, pos.y, pos.z); p.body.quaternion.set(q.x, q.y, q.z, q.w); p.body.aabbNeedsUpdate = true; }
@@ -227,6 +232,8 @@ function paintVehicle(v, col) {
   else v.paintMat.color.set(col);
   v.paint = col;
 }
+/* close enough to use a part: by where the host shows them, or where they last said they are */
+function inReach(s, p) { const q = new V3(p.x, p.y, p.z); if (dist3(s.eye(new V3()), q) < 12) return true; const n = s.net; return !!(n && n.tx != null && Math.hypot(n.tx - p.x, n.tz - p.z) < 12); }
 const vehById = id => Game.vehicles.find(x => x.id === id);
 
 /* ── actions ───────────────────────────────────────────────────────────── */
@@ -247,12 +254,12 @@ Sandbox.run = function (a) {
       if (!['wire', 'hinge', 'ball'].includes(a.type)) break;
       const A = a.a && Phys.byId.get(a.a), B = a.b && Phys.byId.get(a.b); if (!A || (a.type === 'wire' && !B)) return;
       if (a.type === 'wire' && Phys.constraints.some(c => c.type === 'wire' && c.a === A && c.b === B)) return;
-      const id = 'c' + (Phys.nextId++); this.emit({ e: 'con', id, type: a.type, a: a.a, b: a.b || null, la: a.la, lb: a.lb, axisA: a.axisA, axisB: a.axisB });
+      const id = 'c' + (Phys.nextId++); this.emit({ e: 'con', id, type: a.type, a: a.a, b: a.b || null, la: a.la, lb: a.lb, axisA: a.axisA, axisB: a.axisB, col: typeof a.col === 'string' && /^#[0-9a-f]{6}$/i.test(a.col) ? a.col : undefined });
       undo.push({ kind: 'con', id }); return;
     }
     case 'unwire': { const p = Phys.byId.get(a.id); if (!p) return; for (const c of Phys.constraints.filter(c => c.type === 'wire' && c.b === p)) this.emit({ e: 'cdel', id: c.id }); return; }
     case 'use': {
-      const p = Phys.byId.get(a.id), d = p && p.def; if (!p || dist3(actor.eye(new V3()), new V3(p.x, p.y, p.z)) > 12) return;
+      const p = Phys.byId.get(a.id), d = p && p.def; if (!p || !inReach(actor, p)) return;
       const tell = x => { const pr = Net.peerOf(a.by); if (pr) Net.to(pr.id, { t: 'toast', x }); if (actor === Game.local) HUD.center(x, 0.9); };
       if (d.logic === 'button') p.pressT = Game.now + 1;
       else if (d.logic === 'switch') p.manual = !p.manual;
@@ -307,14 +314,14 @@ Sandbox.apply = function (ev) {
       _apply3(ev); const c = Phys.constraints.find(x => x.id === ev.id); if (!c) return;
       if (ev.type === 'wire') {
         const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-        c.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: c.a && c.a.sig ? 0x3aff6a : 0x8a2a2a })); c.line.frustumCulled = false; Game.scene.add(c.line); Phys.ropes.push(c);
+        c.col = ev.col; c.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: wireColor(c, !!(c.a && c.a.sig)) })); c.line.frustumCulled = false; Game.scene.add(c.line); Phys.ropes.push(c);
         if (c.b && Game.authority()) Wiring.tick();
       }
       if (ev.type === 'hinge' || ev.type === 'ball') { c.axisA = ev.axisA; c.axisB = ev.axisB; if (c.cn && Phys.world) Phys.world.removeConstraint(c.cn); c.cn = null; Phys.rebuildConstraint(c); }
       return;
     }
     case 'set': { _apply3(ev); const p = Phys.byId.get(ev.id); if (p && p.def.light && (ev.col || ev.mat)) setLightOn(p, p.sig !== false); return; }
-    case 'sig': { const p = Phys.byId.get(ev.id); if (p) Wiring.apply(p, ev.v); return; }
+    case 'sig': { const p = Phys.byId.get(ev.id); if (!p) return; if (ev.n !== undefined) p.num = ev.n; Wiring.apply(p, ev.v); return; }
     case 'wst': { const p = Phys.byId.get(ev.id); if (!p) return; p.manual = ev.m; p.period = ev.per; if (ev.dr && p.door) p.door.dir = ev.dr; if (ev.click) Sfx.play('tick', new V3(p.x, p.y, p.z)); return; }
     case 'veh': {
       _apply3(ev); const v = vehById(ev.id); if (!v) return;
@@ -356,7 +363,7 @@ Sandbox.snapshotAll = function () {
     if (p.manual !== undefined || p.period || p.sig || p.door) ev.ws = { m: p.manual, per: p.period, sg: !!p.sig && !p.def.logic && !p.def.door, dr: p.door ? p.door.dir : undefined };
     if (p.door && p.door.t > 0) { ev.pos = p.door.pos.slice(); ev.quat = p.door.q.slice(); }
   });
-  st.cons.forEach(ev => { const c = Phys.constraints.find(x => x.id === ev.id); if (c && (c.type === 'hinge' || c.type === 'ball')) { ev.axisA = c.axisA; ev.axisB = c.axisB; } });
+  st.cons.forEach(ev => { const c = Phys.constraints.find(x => x.id === ev.id); if (c && (c.type === 'hinge' || c.type === 'ball')) { ev.axisA = c.axisA; ev.axisB = c.axisB; } if (c && c.type === 'wire' && c.col) ev.col = c.col; });
   st.veh = Game.vehicles.filter(v => v.noRespawn && v.alive).map(v => ({ e: 'veh', id: v.id, x: +v.pos.x.toFixed(3), y: +v.pos.y.toFixed(3), z: +v.pos.z.toFixed(3), yaw: v.yaw, k: v.kind, col: v.paint, fr: v.frozen || undefined, hp: Math.round(v.hp) }));
   return st;
 };
@@ -439,7 +446,7 @@ Sandbox.placement = function (s, d) {
   if (tr.kind === 'none' || tr.kind === 'npc' || tr.kind === 'veh' || n.lengthSq() < 0.5) { P = s.eye(new V3()).addScaledVector(s.forward(new V3()), 3); n.set(0, 1, 0); }
   n.normalize();
   const prop = tr.kind === 'prop' ? tr.prop : null, yawQ = new THREE.Quaternion().setFromAxisAngle(Y_AXIS, s.yaw);
-  if (d.door) {
+  if (d.door || d.upright) {
     const b = P.clone().addScaledVector(n, 0.15), t = World.raycast(b.x, b.y + 0.05, b.z, 0, -1, 0, 60), ph = Phys.ray(new V3(b.x, b.y + 0.05, b.z), new V3(0, -1, 0), t >= 0 ? t : 60);
     const fy = Math.max(0, ph ? b.y + 0.05 - ph.t : t >= 0 ? b.y + 0.05 - t : 0);
     return { pos: [b.x, fy + d.shapes[0].h[1] + 0.01, b.z], quat: [yawQ.x, yawQ.y, yawQ.z, yawQ.w], fr: true };
@@ -450,7 +457,7 @@ Sandbox.placement = function (s, d) {
 const _spawn3 = Sandbox.spawn.bind(Sandbox);
 Sandbox.spawn = function (kind, key, extra) {
   const d = kind === 'prop' && PROPS[key];
-  if (!d || !(d.flush || d.door)) return _spawn3(kind, key);
+  if (!d || !(d.flush || d.door || d.upright)) return _spawn3(kind, key);
   const L = Game.local; if (!L || !L.alive) return;
   this.exec(Object.assign({ op: 'prop', k: key }, this.placement(L, d), extra || {}));
 };

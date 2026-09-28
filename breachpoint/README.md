@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.8.html     the game (built, self-contained, works offline)
+Breachpoint v1.9.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.8.html
+build.js                  npm install && node build.js  →  Breachpoint v1.9.html
 ```
 
 ## Modes
@@ -77,6 +77,21 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v1.9
+
+- **Ragdolls:** bodies go limp and get thrown by the hit that killed them
+  (explosions throw hardest), settle on the level and on props, and get
+  shoved by later explosions. Toggle in Settings.
+- **More wiring** (Wiring tab, now grouped):
+  - Inputs: keypad, key input, laser tripwire, damage sensor, prop sensor,
+    toggle button, random.
+  - Logic: NAND, NOR, pulse, set/reset latch.
+  - Numbers: counter, constant, adder, comparator, number display, text
+    screen. Wires carry numbers; non-zero is on. Latches, counters and
+    comparators read their left half as input 1 and right half as input 2.
+  - Outputs: turret, speaker, forcefield, lift, spawner, thumper.
+  - Wire colours, "only show wires with the tool gun", and a Debugger tool.
 
 ## New in v1.8
 
