@@ -103,7 +103,7 @@ const Game = {
   spawnPoints(team) { return World.spawns[team]; },
   place(s, p, yaw) { s.pos.set(p.x, 0, p.z); s.vel.set(0, 0, 0); s.yaw = yaw != null ? yaw : (p.yaw || 0); s.pitch = 0; },
   respawn(s, where) {
-    s.alive = true; s.hp = 100; s.deadT = 0; s.blind = 0; s.lastDamage = -9; s.dmgBy = {}; s.vehicle = null; s.spawnProt = this.now + 2;
+    s.alive = true; s.hp = 100; s.deadT = 0; s.blind = 0; s.lastDamage = -9; s.dmgBy = {}; s.vehicle = null; s.spawnProt = this.now + 2; s.hitLock = null;
     if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; }
     if (this.mode.classes) this.giveClass(s);
     else if (this.mode.id === 'sandbox' && !s.npc) Sandbox.loadout(s);
@@ -373,6 +373,14 @@ const Game = {
     if (!this.authority() || !v.alive) return;
     if (att && att !== v && att.team === v.team && !(this.mode.id === 'sandbox' && (v.npc || att.npc))) return; // no friendly fire (sandbox NPCs are fair game)
     if (v.spawnProt && this.now < v.spawnProt && att && att !== v) return;
+    // damage cooldown: a short window after a hit where further hits are ignored.
+    // Pellets from the same blast (same attacker + weapon within 50 ms) still land.
+    const cd = Settings.dmgCooldown || 0;
+    if (cd > 0 && att && att !== v && dmg < 500) {
+      const L = v.hitLock;
+      if (L && this.now < L.until && !(L.att === att.id && L.w === weapon && this.now - L.t < 0.05)) return;
+      if (!L || this.now >= L.until) v.hitLock = { t: this.now, until: this.now + cd, att: att.id, w: weapon };
+    }
     let hp = dmg;
     const armored = this.mode.armor && v.armor > 0 && zone !== 'legs' && (zone !== 'head' || v.helmet);
     if (armored) { const pen = WEAPONS[weapon] ? WEAPONS[weapon].pen : 0.55; hp = dmg * pen; v.armor = Math.max(0, v.armor - (dmg - hp) * 0.5); if (!v.armor) v.helmet = false; }

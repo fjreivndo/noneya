@@ -305,7 +305,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.4';
+const VERSION = '1.5';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -341,7 +341,7 @@ const Settings = Object.assign({
   name: 'Player' + randi(100, 999),
   sens: 1.0, fov: 85, vol: 0.55, diff: 'normal',
   xhColor: '#4dff88', xhSize: 6, xhGap: 4, xhDot: false,
-  showFps: false, viewDist: 1, botSight: 1,
+  showFps: false, viewDist: 1, botSight: 1, dmgCooldown: 0.1,
 }, Store.get('settings', {}));
 function saveSettings() { Store.set('settings', Settings); if (Sfx.master) Sfx.master.gain.value = Settings.vol; }
 
@@ -2822,7 +2822,7 @@ const Game = {
   spawnPoints(team) { return World.spawns[team]; },
   place(s, p, yaw) { s.pos.set(p.x, 0, p.z); s.vel.set(0, 0, 0); s.yaw = yaw != null ? yaw : (p.yaw || 0); s.pitch = 0; },
   respawn(s, where) {
-    s.alive = true; s.hp = 100; s.deadT = 0; s.blind = 0; s.lastDamage = -9; s.dmgBy = {}; s.vehicle = null; s.spawnProt = this.now + 2;
+    s.alive = true; s.hp = 100; s.deadT = 0; s.blind = 0; s.lastDamage = -9; s.dmgBy = {}; s.vehicle = null; s.spawnProt = this.now + 2; s.hitLock = null;
     if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; }
     if (this.mode.classes) this.giveClass(s);
     else if (this.mode.id === 'sandbox' && !s.npc) Sandbox.loadout(s);
@@ -3092,6 +3092,14 @@ const Game = {
     if (!this.authority() || !v.alive) return;
     if (att && att !== v && att.team === v.team && !(this.mode.id === 'sandbox' && (v.npc || att.npc))) return; // no friendly fire (sandbox NPCs are fair game)
     if (v.spawnProt && this.now < v.spawnProt && att && att !== v) return;
+    // damage cooldown: a short window after a hit where further hits are ignored.
+    // Pellets from the same blast (same attacker + weapon within 50 ms) still land.
+    const cd = Settings.dmgCooldown || 0;
+    if (cd > 0 && att && att !== v && dmg < 500) {
+      const L = v.hitLock;
+      if (L && this.now < L.until && !(L.att === att.id && L.w === weapon && this.now - L.t < 0.05)) return;
+      if (!L || this.now >= L.until) v.hitLock = { t: this.now, until: this.now + cd, att: att.id, w: weapon };
+    }
     let hp = dmg;
     const armored = this.mode.armor && v.armor > 0 && zone !== 'legs' && (zone !== 'head' || v.helmet);
     if (armored) { const pen = WEAPONS[weapon] ? WEAPONS[weapon].pen : 0.55; hp = dmg * pen; v.armor = Math.max(0, v.armor - (dmg - hp) * 0.5); if (!v.armor) v.helmet = false; }
@@ -4579,7 +4587,7 @@ const UI = {
     const S = Settings;
     const rng = (k, label, min, max, step) => `<label>${label} <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}</output></label>`;
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
-      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}
+      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
       <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>`;
@@ -6004,6 +6012,10 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.5', date: 'Sep 2026', title: 'Damage cooldown', items: [
+    ['New', 'Damage cooldown: after you take a hit, further hits are ignored for a moment (0.1 s by default), so fast bursts and multiple shooters cannot delete you instantly. Every pellet of a single shotgun blast still counts.'],
+    ['New', 'Damage cooldown setting (0 to 0.5 s, 0 turns it off). In multiplayer the host\'s setting applies.'],
+  ] },
   { v: '1.4', date: 'Sep 2026', title: 'Tanks, scopes and a pricier armory', items: [
     ['New', 'Tanks. One per side in Conquest, and in the Sandbox spawn menu. W/S drive, A/D turn on the spot, the turret follows your aim, LMB fires the cannon. The crew is safe from bullets. RPGs and M79s do extra damage to it, and engineer bots go after tanks with them.'],
     ['New', 'Real scope overlays for the 4x ACOG, the AUG and the crossbow (with bullet-drop marks), plus a new mil-dot sniper reticle. The overlay fades in as you aim.'],

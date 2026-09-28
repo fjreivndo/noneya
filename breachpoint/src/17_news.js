@@ -4,6 +4,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.5', date: 'Sep 2026', title: 'Damage cooldown', items: [
+    ['New', 'Damage cooldown: after you take a hit, further hits are ignored for a moment (0.1 s by default), so fast bursts and multiple shooters cannot delete you instantly. Every pellet of a single shotgun blast still counts.'],
+    ['New', 'Damage cooldown setting (0 to 0.5 s, 0 turns it off). In multiplayer the host\'s setting applies.'],
+  ] },
   { v: '1.4', date: 'Sep 2026', title: 'Tanks, scopes and a pricier armory', items: [
     ['New', 'Tanks. One per side in Conquest, and in the Sandbox spawn menu. W/S drive, A/D turn on the spot, the turret follows your aim, LMB fires the cannon. The crew is safe from bullets. RPGs and M79s do extra damage to it, and engineer bots go after tanks with them.'],
     ['New', 'Real scope overlays for the 4x ACOG, the AUG and the crossbow (with bullet-drop marks), plus a new mil-dot sniper reticle. The overlay fades in as you aim.'],

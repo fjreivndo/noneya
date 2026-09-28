@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.4.html     the game (built, self-contained, works offline)
+Breachpoint v1.5.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.4.html
+build.js                  npm install && node build.js  →  Breachpoint v1.5.html
 ```
 
 ## Modes
@@ -72,6 +72,10 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v1.5
+
+- **Damage cooldown:** after taking a hit, further hits are ignored for 0.1 s, so bursts and focus fire can't delete you instantly. Every pellet of one shotgun blast still counts. Adjustable in Settings (0 to 0.5 s, 0 = off); in multiplayer the host's value applies.
 
 ## New in v1.4
 
