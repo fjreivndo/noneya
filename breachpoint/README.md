@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.6.html     the game (built, self-contained, works offline)
+Breachpoint v1.7.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.6.html
+build.js                  npm install && node build.js  →  Breachpoint v1.7.html
 ```
 
 ## Modes
@@ -27,12 +27,17 @@ Press **Q** for the spawn menu. It has these tabs:
 - **Props:** 23 physics props, including crates, barrels, planks, sheets,
   concrete, furniture, a car wreck, balls and the melon.
 - **Entities:** explosive barrels, health kits, ammo crates, balloons,
-  dynamite and lights.
+  dynamite, stations, and hinged / sliding / garage doors (E opens them).
+- **Wiring:** buttons, switches, pressure plates, proximity sensors, timers,
+  AND / OR / NOT / XOR gates, delays and toggle latches, and an alarm.
+- **Lights:** bulbs, ceiling panels, neon tubes, floodlights and lanterns
+  (E switches them).
 - **NPCs:** Aegis and Vanta soldiers (pick their weapon and skill), zombies,
   citizens and target dummies.
 - **Weapons:** everything in the game, with your skins and attachments on.
-- **Vehicles:** jeeps, plus tanks (W/S drive, A/D turn on the spot, mouse aims the turret, LMB fires the cannon; the crew is safe from bullets, so bring RPGs or M79s).
-- **Tools** and **Options.**
+- **Vehicles:** jeeps, cars, plus tanks (W/S drive, A/D turn on the spot, mouse aims the turret, LMB fires the cannon; the crew is safe from bullets, so bring RPGs or M79s).
+- **Tools**, **Saves** (named slots, export / import as a file, an Autosave
+  when you leave) and **Options.**
 
 Things spawn where you're aiming.
 
@@ -72,6 +77,20 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v1.7
+
+- **Saves** for the sandbox: named slots, file export / import, Autosave.
+- **Wiring:** place parts from the Wiring tab, then use the **Wire** tool:
+  click an output (button, switch, plate, sensor, timer, gate), then what it
+  powers. Doors open, lights switch, alarms sound, thrusters fire, wheels
+  drive, lamps and emitters toggle, dynamite explodes. A button into a toggle
+  latch makes a light switch; a plate into a door makes an automatic door.
+- **Doors that work** and **lights** you switch with **E** or by wire. Lights
+  share a small pool of real lights, so lots of them stay fast.
+- **Vehicles with the physics gun** (grab, rotate, throw, freeze) and the
+  **tool gun** (paint, freeze, ignite, copy, repair, remove), plus a Car.
+- **Axis**, **Ball socket** and **Repair** tools.
 
 ## New in v1.6
 

@@ -4,6 +4,17 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.7', date: 'Sep 2026', title: 'Sandbox: saves, wiring, doors, lights', items: [
+    ['New', 'Sandbox saves: name a save in the new Saves tab, load it any time, export it as a file to share or back up, and import files. Leaving a sandbox keeps an Autosave. Loading a save made on another map switches to that map.'],
+    ['New', 'Wiring: buttons, switches, pressure plates, proximity sensors, timers, AND / OR / NOT / XOR gates, delays and toggle latches. The new Wire tool connects an output to anything: doors open, lights switch, alarms sound, thrusters fire, wheels drive, lamps and emitters toggle, dynamite goes off.'],
+    ['New', 'Doors that work: hinged, sliding and garage doors. Press E to open them, or wire them to a circuit. Hinged doors swing away from you.'],
+    ['New', 'Lights: bulbs, ceiling panels, neon tubes, floodlights and lanterns in a new Lights tab, and a Light tool with brightness. E switches any light on and off.'],
+    ['New', 'Vehicles work with the physics gun (pick up, rotate with E, throw, freeze with RMB, R unfreezes) and the tool gun (paint, freeze, ignite, copy and paste, repair, remove).'],
+    ['New', 'A drivable Car in the Vehicles tab.'],
+    ['New', 'Tools: Axis (hinge two props, or a prop to the world), Ball socket, Repair.'],
+    ['Change', 'Explosions shove jeeps and cars around.'],
+    ['Fix', 'Many lights no longer slow the game down or stutter when switched: the world shares a small set of real lights between the nearest ones.'],
+  ] },
   { v: '1.6', date: 'Sep 2026', title: 'Bigger blasts, tougher tanks', items: [
     ['Change', 'Every explosion (grenades, RPG, M79, crossbow bolts, tank shells, dynamite, barrels, blown-up vehicles) now reaches twice as far, with a bigger fireball to match. The C4 was already huge and is unchanged.'],
     ['Fix', 'Tanks died too easily. They now have 2600 HP (was 1300), about 10 RPG hits, and shrug off bullets even more.'],

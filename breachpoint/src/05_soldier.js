@@ -353,6 +353,7 @@ class Rocket {
    and carry a cannon aimed wherever the driver looks. */
 const VKIND = {
   jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
+  car: { name: 'Car', hp: 380, max: 27, rev: -9, acc: 17, r: 1.15, h: 1.5, crush: 7, enter: 3.5, bullet: 0.2, blast: 2.5, at: 1, respawn: 25, build: buildCar, seatY: 1.3 },
   tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
 };
 WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
@@ -360,7 +361,7 @@ class Vehicle {
   constructor(id, team, spawn) {
     this.id = id; this.team = team; this.spawn = spawn; this.kind = spawn.kind || 'jeep'; this.K = VKIND[this.kind]; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
     this.hp = this.K.hp; this.maxHp = this.K.hp; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
-    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0;
+    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0; this.ext = new V3(); this.held = false; this.frozen = false; this.burnT = 0;
     this.model = this.K.build(team); Game.scene.add(this.model); this.reset();
   }
   /* the turret swings toward where the driver aims, at a tank-like pace */
@@ -381,7 +382,7 @@ class Vehicle {
   }
   reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; }
   seatPos(out, s) {
-    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
+    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + (this.K.seatY || 1.65), this.pos.z - sn * side + c * 0.1); }
   drive(inp, dt) {
     const K = this.K;
     this.speed += inp.f * K.acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * (this.kind === 'tank' ? 2.5 : 0.8)); if (inp.brake) this.speed *= Math.exp(-dt * 4);
@@ -392,8 +393,13 @@ class Vehicle {
   }
   physics(dt) {
     if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
-    this.vel.set(-Math.sin(this.yaw) * this.speed, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed);
+    // held by a physics gun, or frozen in place: the sandbox owns the position
+    if (this.driver && this.frozen) this.frozen = false;
+    if (this.held || this.frozen) { this.speed = 0; this.vel.set(0, 0, 0); this.ext.set(0, 0, 0); this.model.position.copy(this.pos); this.model.rotation.y = this.yaw; if (this.kind === 'tank') this.syncTurret(); return; }
+    this.vel.set(-Math.sin(this.yaw) * this.speed + this.ext.x, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed + this.ext.z);
+    if (this.ext.y > 0) { this.vel.y = Math.max(this.vel.y, this.ext.y); this.ext.y = 0; }
     const before = this.speed; const r = moveBody(this.pos, this.vel, dt, this.K.r, this.K.h, true);
+    this.ext.x *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); this.ext.z *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); if (r.hitWall) { this.ext.x *= -0.3; this.ext.z *= -0.3; }
     this.reloadT -= dt; this.recoil = Math.max(0, this.recoil - dt * 2.5);
     if (this.kind === 'tank') { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
     if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority() && this.kind !== 'tank') this.damage(Math.abs(before) * 3, null); this.speed *= this.kind === 'tank' ? 0 : -0.25; }

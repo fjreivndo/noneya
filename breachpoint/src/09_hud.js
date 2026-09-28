@@ -146,6 +146,7 @@ const HUD = {
     if (L.alive) {
       if (B.state === 'carried' && B.carrier === L.id) hint = World.siteAt(L.pos.x, L.pos.z) ? 'Hold E to plant the bomb' : 'You have the bomb — plant it at A or B';
       else if (L.team === 'CT' && B.state === 'planted' && B.pos && dist2(L.pos.x, L.pos.z, B.pos.x, B.pos.z) < 2 && !prog) hint = 'Hold E to defuse';
+      else if (Sandbox.on && !L.vehicle && (hint = Sandbox.useHint(L))) { }
       else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || (!v.passenger && v.kind !== 'tank')) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter)) { const v = Game.vehicles.find(v => v.alive && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter); hint = 'E — enter ' + (v ? v.K.name.toLowerCase() : 'vehicle'); }
       else if (L.vehicle) hint = L.vehicle.kind === 'tank' ? `Tank ${Math.max(0, Math.ceil(L.vehicle.hp))}/${L.vehicle.maxHp} · W/S drive · A/D turn · mouse aim · LMB fire · E exit` : L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
       else if (Game.mode.buy && Game.round && UI.canBuy(L)) hint = 'B — buy menu';

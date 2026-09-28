@@ -72,7 +72,7 @@ const Player = {
       if (w.mag && s.ammo[s.cur] && s.ammo[s.cur].mag === 0 && s.ammo[s.cur].res > 0 && s.fireCd <= 0 && s.reloadT <= 0) s.startReload();
     }
     // use: vehicles, plant, defuse
-    if (I.hit('KeyE')) {
+    if (I.hit('KeyE') && !(Sandbox.on && Sandbox.tryUse(s))) {
       if (!Game.tryEnterVehicle(s)) {
         if (Game.bomb.state === 'carried' && Game.bomb.carrier === s.id && World.siteAt(s.pos.x, s.pos.z)) Game.startPlant(s);
         else if (s.team === 'CT' && Game.bomb.state === 'planted') Game.startDefuse(s);

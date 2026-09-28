@@ -194,7 +194,20 @@ function buildJeep(team) {
   const wheels = [];
   [[-1, -1.3], [1, -1.3], [-1, 1.3], [1, 1.3]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12), D); w.rotation.z = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w); wheels.push(w); });
   g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), -0.6, 0.85, -2.0)); g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), 0.6, 0.85, -2.0));
-  g.userData.wheels = wheels;
+  g.userData.wheels = wheels; g.userData.paint = C;
+  return g;
+}
+
+/* ── car ── a civilian sedan for the sandbox ─────────────────────────── */
+function buildCar(team) {
+  const g = new THREE.Group(), C = lam(team === 'T' ? '#8a3a2a' : '#2a5a9a'), D = lam('#1a1a1a'), G = lam('#9ac0dc'), M = lam('#c8c8c8');
+  g.add(bx(1.9, 0.55, 4.3, C, 0, 0.62, 0)); g.add(bx(1.75, 0.5, 2.2, C, 0, 1.12, 0.25));
+  g.add(bx(1.7, 0.42, 0.05, G, 0, 1.13, -0.86)); g.add(bx(1.7, 0.4, 0.05, G, 0, 1.13, 1.36)); g.add(bx(1.77, 0.34, 1.8, G, 0, 1.14, 0.25));
+  g.add(bx(1.95, 0.12, 0.2, M, 0, 0.45, -2.16)); g.add(bx(1.95, 0.12, 0.2, M, 0, 0.45, 2.16));
+  g.add(bx(0.36, 0.14, 0.05, lam('#ffffcc'), -0.62, 0.72, -2.16)); g.add(bx(0.36, 0.14, 0.05, lam('#ffffcc'), 0.62, 0.72, -2.16)); g.add(bx(0.36, 0.12, 0.05, lam('#c01818'), -0.62, 0.74, 2.16)); g.add(bx(0.36, 0.12, 0.05, lam('#c01818'), 0.62, 0.74, 2.16));
+  const wheels = [];
+  [[-0.9, -1.35], [0.9, -1.35], [-0.9, 1.35], [0.9, 1.35]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 12), D); w.rotation.z = Math.PI / 2; w.position.set(x, 0.36, z); g.add(w); wheels.push(w); });
+  g.userData.wheels = wheels; g.userData.paint = C;
   return g;
 }
 
@@ -212,7 +225,7 @@ function buildTank(team) {
   const gun = new THREE.Group(); gun.position.set(0, 0.38, -1.25); turret.add(gun);
   gun.add(bx(0.55, 0.45, 0.5, Dk, 0, 0, 0)); gun.add(cyl(0.11, 3.4, M, 0, 0, -1.9, 10)); gun.add(cyl(0.16, 0.5, M, 0, 0, -3.45, 10));
   const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, -3.75); gun.add(muzzle);
-  g.userData = { wheels, turret, gun, muzzle };
+  g.userData = { wheels, turret, gun, muzzle, paint: C };
   return g;
 }
 

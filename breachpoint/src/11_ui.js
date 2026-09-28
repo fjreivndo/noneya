@@ -455,14 +455,15 @@ UI.toggleSpawnMenu = function (on) {
   if (on) { this.pause(false); Input.clear(); if (document.pointerLockElement) document.exitPointerLock(); this.renderSpawnMenu(); } else this.lock();
 };
 UI.renderSpawnMenu = function () {
-  const tabs = ['Props', 'Entities', 'NPCs', 'Weapons', 'Vehicles', 'Tools', 'Options'], T = this.spawnTab, O = Sandbox.opts;
+  const tabs = ['Props', 'Entities', 'Wiring', 'Lights', 'NPCs', 'Weapons', 'Vehicles', 'Tools', 'Saves', 'Options'], T = this.spawnTab, O = Sandbox.opts;
   const tile = (kind, key, name, img, sub) => `<button class="sp-tile" data-kind="${kind}" data-key="${key}"><img src="${img}" alt=""><span>${escapeHtml(name)}</span>${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</button>`;
   let html = '';
-  if (T === 'Props' || T === 'Entities') html = `<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T && p.id !== 'lightbulb').map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)))).join('')}</div>`;
+  if (['Props', 'Entities', 'Wiring', 'Lights'].includes(T)) html = `${T === 'Wiring' ? '<p class="muted sp-note">Place parts where you aim (on a prop they get welded to it). Connect them with the <b>Wire</b> tool: click an output, then what it powers. <b>E</b> presses buttons, flips switches, opens doors and switches lights.</p>' : ''}<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T).map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)), p.desc)).join('')}</div>`;
+  else if (T === 'Saves') html = UI.savesHtml();
   else if (T === 'NPCs') html = `<div class="sp-row"><label>Weapon <select id="npcW"><option value="default">Default</option>${Object.values(WEAPONS).filter(w => w.mag && w.type !== 'launcher').map(w => `<option value="${w.id}" ${O.npcWeapon === w.id ? 'selected' : ''}>${w.name}</option>`).join('')}<option value="knife" ${O.npcWeapon === 'knife' ? 'selected' : ''}>Knife</option></select></label><label>Skill <select id="npcS">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${O.npcSkill === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label></div>
     <div class="sp-grid">${Object.entries(NPCS).map(([k, n]) => tile('npc', k, n.name, Thumbs.get('n:' + k, () => { const m = buildSoldierModel(n.team); if (!n.weapon) m.userData.gunMount.visible = false; else setSoldierGun(m, n.weapon, null, null); if (k === 'zombie') m.userData.arms.rotation.x = -0.3; m.rotation.y = Math.PI * 0.85; return m; }), n.desc)).join('')}</div>`;
   else if (T === 'Weapons') html = `<div class="sp-grid">${Object.values(WEAPONS).filter(w => w.id !== 'physgun' && w.id !== 'toolgun' && !w.hidden).map(w => tile('weapon', w.id, w.name, Thumbs.get('w:' + w.id + attSig(Inv.data.attach[w.id]), () => { const g = buildGun(w.id, Inv.equippedItem(w.id), Inv.data.attach[w.id]); g.rotation.y = Math.PI / 2; return g; }))).join('')}${['frag', 'flash', 'smoke'].map(n => tile('weapon', n, GRENADES[n].name, Thumbs.get('g:' + n, () => new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), lam(n === 'frag' ? '#3a4a2a' : n === 'flash' ? '#b8b8b8' : '#5a6a7a'))))).join('')}</div>`;
-  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'Fast. E to drive')}${tile('veh', 'tank', 'Tank', Thumbs.get('v:tank', () => { const j = buildTank('CT'); j.rotation.y = 0.6; return j; }), 'Armoured, cannon on LMB')}</div>`;
+  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'Fast. E to drive')}${tile('veh', 'car', 'Car', Thumbs.get('v:car', () => { const j = buildCar('CT'); j.rotation.y = 0.6; return j; }), 'Quick and light. E to drive')}${tile('veh', 'tank', 'Tank', Thumbs.get('v:tank', () => { const j = buildTank('CT'); j.rotation.y = 0.6; return j; }), 'Armoured, cannon on LMB')}</div>`;
   else if (T === 'Tools') {
     const tool = TOOLS[O.tool], opt = tool.opts || [];
     html = `<div class="sp-tools"><div class="sp-toollist">${Object.entries(TOOLS).map(([k, t]) => `<button class="${O.tool === k ? 'on' : ''}" data-tool="${k}">${t.name}</button>`).join('')}</div><div class="sp-toolopts"><h3>${tool.name}</h3><p><b>LMB</b> ${tool.lmb}<br><b>RMB</b> ${tool.rmb}<br><b>R</b> clear selection</p>
@@ -476,7 +477,7 @@ UI.renderSpawnMenu = function () {
       ${opt.includes('effect') ? `<label>Effect</label><div class="mats">${Object.entries(EFFECTS).map(([k, n]) => `<button data-fx="${k}" class="${O.effect === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
       ${opt.includes('physprop') ? `<label>Physics</label><div class="mats">${Object.entries(PHYSPROPS).filter(([k]) => k !== 'normal').map(([k, n]) => `<button data-pp="${k}" class="${O.physprop === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
       ${O.tool === 'duplicator' ? `<p class="muted">${Sandbox.clip ? 'Clipboard: ' + Sandbox.clip.items.length + ' prop(s)' : 'Clipboard empty'}</p>` : ''}
-      ${O.tool === 'lamp' ? '<p class="muted">Press L to switch all your lamps on or off.</p>' : ''}${O.tool === 'emitter' ? '<p class="muted">Press O to switch your emitters on or off.</p>' : ''}
+      ${O.tool === 'lamp' ? '<p class="muted">Press L to switch all your lamps on or off.</p>' : ''}${O.tool === 'emitter' ? '<p class="muted">Press O to switch your emitters on or off.</p>' : ''}${UI.toolExtra(O)}
       <button class="btn" id="useTool">Use tool gun</button></div></div>`;
   } else html = `<div class="sp-opts"><label>Faction <select id="optFac"><option value="CT" ${O.faction === 'CT' ? 'selected' : ''}>Aegis</option><option value="T" ${O.faction === 'T' ? 'selected' : ''}>Vanta</option></select> <small class="muted">takes effect when you respawn</small></label>
     <label><input type="checkbox" id="optIgnore" ${O.ignorePlayers ? 'checked' : ''}> NPCs ignore players</label>
@@ -494,6 +495,8 @@ UI.renderSpawnMenu = function () {
   M.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { O.effect = b.dataset.fx; Sandbox.saveOpts(); this.renderSpawnMenu(); });
   M.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { O.physprop = b.dataset.pp; Sandbox.saveOpts(); this.renderSpawnMenu(); }); bind('npcS', 'npcSkill');
   if ($('npcW')) $('npcW').onchange = $('npcW').oninput; if ($('npcS')) $('npcS').onchange = $('npcS').oninput;
+  if (T === 'Tools') UI.bindToolExtra(M, O);
+  if (T === 'Saves') UI.bindSaves(M);
   if ($('useTool')) $('useTool').onclick = () => { if (L) L.switchTo('toolgun'); this.toggleSpawnMenu(false); };
   if ($('optFac')) $('optFac').onchange = e => { O.faction = e.target.value; Sandbox.saveOpts(); if (L && Net.role === 'off') { L.team = O.faction; L.buildModel(Game.scene); Game.view && (Game.view.key = null); } };
   if ($('optIgnore')) $('optIgnore').onchange = e => { O.ignorePlayers = e.target.checked; Sandbox.saveOpts(); };

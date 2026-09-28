@@ -392,7 +392,7 @@ const Net = {
     if (Game.mode.id === 'tdm') g.td = [Game.tdm.kills.T, Game.tdm.kills.CT, Math.round(Game.tdm.timeLeft)];
     if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0, +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]);
     let props;
-    if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
+    if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen) || (p.door && p.door.moving)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
     this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0), p: props });
   },
 };

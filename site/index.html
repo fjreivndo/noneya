@@ -187,6 +187,8 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 .sp-row{display:flex;gap:18px;margin-bottom:12px}.sp-row label,.sp-opts label{display:flex;gap:8px;align-items:center;color:var(--mut);margin:8px 0}
 .sp-tools{display:flex;gap:18px;height:100%}.sp-toollist{display:flex;flex-direction:column;gap:3px;width:190px}
 .sp-toollist button{background:rgba(255,255,255,.04);border:1px solid var(--line);padding:9px 12px;text-align:left;cursor:pointer;font-weight:600;border-radius:3px}.sp-toollist button.on{border-color:var(--acc);background:rgba(255,122,47,.18)}
+.sp-note{margin:0 0 10px}.sv{max-width:820px}.sv-new{display:flex;gap:8px;margin-bottom:14px}.sv-new input{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--line);color:inherit;padding:9px 12px;border-radius:4px;font:inherit}
+.sv-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.sv-row{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:4px;padding:8px 10px}.sv-info{flex:1;display:flex;flex-direction:column;gap:2px}.sv-info small{color:var(--mut);font-size:11px}
 .sp-toolopts{flex:1}.sp-toolopts h3{margin:0 0 6px}.sp-toolopts label{display:block;color:var(--mut);margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
 .swatches{display:flex;gap:6px;align-items:center}.swatches i{width:26px;height:26px;border-radius:4px;cursor:pointer;border:2px solid transparent}.swatches i.on{border-color:#fff}
 .mats{display:flex;gap:6px;flex-wrap:wrap}.mats button{background:rgba(255,255,255,.05);border:1px solid var(--line);padding:7px 12px;cursor:pointer;border-radius:3px}.mats button.on{border-color:var(--acc)}
@@ -305,7 +307,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.6';
+const VERSION = '1.7';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -1536,7 +1538,20 @@ function buildJeep(team) {
   const wheels = [];
   [[-1, -1.3], [1, -1.3], [-1, 1.3], [1, 1.3]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12), D); w.rotation.z = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w); wheels.push(w); });
   g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), -0.6, 0.85, -2.0)); g.add(bx(0.4, 0.3, 0.3, lam('#ffffaa'), 0.6, 0.85, -2.0));
-  g.userData.wheels = wheels;
+  g.userData.wheels = wheels; g.userData.paint = C;
+  return g;
+}
+
+/* ── car ── a civilian sedan for the sandbox ─────────────────────────── */
+function buildCar(team) {
+  const g = new THREE.Group(), C = lam(team === 'T' ? '#8a3a2a' : '#2a5a9a'), D = lam('#1a1a1a'), G = lam('#9ac0dc'), M = lam('#c8c8c8');
+  g.add(bx(1.9, 0.55, 4.3, C, 0, 0.62, 0)); g.add(bx(1.75, 0.5, 2.2, C, 0, 1.12, 0.25));
+  g.add(bx(1.7, 0.42, 0.05, G, 0, 1.13, -0.86)); g.add(bx(1.7, 0.4, 0.05, G, 0, 1.13, 1.36)); g.add(bx(1.77, 0.34, 1.8, G, 0, 1.14, 0.25));
+  g.add(bx(1.95, 0.12, 0.2, M, 0, 0.45, -2.16)); g.add(bx(1.95, 0.12, 0.2, M, 0, 0.45, 2.16));
+  g.add(bx(0.36, 0.14, 0.05, lam('#ffffcc'), -0.62, 0.72, -2.16)); g.add(bx(0.36, 0.14, 0.05, lam('#ffffcc'), 0.62, 0.72, -2.16)); g.add(bx(0.36, 0.12, 0.05, lam('#c01818'), -0.62, 0.74, 2.16)); g.add(bx(0.36, 0.12, 0.05, lam('#c01818'), 0.62, 0.74, 2.16));
+  const wheels = [];
+  [[-0.9, -1.35], [0.9, -1.35], [-0.9, 1.35], [0.9, 1.35]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 12), D); w.rotation.z = Math.PI / 2; w.position.set(x, 0.36, z); g.add(w); wheels.push(w); });
+  g.userData.wheels = wheels; g.userData.paint = C;
   return g;
 }
 
@@ -1554,7 +1569,7 @@ function buildTank(team) {
   const gun = new THREE.Group(); gun.position.set(0, 0.38, -1.25); turret.add(gun);
   gun.add(bx(0.55, 0.45, 0.5, Dk, 0, 0, 0)); gun.add(cyl(0.11, 3.4, M, 0, 0, -1.9, 10)); gun.add(cyl(0.16, 0.5, M, 0, 0, -3.45, 10));
   const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, -3.75); gun.add(muzzle);
-  g.userData = { wheels, turret, gun, muzzle };
+  g.userData = { wheels, turret, gun, muzzle, paint: C };
   return g;
 }
 
@@ -2025,6 +2040,7 @@ class Rocket {
    and carry a cannon aimed wherever the driver looks. */
 const VKIND = {
   jeep: { name: 'Jeep', hp: 500, max: 22, rev: -8, acc: 14, r: 1.25, h: 1.7, crush: 9, enter: 3.5, bullet: 0.15, blast: 2.2, at: 1, respawn: 25, build: buildJeep },
+  car: { name: 'Car', hp: 380, max: 27, rev: -9, acc: 17, r: 1.15, h: 1.5, crush: 7, enter: 3.5, bullet: 0.2, blast: 2.5, at: 1, respawn: 25, build: buildCar, seatY: 1.3 },
   tank: { name: 'Tank', hp: 2600, max: 10, rev: -5, acc: 6, r: 1.9, h: 2.4, crush: 25, enter: 4.5, bullet: 0.006, blast: 1.0, at: 1.7, respawn: 45, closed: true, build: buildTank, reload: 3.6 },
 };
 WEAPONS.tankshell = { id: 'tankshell', name: 'Tank cannon', slot: 0, type: 'launcher', dmg: 260, radius: 6.5, projectile: 130, gravity: 2.5, explosive: true, hidden: true, speed: 1, spread: 0, moveSpread: 0, recoil: 0, rpm: 20, pen: 1 };
@@ -2032,7 +2048,7 @@ class Vehicle {
   constructor(id, team, spawn) {
     this.id = id; this.team = team; this.spawn = spawn; this.kind = spawn.kind || 'jeep'; this.K = VKIND[this.kind]; this.pos = new V3(); this.vel = new V3(); this.yaw = 0; this.speed = 0; this.steer = 0;
     this.hp = this.K.hp; this.maxHp = this.K.hp; this.driver = null; this.passenger = null; this.alive = true; this.respawnT = 0; this.lastSync = 0;
-    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0;
+    this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; this.recoil = 0; this.ext = new V3(); this.held = false; this.frozen = false; this.burnT = 0;
     this.model = this.K.build(team); Game.scene.add(this.model); this.reset();
   }
   /* the turret swings toward where the driver aims, at a tank-like pace */
@@ -2053,7 +2069,7 @@ class Vehicle {
   }
   reset() { this.pos.set(this.spawn.x, 0, this.spawn.z); this.yaw = this.spawn.yaw; this.speed = 0; this.hp = this.maxHp; this.alive = true; this.model.visible = true; this.model.rotation.set(0, this.yaw, 0); this.tYaw = 0; this.tPitch = 0; this.reloadT = 0; }
   seatPos(out, s) {
-    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + 1.65, this.pos.z - sn * side + c * 0.1); }
+    if (this.kind === 'tank') return out.set(this.pos.x, this.pos.y + 2.3, this.pos.z); const side = s === this.passenger ? 0.45 : -0.45; const c = Math.cos(this.yaw), sn = Math.sin(this.yaw); return out.set(this.pos.x + c * side + sn * 0.1, this.pos.y + (this.K.seatY || 1.65), this.pos.z - sn * side + c * 0.1); }
   drive(inp, dt) {
     const K = this.K;
     this.speed += inp.f * K.acc * dt; if (!inp.f) this.speed *= Math.exp(-dt * (this.kind === 'tank' ? 2.5 : 0.8)); if (inp.brake) this.speed *= Math.exp(-dt * 4);
@@ -2064,8 +2080,13 @@ class Vehicle {
   }
   physics(dt) {
     if (!this.alive) { this.respawnT -= dt; if (this.respawnT <= 0 && Game.authority()) { if (this.noRespawn) { Sandbox.emit({ e: 'vehdel', id: this.id }); return; } this.reset(); Game.broadcastVehicle(this); } return; }
-    this.vel.set(-Math.sin(this.yaw) * this.speed, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed);
+    // held by a physics gun, or frozen in place: the sandbox owns the position
+    if (this.driver && this.frozen) this.frozen = false;
+    if (this.held || this.frozen) { this.speed = 0; this.vel.set(0, 0, 0); this.ext.set(0, 0, 0); this.model.position.copy(this.pos); this.model.rotation.y = this.yaw; if (this.kind === 'tank') this.syncTurret(); return; }
+    this.vel.set(-Math.sin(this.yaw) * this.speed + this.ext.x, this.vel.y - PHYS.gravity * dt, -Math.cos(this.yaw) * this.speed + this.ext.z);
+    if (this.ext.y > 0) { this.vel.y = Math.max(this.vel.y, this.ext.y); this.ext.y = 0; }
     const before = this.speed; const r = moveBody(this.pos, this.vel, dt, this.K.r, this.K.h, true);
+    this.ext.x *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); this.ext.z *= Math.exp(-dt * (r.grounded ? 2.2 : 0.15)); if (r.hitWall) { this.ext.x *= -0.3; this.ext.z *= -0.3; }
     this.reloadT -= dt; this.recoil = Math.max(0, this.recoil - dt * 2.5);
     if (this.kind === 'tank') { const d = this.driver; if (d && (d.ctrl === 'local' || d.ctrl === 'bot')) this.aimTurret(dt, d.yaw, d.pitch); this.syncTurret(); }
     if (r.hitWall) { if (Math.abs(before) > 8 && Game.authority() && this.kind !== 'tank') this.damage(Math.abs(before) * 3, null); this.speed *= this.kind === 'tank' ? 0 : -0.25; }
@@ -3159,7 +3180,7 @@ const Game = {
       if (owner && owner.team === s.team && owner !== s) continue;
       this.damage(s, dmg * f, owner, weapon, 'chest');
     }
-    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); }
+    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) { v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); if (v.ext && v.kind !== 'tank' && !v.frozen && !v.held) { const f = dmg * 0.09 * (1 - d / R), dx = v.pos.x - p.x, dz = v.pos.z - p.z, l = Math.hypot(dx, dz) || 1; v.ext.x += dx / l * f; v.ext.z += dz / l * f; v.ext.y = Math.max(v.ext.y, f * 0.6); } } }
     if (Phys.active) { Phys.blast(p, radius * 1.6, 10); for (const q of Phys.props.slice()) if (q.def.explosive && dist3(new V3(q.x, q.y, q.z), p) < radius) Phys.damage(q, dmg, owner); }
   },
   flashbang(p, owner) {
@@ -3271,7 +3292,7 @@ const Game = {
     }
     for (const v of this.vehicles) {
       if (v.driver && v.driver.ctrl === 'local') v.drive(Player.vehicleInput(), dt);
-      if (!v.driver || v.driver.ctrl === 'local' || v.driver.ctrl === 'bot' || this.authority() && !v.driver) v.physics(dt);
+      if (this.authority() ? (!v.driver || v.driver.ctrl === 'local' || v.driver.ctrl === 'bot') : (v.driver && v.driver.ctrl === 'local') || !v.net) v.physics(dt);
       else Net.interpVehicle(v, dt);
     }
     for (let i = this.nades.length - 1; i >= 0; i--) { this.nades[i].update(dt); if (this.nades[i].done) this.nades.splice(i, 1); }
@@ -3387,7 +3408,7 @@ const Player = {
       if (w.mag && s.ammo[s.cur] && s.ammo[s.cur].mag === 0 && s.ammo[s.cur].res > 0 && s.fireCd <= 0 && s.reloadT <= 0) s.startReload();
     }
     // use: vehicles, plant, defuse
-    if (I.hit('KeyE')) {
+    if (I.hit('KeyE') && !(Sandbox.on && Sandbox.tryUse(s))) {
       if (!Game.tryEnterVehicle(s)) {
         if (Game.bomb.state === 'carried' && Game.bomb.carrier === s.id && World.siteAt(s.pos.x, s.pos.z)) Game.startPlant(s);
         else if (s.team === 'CT' && Game.bomb.state === 'planted') Game.startDefuse(s);
@@ -3748,6 +3769,7 @@ const HUD = {
     if (L.alive) {
       if (B.state === 'carried' && B.carrier === L.id) hint = World.siteAt(L.pos.x, L.pos.z) ? 'Hold E to plant the bomb' : 'You have the bomb — plant it at A or B';
       else if (L.team === 'CT' && B.state === 'planted' && B.pos && dist2(L.pos.x, L.pos.z, B.pos.x, B.pos.z) < 2 && !prog) hint = 'Hold E to defuse';
+      else if (Sandbox.on && !L.vehicle && (hint = Sandbox.useHint(L))) { }
       else if (!L.vehicle && Game.vehicles.some(v => v.alive && (!v.driver || (!v.passenger && v.kind !== 'tank')) && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter)) { const v = Game.vehicles.find(v => v.alive && dist2(v.pos.x, v.pos.z, L.pos.x, L.pos.z) < v.K.enter); hint = 'E — enter ' + (v ? v.K.name.toLowerCase() : 'vehicle'); }
       else if (L.vehicle) hint = L.vehicle.kind === 'tank' ? `Tank ${Math.max(0, Math.ceil(L.vehicle.hp))}/${L.vehicle.maxHp} · W/S drive · A/D turn · mouse aim · LMB fire · E exit` : L.vehicle.driver === L ? 'W/S drive · A/D steer · Space brake · E exit' : 'Passenger — shoot freely · E exit';
       else if (Game.mode.buy && Game.round && UI.canBuy(L)) hint = 'B — buy menu';
@@ -4288,7 +4310,7 @@ const Net = {
     if (Game.mode.id === 'tdm') g.td = [Game.tdm.kills.T, Game.tdm.kills.CT, Math.round(Game.tdm.timeLeft)];
     if (Game.vehicles.length) g.v = Game.vehicles.map(v => [v.id, +v.pos.x.toFixed(2), +v.pos.y.toFixed(2), +v.pos.z.toFixed(2), +v.yaw.toFixed(3), +v.speed.toFixed(2), Math.round(v.hp), v.alive ? 1 : 0, +v.tYaw.toFixed(3), +v.tPitch.toFixed(3)]);
     let props;
-    if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
+    if (Sandbox.on) { this.propFull = (this.propFull || 0) - 1; const all = this.propFull <= 0; if (all) this.propFull = 15; props = Phys.props.filter(p => all || (p.body && p.body.sleepState !== CANNON.Body.SLEEPING && !p.frozen) || (p.door && p.door.moving)).map(p => [p.id, +p.x.toFixed(3), +p.y.toFixed(3), +p.z.toFixed(3), +p.q.x.toFixed(4), +p.q.y.toFixed(4), +p.q.z.toFixed(4), +p.q.w.toFixed(4)]); }
     this.toAll({ t: 'snap', s, g, sh: this.shotsOut.splice(0), p: props });
   },
 };
@@ -4751,14 +4773,15 @@ UI.toggleSpawnMenu = function (on) {
   if (on) { this.pause(false); Input.clear(); if (document.pointerLockElement) document.exitPointerLock(); this.renderSpawnMenu(); } else this.lock();
 };
 UI.renderSpawnMenu = function () {
-  const tabs = ['Props', 'Entities', 'NPCs', 'Weapons', 'Vehicles', 'Tools', 'Options'], T = this.spawnTab, O = Sandbox.opts;
+  const tabs = ['Props', 'Entities', 'Wiring', 'Lights', 'NPCs', 'Weapons', 'Vehicles', 'Tools', 'Saves', 'Options'], T = this.spawnTab, O = Sandbox.opts;
   const tile = (kind, key, name, img, sub) => `<button class="sp-tile" data-kind="${kind}" data-key="${key}"><img src="${img}" alt=""><span>${escapeHtml(name)}</span>${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</button>`;
   let html = '';
-  if (T === 'Props' || T === 'Entities') html = `<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T && p.id !== 'lightbulb').map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)))).join('')}</div>`;
+  if (['Props', 'Entities', 'Wiring', 'Lights'].includes(T)) html = `${T === 'Wiring' ? '<p class="muted sp-note">Place parts where you aim (on a prop they get welded to it). Connect them with the <b>Wire</b> tool: click an output, then what it powers. <b>E</b> presses buttons, flips switches, opens doors and switches lights.</p>' : ''}<div class="sp-grid">${Object.values(PROPS).filter(p => p.cat === T).map(p => tile('prop', p.id, p.name, Thumbs.get('p:' + p.id, () => buildPropMesh(p)), p.desc)).join('')}</div>`;
+  else if (T === 'Saves') html = UI.savesHtml();
   else if (T === 'NPCs') html = `<div class="sp-row"><label>Weapon <select id="npcW"><option value="default">Default</option>${Object.values(WEAPONS).filter(w => w.mag && w.type !== 'launcher').map(w => `<option value="${w.id}" ${O.npcWeapon === w.id ? 'selected' : ''}>${w.name}</option>`).join('')}<option value="knife" ${O.npcWeapon === 'knife' ? 'selected' : ''}>Knife</option></select></label><label>Skill <select id="npcS">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${O.npcSkill === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label></div>
     <div class="sp-grid">${Object.entries(NPCS).map(([k, n]) => tile('npc', k, n.name, Thumbs.get('n:' + k, () => { const m = buildSoldierModel(n.team); if (!n.weapon) m.userData.gunMount.visible = false; else setSoldierGun(m, n.weapon, null, null); if (k === 'zombie') m.userData.arms.rotation.x = -0.3; m.rotation.y = Math.PI * 0.85; return m; }), n.desc)).join('')}</div>`;
   else if (T === 'Weapons') html = `<div class="sp-grid">${Object.values(WEAPONS).filter(w => w.id !== 'physgun' && w.id !== 'toolgun' && !w.hidden).map(w => tile('weapon', w.id, w.name, Thumbs.get('w:' + w.id + attSig(Inv.data.attach[w.id]), () => { const g = buildGun(w.id, Inv.equippedItem(w.id), Inv.data.attach[w.id]); g.rotation.y = Math.PI / 2; return g; }))).join('')}${['frag', 'flash', 'smoke'].map(n => tile('weapon', n, GRENADES[n].name, Thumbs.get('g:' + n, () => new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.09, 12), lam(n === 'frag' ? '#3a4a2a' : n === 'flash' ? '#b8b8b8' : '#5a6a7a'))))).join('')}</div>`;
-  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'Fast. E to drive')}${tile('veh', 'tank', 'Tank', Thumbs.get('v:tank', () => { const j = buildTank('CT'); j.rotation.y = 0.6; return j; }), 'Armoured, cannon on LMB')}</div>`;
+  else if (T === 'Vehicles') html = `<div class="sp-grid">${tile('veh', 'jeep', 'Jeep', Thumbs.get('v:jeep', () => { const j = buildJeep('CT'); j.rotation.y = 0.6; return j; }), 'Fast. E to drive')}${tile('veh', 'car', 'Car', Thumbs.get('v:car', () => { const j = buildCar('CT'); j.rotation.y = 0.6; return j; }), 'Quick and light. E to drive')}${tile('veh', 'tank', 'Tank', Thumbs.get('v:tank', () => { const j = buildTank('CT'); j.rotation.y = 0.6; return j; }), 'Armoured, cannon on LMB')}</div>`;
   else if (T === 'Tools') {
     const tool = TOOLS[O.tool], opt = tool.opts || [];
     html = `<div class="sp-tools"><div class="sp-toollist">${Object.entries(TOOLS).map(([k, t]) => `<button class="${O.tool === k ? 'on' : ''}" data-tool="${k}">${t.name}</button>`).join('')}</div><div class="sp-toolopts"><h3>${tool.name}</h3><p><b>LMB</b> ${tool.lmb}<br><b>RMB</b> ${tool.rmb}<br><b>R</b> clear selection</p>
@@ -4772,7 +4795,7 @@ UI.renderSpawnMenu = function () {
       ${opt.includes('effect') ? `<label>Effect</label><div class="mats">${Object.entries(EFFECTS).map(([k, n]) => `<button data-fx="${k}" class="${O.effect === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
       ${opt.includes('physprop') ? `<label>Physics</label><div class="mats">${Object.entries(PHYSPROPS).filter(([k]) => k !== 'normal').map(([k, n]) => `<button data-pp="${k}" class="${O.physprop === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
       ${O.tool === 'duplicator' ? `<p class="muted">${Sandbox.clip ? 'Clipboard: ' + Sandbox.clip.items.length + ' prop(s)' : 'Clipboard empty'}</p>` : ''}
-      ${O.tool === 'lamp' ? '<p class="muted">Press L to switch all your lamps on or off.</p>' : ''}${O.tool === 'emitter' ? '<p class="muted">Press O to switch your emitters on or off.</p>' : ''}
+      ${O.tool === 'lamp' ? '<p class="muted">Press L to switch all your lamps on or off.</p>' : ''}${O.tool === 'emitter' ? '<p class="muted">Press O to switch your emitters on or off.</p>' : ''}${UI.toolExtra(O)}
       <button class="btn" id="useTool">Use tool gun</button></div></div>`;
   } else html = `<div class="sp-opts"><label>Faction <select id="optFac"><option value="CT" ${O.faction === 'CT' ? 'selected' : ''}>Aegis</option><option value="T" ${O.faction === 'T' ? 'selected' : ''}>Vanta</option></select> <small class="muted">takes effect when you respawn</small></label>
     <label><input type="checkbox" id="optIgnore" ${O.ignorePlayers ? 'checked' : ''}> NPCs ignore players</label>
@@ -4790,6 +4813,8 @@ UI.renderSpawnMenu = function () {
   M.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { O.effect = b.dataset.fx; Sandbox.saveOpts(); this.renderSpawnMenu(); });
   M.querySelectorAll('[data-pp]').forEach(b => b.onclick = () => { O.physprop = b.dataset.pp; Sandbox.saveOpts(); this.renderSpawnMenu(); }); bind('npcS', 'npcSkill');
   if ($('npcW')) $('npcW').onchange = $('npcW').oninput; if ($('npcS')) $('npcS').onchange = $('npcS').oninput;
+  if (T === 'Tools') UI.bindToolExtra(M, O);
+  if (T === 'Saves') UI.bindSaves(M);
   if ($('useTool')) $('useTool').onclick = () => { if (L) L.switchTo('toolgun'); this.toggleSpawnMenu(false); };
   if ($('optFac')) $('optFac').onchange = e => { O.faction = e.target.value; Sandbox.saveOpts(); if (L && Net.role === 'off') { L.team = O.faction; L.buildModel(Game.scene); Game.view && (Game.view.key = null); } };
   if ($('optIgnore')) $('optIgnore').onchange = e => { O.ignorePlayers = e.target.checked; Sandbox.saveOpts(); };
@@ -5445,7 +5470,7 @@ const Sandbox = {
         this.emit({ e: 'npc', id, k: a.k, name: n.name.split(' ')[0] + ' ' + pick(BOT_NAMES), team: n.team, w: weapon, pos: a.pos, yaw: a.yaw || 0, att });
         undo.push({ kind: 'npc', id }); break;
       }
-      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0, k: a.k === 'tank' ? 'tank' : 'jeep' }); undo.push({ kind: 'veh', id }); break; }
+      case 'veh': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], z: a.pos[2], yaw: a.yaw || 0, k: VKIND[a.k] ? a.k : 'jeep' }); undo.push({ kind: 'veh', id }); break; }
       case 'undo': {
         let u; while ((u = undo.pop())) { if (this.exists(u)) break; }
         if (!u) return;
@@ -5686,7 +5711,7 @@ const Sandbox = {
     const L = Game.local; if (!L || !L.alive) return;
     if (kind === 'prop') { const d = PROPS[key]; const p = this.spawnPoint(L, d.radius * 0.8); this.exec({ op: 'prop', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
     else if (kind === 'npc') { const p = this.spawnPoint(L, 0.1); const q = World.nav.walkableAt(p.x, p.z) ? p : World.nav.randomNear(p.x, p.z, 3); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, Math.max(0, p.y - 0.1), q.z], yaw: L.yaw + Math.PI }); }
-    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); this.exec({ op: 'veh', k: key, pos: [p.x, 0, p.z], yaw: L.yaw }); }
+    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); p.y = Math.max(0, p.y - (key === 'tank' ? 2.5 : 1.2)); this.exec({ op: 'veh', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
     else if (kind === 'weapon') {
       if (isNade(key)) { L.nades[key] = Math.min(3, L.nades[key] + 1); } else { const w = WEAPONS[key]; if (w.slot === 4) { L.weapons[4] = key; L.fillAmmo(key); L.switchTo(key); } else L.give(key); }
       Sfx.play('buy');
@@ -6014,6 +6039,17 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.7', date: 'Sep 2026', title: 'Sandbox: saves, wiring, doors, lights', items: [
+    ['New', 'Sandbox saves: name a save in the new Saves tab, load it any time, export it as a file to share or back up, and import files. Leaving a sandbox keeps an Autosave. Loading a save made on another map switches to that map.'],
+    ['New', 'Wiring: buttons, switches, pressure plates, proximity sensors, timers, AND / OR / NOT / XOR gates, delays and toggle latches. The new Wire tool connects an output to anything: doors open, lights switch, alarms sound, thrusters fire, wheels drive, lamps and emitters toggle, dynamite goes off.'],
+    ['New', 'Doors that work: hinged, sliding and garage doors. Press E to open them, or wire them to a circuit. Hinged doors swing away from you.'],
+    ['New', 'Lights: bulbs, ceiling panels, neon tubes, floodlights and lanterns in a new Lights tab, and a Light tool with brightness. E switches any light on and off.'],
+    ['New', 'Vehicles work with the physics gun (pick up, rotate with E, throw, freeze with RMB, R unfreezes) and the tool gun (paint, freeze, ignite, copy and paste, repair, remove).'],
+    ['New', 'A drivable Car in the Vehicles tab.'],
+    ['New', 'Tools: Axis (hinge two props, or a prop to the world), Ball socket, Repair.'],
+    ['Change', 'Explosions shove jeeps and cars around.'],
+    ['Fix', 'Many lights no longer slow the game down or stutter when switched: the world shares a small set of real lights between the nearest ones.'],
+  ] },
   { v: '1.6', date: 'Sep 2026', title: 'Bigger blasts, tougher tanks', items: [
     ['Change', 'Every explosion (grenades, RPG, M79, crossbow bolts, tank shells, dynamite, barrels, blown-up vehicles) now reaches twice as far, with a bigger fireball to match. The C4 was already huge and is unchanged.'],
     ['Fix', 'Tanks died too easily. They now have 2600 HP (was 1300), about 10 RPG hits, and shrug off bullets even more.'],
@@ -6071,6 +6107,610 @@ UI.maybeShowNews = function () {
   const seen = Store.get('seenVersion', null);
   const dot = $('newsDot'); if (dot) dot.classList.toggle('hidden', seen === VERSION);
   if (seen !== VERSION) setTimeout(() => { if (!Game.running && this.cur === 'main') this.show('news'); }, 400);
+};
+
+/* ── 18_sandbox_plus.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sandbox, part three:
+   · Wiring: buttons, switches, pressure plates, sensors and timers feed
+     AND / OR / NOT / XOR gates, delays and toggle latches, which drive
+     doors, lights, alarms, thrusters, wheels, lamps, emitters and dynamite.
+     The Wire tool connects an output to an input.
+   · Doors that work: hinged, sliding and garage doors. E opens them, or
+     wire them to a circuit.
+   · Lights: bulbs, ceiling panels, neon tubes, floodlights and lanterns,
+     switched with E or by wire. A fixed pool of real lights is shared by
+     every light in the world, so a hundred bulbs don't stall the renderer.
+   · Axis (hinge) and Ball socket constraints, and a Repair tool.
+   · Vehicles work with the physics gun (pick up, rotate, throw, freeze) and
+     the tool gun (paint, freeze, ignite, copy, repair, remove).
+   · Saves: named slots in the browser, plus export / import as a file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const Y_AXIS = new V3(0, 1, 0);
+
+/* ── catalog ───────────────────────────────────────────────────────────── */
+const CHIP = (name, label, color, logic, extra) => Object.assign({ name, cat: 'Wiring', shapes: [B3(0.13, 0.025, 0.13)], mass: 2, mat: 'plastic', color: '#24272c', parts: 'chip', label, chip: color, logic, flush: true }, extra || {});
+Object.assign(PROPS, {
+  button:   { name: 'Button', cat: 'Wiring', shapes: [B3(0.11, 0.025, 0.11)], mass: 2, mat: 'plastic', color: '#3a3e44', parts: 'button', logic: 'button', usable: true, flush: true, desc: 'On for 1 s when pressed' },
+  switch:   { name: 'Switch', cat: 'Wiring', shapes: [B3(0.09, 0.025, 0.13)], mass: 2, mat: 'plastic', color: '#3a3e44', parts: 'switch', logic: 'switch', usable: true, flush: true, desc: 'Flip it on and off with E' },
+  plate:    { name: 'Pressure plate', cat: 'Wiring', shapes: [B3(0.6, 0.03, 0.6)], mass: 30, mat: 'metal', color: '#5a6068', parts: 'plate', logic: 'plate', flush: true, desc: 'On while someone or something is on it' },
+  sensor:   { name: 'Proximity sensor', cat: 'Wiring', shapes: [B3(0.08, 0.04, 0.08)], mass: 2, mat: 'plastic', color: '#2a2e34', parts: 'sensor', logic: 'sensor', flush: true, desc: 'On while anyone is within 4 m' },
+  timer:    CHIP('Timer', 'CLK', '#2a6adf', 'timer', { usable: true, desc: 'Pulses on and off. E changes the speed' }),
+  g_and:    CHIP('AND gate', 'AND', '#2a9a5a', 'and', { desc: 'On when every input is on' }),
+  g_or:     CHIP('OR gate', 'OR', '#2a8a9a', 'or', { desc: 'On when any input is on' }),
+  g_not:    CHIP('NOT gate', 'NOT', '#9a3a3a', 'not', { desc: 'On when no input is on' }),
+  g_xor:    CHIP('XOR gate', 'XOR', '#8a5a2a', 'xor', { desc: 'On when an odd number of inputs are on' }),
+  delay:    CHIP('Delay', 'DLY', '#6a4aaa', 'delay', { desc: 'Copies its input 1 s later' }),
+  flipflop: CHIP('Toggle latch', 'T-FF', '#aa4a8a', 'flipflop', { desc: 'Flips each time its input turns on. Button + latch = light switch' }),
+  alarm:    { name: 'Alarm', cat: 'Wiring', shapes: [{ t: 'cyl', r: 0.1, h: 0.06 }], mass: 2, mat: 'plastic', color: '#2a2a2a', parts: 'alarm', flush: true, desc: 'Flashes and beeps while powered' },
+  hdoor:    { name: 'Hinged door', cat: 'Entities', shapes: [B3(0.6, 1.1, 0.04)], mass: 40, mat: 'wood', color: '#9a6a3a', door: 'hinge', parts: 'door', usable: true, desc: 'E to open, or wire it' },
+  sdoor:    { name: 'Sliding door', cat: 'Entities', shapes: [B3(0.75, 1.1, 0.05)], mass: 60, mat: 'metal', color: '#7a8088', door: 'slide', parts: 'door', usable: true, desc: 'Slides aside. E or wire' },
+  garage:   { name: 'Garage door', cat: 'Entities', shapes: [B3(1.5, 1.2, 0.05)], mass: 120, mat: 'metal', color: '#a8aca8', door: 'lift', parts: 'garage', usable: true, desc: 'Rolls up. E or wire' },
+  ceiling:  { name: 'Ceiling light', cat: 'Lights', shapes: [B3(0.35, 0.025, 0.35)], mass: 3, mat: 'glow', color: '#fff4dc', light: { i: 9, d: 20, at: [0, 0.2, 0] }, usable: true, flush: true },
+  neon:     { name: 'Neon tube', cat: 'Lights', shapes: [B3(0.025, 0.025, 0.7)], mass: 1, mat: 'glow', color: '#ff3ad8', light: { i: 3, d: 9, at: [0, 0.1, 0] }, usable: true, flush: true },
+  flood:    { name: 'Floodlight', cat: 'Lights', shapes: [B3(0.2, 0.02, 0.2, [0, 0.02, 0]), B3(0.025, 0.55, 0.025, [0, 0.6, 0]), B3(0.18, 0.13, 0.08, [0, 1.2, 0])], mass: 15, mat: 'metal', color: '#333333', parts: 'flood', light: { spot: true, i: 70, d: 60, at: [0, 1.2, -0.12], dir: [0, -0.3, -1], angle: 0.55 }, usable: true, flush: true },
+  lantern:  { name: 'Lantern', cat: 'Lights', shapes: [{ t: 'cyl', r: 0.09, h: 0.24 }], mass: 2, mat: 'glow', color: '#ffc860', parts: 'lantern', light: { i: 5, d: 12 }, usable: true },
+});
+Object.assign(PROPS.lightbulb, { cat: 'Lights', usable: true, flush: true });
+for (const k in PROPS) { const d = PROPS[k]; d.id = k; let r = 0; for (const s of d.shapes) { const o = s.off || [0, 0, 0], ext = s.t === 'sphere' ? s.r : s.t === 'cyl' ? Math.hypot(s.r, s.h / 2) : Math.hypot(...s.h); r = Math.max(r, Math.hypot(...o) + ext); } d.radius = r; }
+
+Object.assign(TOOLS, {
+  wire:   { name: 'Wire', lmb: 'click an output (button, gate…), then what it powers', rmb: 'cut every wire going into what you aim at' },
+  hinge:  { name: 'Axis', lmb: 'click a prop where it should pivot, then the other prop or the world', rmb: 'cancel' },
+  ball:   { name: 'Ball socket', lmb: 'click a prop, then the other prop or the world: they pivot freely there', rmb: 'cancel' },
+  repair: { name: 'Repair', lmb: 'repair a vehicle', rmb: 'repair every vehicle near you' },
+});
+TOOLS.light = { name: 'Light', lmb: 'place the chosen light (welded if you aim at a prop)', rmb: 'switch the light you aim at on or off', opts: ['lightkind', 'color', 'bright'] };
+Object.assign(Sandbox.opts, Object.assign({ lightKind: 'lightbulb', bright: 1 }, Store.get('sbx_opts', {})));
+const LIGHT_KINDS = { lightbulb: 'Bulb', ceiling: 'Ceiling panel', neon: 'Neon tube', flood: 'Floodlight', lantern: 'Lantern' };
+
+/* ── light pool ────────────────────────────────────────────────────────── */
+/* Real lights are expensive and every change in how many exist recompiles
+   shaders. So the world keeps a few, and each frame hands them to the
+   nearest switched-on lights. The count only ever steps between a handful
+   of sizes. */
+const LightPool = {
+  pts: [], spots: [], scene: null, STEP_P: [0, 2, 4, 8], STEP_S: [0, 1, 2, 4],
+  init(scene) {
+    this.clear(); this.scene = scene;
+    for (let i = 0; i < 8; i++) { const L = new THREE.PointLight(0xffffff, 0, 10); L.visible = false; scene.add(L); this.pts.push(L); }
+    for (let i = 0; i < 4; i++) { const L = new THREE.SpotLight(0xffffff, 0, 40, 0.5, 0.45, 1.2); L.visible = false; scene.add(L); scene.add(L.target); this.spots.push(L); }
+  },
+  clear() { for (const L of this.pts.concat(this.spots)) { if (L.parent) L.parent.remove(L); if (L.target && L.target.parent) L.target.parent.remove(L.target); } this.pts = []; this.spots = []; this.scene = null; },
+  update() {
+    if (!this.scene || this.scene !== Game.scene) return;
+    const cam = Game.camera.position, P = [], S = [];
+    for (const p of Phys.props) {
+      const s = p.mesh.userData.light;
+      if (s && s.visible) {
+        const w = s.at ? Phys.anchor(p, s.at) : new V3(p.x, p.y, p.z), e = { s, w, d: w.distanceToSquared(cam), k: p.bright || 1 };
+        if (s.spot) e.dir = new V3(...s.dir).normalize().applyQuaternion(p.q);
+        (s.spot ? S : P).push(e);
+      }
+      if (p.lamps) for (const l of p.lamps) if (l.light && l.light.visible) { const dir = new V3(...l.dir).normalize().applyQuaternion(p.q), w = Phys.anchor(p, l.at).addScaledVector(dir, 0.1); S.push({ s: l.light, w, dir, d: w.distanceToSquared(cam), k: 1 }); }
+    }
+    P.sort((a, b) => a.d - b.d); S.sort((a, b) => a.d - b.d);
+    const fill = (pool, list, steps) => {
+      const k = steps.find(n => n >= Math.min(list.length, pool.length)), want = k === undefined ? pool.length : k;
+      pool.forEach((L, i) => {
+        L.visible = i < want; const e = list[i];
+        if (!e) { L.intensity = 0; return; }
+        L.color.copy(e.s.color); L.intensity = e.s.intensity * e.k; L.distance = e.s.distance * Math.sqrt(e.k); L.position.copy(e.w);
+        if (L.isSpotLight) { L.angle = e.s.angle || 0.5; L.target.position.copy(e.w).addScaledVector(e.dir, 5); L.target.updateMatrixWorld(); }
+      });
+    };
+    fill(this.pts, P, this.STEP_P); fill(this.spots, S, this.STEP_S);
+  },
+};
+
+/* ── prop meshes: decorations, and lights as pool sources ─────────────── */
+const _labelCache = {};
+function labelTex(text, bg) {
+  const key = text + bg; if (_labelCache[key]) return _labelCache[key];
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  x.fillStyle = bg; x.fillRect(0, 0, 64, 64); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 3; x.strokeRect(4, 4, 56, 56);
+  x.fillStyle = '#fff'; x.font = `bold ${text.length > 3 ? 17 : 21}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 32, 34);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return _labelCache[key] = t;
+}
+function keepAdd(g, m) { m.traverse(o => o.userData.keep = true); g.add(m); return m; }
+function addLed(g, x, y, z) { const m = keepAdd(g, new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), new THREE.MeshBasicMaterial({ color: 0x3a1010 }))); m.position.set(x, y, z); g.userData.led = m; }
+function vcyl(r, h, m, x, y, z) { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); o.position.set(x, y, z); return o; }
+const _buildPropMesh = buildPropMesh;
+buildPropMesh = function (def, p = {}) {
+  const g = _buildPropMesh(def, p), u = g.userData;
+  if (u.light && u.light.isLight) { g.remove(u.light); u.light.dispose(); u.light = null; }
+  if (def.light) { const L = typeof def.light === 'object' ? def.light : {}; u.light = { color: new THREE.Color(p.color || def.color || '#ffe8a0'), intensity: L.i || 6, distance: L.d || 14, spot: !!L.spot, at: L.at || null, dir: L.dir || null, angle: L.angle || 0.5, visible: true }; }
+  const h = def.shapes[0].h;
+  switch (def.parts) {
+    case 'chip': { const top = keepAdd(g, new THREE.Mesh(new THREE.PlaneGeometry(h[0] * 1.8, h[2] * 1.8), new THREE.MeshBasicMaterial({ map: labelTex(def.label, def.chip) }))); top.rotation.x = -Math.PI / 2; top.position.y = h[1] + 0.002; addLed(g, h[0] * 0.8, h[1] + 0.012, -h[2] * 0.8); break; }
+    case 'button': u.cap = keepAdd(g, vcyl(0.055, 0.04, lam('#d82020'), 0, 0.045, 0)); addLed(g, 0.085, 0.03, -0.085); break;
+    case 'switch': { const lv = new THREE.Group(); lv.position.y = 0.025; lv.add(bx(0.025, 0.1, 0.025, lam('#dcdcdc'), 0, 0.05, 0)); lv.add(bx(0.04, 0.03, 0.04, lam('#d82020'), 0, 0.1, 0)); lv.rotation.x = 0.5; u.lever = keepAdd(g, lv); addLed(g, 0.065, 0.03, -0.105); break; }
+    case 'plate': addLed(g, 0.54, 0.035, -0.54); break;
+    case 'sensor': keepAdd(g, new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), new THREE.MeshBasicMaterial({ color: 0x1a3a7a }))).position.y = 0.04; addLed(g, 0.06, 0.045, -0.06); break;
+    case 'alarm': { const d = keepAdd(g, new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 8, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x5a1010 }))); d.position.y = 0.03; u.dome = d; break; }
+    case 'door': for (const s of [1, -1]) keepAdd(g, bx(0.03, 0.14, 0.05, lam('#c8c8c0'), h[0] * 0.78, 0, s * (h[2] + 0.02))); break;
+    case 'garage': for (let i = 0; i < 6; i++) keepAdd(g, bx(h[0] * 2, 0.03, h[2] * 2 + 0.02, lam('#8a8e8a'), 0, -h[1] + 0.2 + i * 0.4, 0)); break;
+    case 'flood': u.glows = [keepAdd(g, bx(0.15, 0.1, 0.01, new THREE.MeshBasicMaterial({ color: p.color || '#fff6d8' }), 0, 1.2, -0.086))]; break;
+    case 'lantern': keepAdd(g, vcyl(0.1, 0.02, lam('#333'), 0, 0.13, 0)); keepAdd(g, vcyl(0.1, 0.02, lam('#333'), 0, -0.13, 0)); break;
+  }
+  return g;
+};
+attachLamp = function (p, l) {
+  (p.lamps = p.lamps || []).push(l);
+  const g = new THREE.Group(); g.add(cyl(0.08, 0.12, lam('#333'), 0, 0, 0, 10)); const lens = cyl(0.07, 0.01, new THREE.MeshBasicMaterial({ color: l.on === false ? '#222' : l.color }), 0, 0, -0.065, 10); g.add(lens);
+  g.position.set(...l.at); g.quaternion.setFromUnitVectors(new V3(0, 0, -1), new V3(...l.dir)); g.traverse(o => o.userData.keep = true); p.mesh.add(g);
+  l.mesh = g; l.lens = lens; l.light = { color: new THREE.Color(l.color), intensity: 40, distance: 45, angle: 0.45, spot: true, visible: l.on !== false };
+};
+function setLightOn(p, on) {
+  const s = p.mesh.userData.light; if (!s) return; s.visible = on;
+  const col = on ? (p.color || p.def.color || '#ffe8a0') : '#2a2a28';
+  if (PMAT[p.mat || p.def.mat] && PMAT[p.mat || p.def.mat].glow) p.mesh.children.forEach(o => { if (o.isMesh && !o.userData.keep && o.material.isMeshBasicMaterial) o.material.color.set(col); });
+  for (const o of p.mesh.userData.glows || []) o.material.color.set(on ? (p.color || '#fff6d8') : '#2a2a28');
+}
+
+/* ── wiring ────────────────────────────────────────────────────────────── */
+const Wiring = {
+  t: 0,
+  inputs() { const m = new Map(); for (const c of Phys.constraints) if (c.type === 'wire' && c.a && c.b) { let l = m.get(c.b); if (!l) m.set(c.b, l = []); l.push(c.a); } return m; },
+  wired(p) { return Phys.constraints.some(c => c.type === 'wire' && c.b === p); },
+  plateHit(p) {
+    const b = Object.assign({}, Phys.aabb(p));
+    for (const s of Game.soldiers) if (s.alive && s.pos.x > b.x0 && s.pos.x < b.x1 && s.pos.z > b.z0 && s.pos.z < b.z1 && s.pos.y > b.y1 - 0.4 && s.pos.y < b.y1 + 0.5) return true;
+    for (const q of Phys.props) { if (q === p || q.held) continue; const c = Phys.aabb(q); if (c.x1 > b.x0 && c.x0 < b.x1 && c.z1 > b.z0 && c.z0 < b.z1 && c.y0 > b.y1 - 0.15 && c.y0 < b.y1 + 0.25) return true; }
+    for (const v of Game.vehicles) if (v.alive && v.pos.x > b.x0 - v.K.r && v.pos.x < b.x1 + v.K.r && v.pos.z > b.z0 - v.K.r && v.pos.z < b.z1 + v.K.r && Math.abs(v.pos.y - b.y1) < 0.6) return true;
+    return false;
+  },
+  sensorHit(p) { for (const s of Game.soldiers) if (s.alive && dist3(new V3(s.pos.x, s.pos.y + 0.9, s.pos.z), new V3(p.x, p.y, p.z)) < 4) return true; return false; },
+  /* authority: work out every output from last tick's outputs, then publish the changes */
+  tick() { for (let i = 0; i < 8 && this.step(); i++); },   // settle chains of gates in one tick (loops still oscillate, one step per pass)
+  step() {
+    const now = Game.now, ins = this.inputs(), changes = [];
+    for (const p of Phys.props) {
+      const d = p.def, L = ins.get(p), on = L ? L.filter(x => x.sig).length : 0, any = on > 0;
+      let v;
+      switch (d.logic) {
+        case 'button': v = now < (p.pressT || 0); break;
+        case 'switch': v = !!p.manual; break;
+        case 'plate': v = this.plateHit(p); break;
+        case 'sensor': v = this.sensorHit(p); break;
+        case 'timer': { const per = p.period || 1; v = (now % per) < per / 2; break; }
+        case 'and': v = !!L && on === L.length; break;
+        case 'or': v = any; break;
+        case 'not': v = !any; break;
+        case 'xor': v = on % 2 === 1; break;
+        case 'delay': { p.dq = p.dq || []; if (any !== !!p.dLast) { p.dq.push([now + 1, any]); p.dLast = any; } while (p.dq.length && p.dq[0][0] <= now) p.dOut = p.dq.shift()[1]; v = !!p.dOut; break; }
+        case 'flipflop': { if (any && !p.ffLast) p.ff = !p.ff; p.ffLast = any; v = !!p.ff; break; }
+        default:
+          if (L) v = any;
+          else if (d.light) v = p.manual !== false;
+          else if (d.door) v = !!p.manual;
+          else v = false;
+      }
+      if (v !== !!p.sig) changes.push([p, v]);
+    }
+    for (const [p, v] of changes) Sandbox.emit({ e: 'sig', id: p.id, v });
+    return changes.length > 0;
+  },
+  /* every machine: what a signal looks like, and (authority) what it does */
+  apply(p, v) {
+    const was = !!p.sig; p.sig = v; const u = p.mesh.userData, wired = this.wired(p);
+    if (u.led) u.led.material.color.set(v ? 0x3aff6a : 0x3a1010);
+    if (u.cap) u.cap.position.y = v ? 0.03 : 0.045;
+    if (u.lever) u.lever.rotation.x = v ? -0.5 : 0.5;
+    if (p.def.light) setLightOn(p, v);
+    for (const c of Phys.constraints) if (c.type === 'wire' && c.a === p && c.line) c.line.material.color.set(v ? 0x3aff6a : 0x8a2a2a);
+    if (wired) {
+      if (p.lamps) for (const l of p.lamps) { l.on = v; l.light.visible = v; l.lens.material.color.set(v ? l.color : '#222'); }
+      if (p.emitters) for (const e of p.emitters) e.on = v;
+      if (p.thrusters) for (const t of p.thrusters) t.on = v;
+    }
+    if (!Game.authority() || !wired) return;
+    for (const c of Phys.constraints) if (c.type === 'wheel' && c.a === p && c.cn) {
+      if (v) { c.cn.enableMotor(); c.cn.setMotorSpeed((c.rev ? -1 : 1) * (c.speed || 12)); c.cn.motorEquation.maxForce = 400; c.a.body.wakeUp(); c.b.body.wakeUp(); } else c.cn.disableMotor();
+    }
+    if (p.def.dynamite && v && !was) { const pos = new V3(p.x, p.y, p.z); Sandbox.removeEntity(p.id); Sandbox.explode(pos, p.def.explosive * p.scale, 6 * Math.sqrt(p.scale), Game.byId(p.own)); }
+  },
+};
+
+/* ── doors ─────────────────────────────────────────────────────────────── */
+function doorTick(p, dt) {
+  const D = p.door || (p.door = { pos: [p.x, p.y, p.z], q: [p.q.x, p.q.y, p.q.z, p.q.w], t: 0, dir: 1 });
+  if (p.held || !p.frozen) { D.t = 0; D.moving = false; D.pos = [p.x, p.y, p.z]; D.q = [p.q.x, p.q.y, p.q.z, p.q.w]; return; }
+  const want = p.sig ? 1 : 0;
+  if (D.t === want) { D.moving = false; if (!want) { D.pos = [p.x, p.y, p.z]; D.q = [p.q.x, p.q.y, p.q.z, p.q.w]; } return; }
+  if (!D.moving) Sfx.play('vehicle', new V3(p.x, p.y, p.z), { f: 70, dur: 0.25 });
+  D.moving = true; D.t = want > D.t ? Math.min(1, D.t + dt * 1.4) : Math.max(0, D.t - dt * 1.4);
+  const e = D.t * D.t * (3 - 2 * D.t), C = new V3(...D.pos), Q = new THREE.Quaternion(...D.q), h = p.def.shapes[0].h, s = p.scale;
+  let pos, q = Q.clone();
+  if (p.def.door === 'hinge') {
+    const H = new V3(-h[0] * s, 0, 0).applyQuaternion(Q).add(C), R = new THREE.Quaternion().setFromAxisAngle(Y_AXIS.clone().applyQuaternion(Q), D.dir * e * Math.PI / 2);
+    pos = C.clone().sub(H).applyQuaternion(R).add(H); q = R.multiply(Q);
+  } else if (p.def.door === 'slide') pos = C.clone().addScaledVector(new V3(1, 0, 0).applyQuaternion(Q), h[0] * 2 * s * 0.95 * e);
+  else pos = C.clone().addScaledVector(Y_AXIS.clone().applyQuaternion(Q), h[1] * 2 * s * 0.92 * e);
+  p.x = pos.x; p.y = pos.y; p.z = pos.z; p.q.copy(q);
+  if (p.body) { p.body.position.set(pos.x, pos.y, pos.z); p.body.quaternion.set(q.x, q.y, q.z, q.w); p.body.aabbNeedsUpdate = true; }
+}
+
+/* ── vehicles: paint ───────────────────────────────────────────────────── */
+function paintVehicle(v, col) {
+  const src = v.model.userData.paint; if (!src) return;
+  if (!v.paintMat) { v.paintMat = new THREE.MeshLambertMaterial({ color: col }); v.model.traverse(o => { if (o.material === src) o.material = v.paintMat; }); }
+  else v.paintMat.color.set(col);
+  v.paint = col;
+}
+const vehById = id => Game.vehicles.find(x => x.id === id);
+
+/* ── actions ───────────────────────────────────────────────────────────── */
+const _run3 = Sandbox.run.bind(Sandbox);
+Sandbox.run = function (a) {
+  const actor = Game.byId(a.by); if (!actor) return;
+  const undo = this.undo[a.by] || (this.undo[a.by] = []);
+  switch (a.op) {
+    case 'prop': {
+      if (!(a.quat || a.fr || a.weld || a.col || a.br)) break;
+      const def = PROPS[a.k]; if (!def) return;
+      const id = 'e' + (Phys.nextId++), P = a.weld && Phys.byId.get(a.weld);
+      this.emit({ e: 'add', id, k: a.k, pos: a.pos, quat: a.quat || [0, 0, 0, 1], sc: 1, own: a.by, fr: !!a.fr && !P, col: a.col, br: a.br });
+      if (P) this.emit({ e: 'con', id: 'c' + (Phys.nextId++), type: 'weld', a: P.id, la: Phys.worldToLocal(P, new V3(...a.pos)), b: id, lb: [0, 0, 0] });
+      undo.push({ kind: 'ent', id }); return;
+    }
+    case 'con': {
+      if (!['wire', 'hinge', 'ball'].includes(a.type)) break;
+      const A = a.a && Phys.byId.get(a.a), B = a.b && Phys.byId.get(a.b); if (!A || (a.type === 'wire' && !B)) return;
+      if (a.type === 'wire' && Phys.constraints.some(c => c.type === 'wire' && c.a === A && c.b === B)) return;
+      const id = 'c' + (Phys.nextId++); this.emit({ e: 'con', id, type: a.type, a: a.a, b: a.b || null, la: a.la, lb: a.lb, axisA: a.axisA, axisB: a.axisB });
+      undo.push({ kind: 'con', id }); return;
+    }
+    case 'unwire': { const p = Phys.byId.get(a.id); if (!p) return; for (const c of Phys.constraints.filter(c => c.type === 'wire' && c.b === p)) this.emit({ e: 'cdel', id: c.id }); return; }
+    case 'use': {
+      const p = Phys.byId.get(a.id), d = p && p.def; if (!p || dist3(actor.eye(new V3()), new V3(p.x, p.y, p.z)) > 12) return;
+      const tell = x => { const pr = Net.peerOf(a.by); if (pr) Net.to(pr.id, { t: 'toast', x }); if (actor === Game.local) HUD.center(x, 0.9); };
+      if (d.logic === 'button') p.pressT = Game.now + 1;
+      else if (d.logic === 'switch') p.manual = !p.manual;
+      else if (d.logic === 'timer') { const ps = [0.5, 1, 2, 4]; p.period = ps[(ps.indexOf(p.period || 1) + 1) % ps.length]; tell(`Timer: every ${p.period} s`); }
+      else if (d.door || d.light) {
+        if (Wiring.wired(p)) { tell(d.door ? 'This door is wired to a circuit' : 'This light is wired to a circuit'); return; }
+        p.manual = d.light ? p.manual === false : !p.manual;
+        if (d.door === 'hinge' && p.manual && p.door && p.door.t === 0) { const Q = new THREE.Quaternion(...p.door.q), z = new V3(0, 0, 1).applyQuaternion(Q); p.door.dir = (actor.pos.x - p.door.pos[0]) * z.x + (actor.pos.z - p.door.pos[2]) * z.z > 0 ? 1 : -1; }
+      } else return;
+      this.emit({ e: 'wst', id: p.id, m: p.manual, per: p.period, dr: p.door ? p.door.dir : undefined, click: 1 });
+      Wiring.tick(); return;
+    }
+    case 'grab': {
+      if (!a.vid) break;
+      const v = vehById(a.vid); if (!v || !v.alive || v.driver) return;
+      if (v.frozen) this.emit({ e: 'vset', id: v.id, fr: false });
+      v.held = true; this.hold[a.by] = { vid: a.vid, off: a.off, target: a.target, rot: null }; return;
+    }
+    case 'drop': {
+      const h = this.hold[a.by]; if (!h) return;
+      if (h.id) { const p = Phys.byId.get(h.id); if (p && p.def.door && !a.freeze) { _run3(a); this.emit({ e: 'set', id: p.id, fr: true }); return; } }
+      if (!h.vid) break;
+      delete this.hold[a.by]; const v = vehById(h.vid); if (!v) return; v.held = false;
+      if (a.freeze) this.emit({ e: 'vset', id: v.id, fr: true });
+      else if (h.vel) { const m = h.vel.length(); v.ext.copy(h.vel).multiplyScalar(m > 25 ? 25 / m : 1); v.vel.y = v.ext.y; v.ext.y = 0; }
+      return;
+    }
+    case 'vset': {
+      const v = vehById(a.id); if (!v) return;
+      const ev = { e: 'vset', id: v.id };
+      if (a.col) ev.col = a.col; if (a.fr != null) ev.fr = !!a.fr; if (a.burn != null) ev.burn = a.burn; if (a.fix) ev.hp = v.maxHp;
+      this.emit(ev); return;
+    }
+    case 'vdupe': { const id = 'v' + uid(5); this.emit({ e: 'veh', id, x: a.pos[0], y: a.pos[1], z: a.pos[2], yaw: a.yaw || 0, k: VKIND[a.k] ? a.k : 'jeep', col: a.col }); undo.push({ kind: 'veh', id }); return; }
+    case 'clear': { _run3(a); for (const v of Game.vehicles.filter(x => x.noRespawn)) this.emit({ e: 'vehdel', id: v.id }); return; }
+  }
+  return _run3(a);
+};
+
+/* ── events ────────────────────────────────────────────────────────────── */
+const _apply3 = Sandbox.apply.bind(Sandbox);
+Sandbox.apply = function (ev) {
+  switch (ev.e) {
+    case 'add': {
+      _apply3(ev); const p = Phys.byId.get(ev.id); if (!p) return;
+      if (ev.br) p.bright = ev.br;
+      if (ev.ws) { p.manual = ev.ws.m; p.period = ev.ws.per; if (ev.ws.dr) p.door = { pos: ev.pos.slice(), q: (ev.quat || [0, 0, 0, 1]).slice(), t: 0, dir: ev.ws.dr }; if (ev.ws.sg) Wiring.apply(p, true); }
+      if (p.def.light && p.sig === undefined) p.sig = true;
+      return;
+    }
+    case 'con': {
+      _apply3(ev); const c = Phys.constraints.find(x => x.id === ev.id); if (!c) return;
+      if (ev.type === 'wire') {
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+        c.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: c.a && c.a.sig ? 0x3aff6a : 0x8a2a2a })); c.line.frustumCulled = false; Game.scene.add(c.line); Phys.ropes.push(c);
+        if (c.b && Game.authority()) Wiring.tick();
+      }
+      if (ev.type === 'hinge' || ev.type === 'ball') { c.axisA = ev.axisA; c.axisB = ev.axisB; if (c.cn && Phys.world) Phys.world.removeConstraint(c.cn); c.cn = null; Phys.rebuildConstraint(c); }
+      return;
+    }
+    case 'set': { _apply3(ev); const p = Phys.byId.get(ev.id); if (p && p.def.light && (ev.col || ev.mat)) setLightOn(p, p.sig !== false); return; }
+    case 'sig': { const p = Phys.byId.get(ev.id); if (p) Wiring.apply(p, ev.v); return; }
+    case 'wst': { const p = Phys.byId.get(ev.id); if (!p) return; p.manual = ev.m; p.period = ev.per; if (ev.dr && p.door) p.door.dir = ev.dr; if (ev.click) Sfx.play('tick', new V3(p.x, p.y, p.z)); return; }
+    case 'veh': {
+      _apply3(ev); const v = vehById(ev.id); if (!v) return;
+      if (ev.y) { v.pos.y = ev.y; v.model.position.copy(v.pos); }
+      if (ev.col) paintVehicle(v, ev.col); if (ev.fr) v.frozen = true; if (ev.hp) v.hp = ev.hp;
+      return;
+    }
+    case 'vset': {
+      const v = vehById(ev.id); if (!v) return;
+      if (ev.col) paintVehicle(v, ev.col); if (ev.fr != null) v.frozen = ev.fr; if (ev.burn != null) v.burnT = ev.burn; if (ev.hp) { v.hp = ev.hp; if (!v.alive) { v.reset(); } }
+      return;
+    }
+  }
+  return _apply3(ev);
+};
+
+/* hinges and ball sockets (authority only builds the physics) */
+Phys.worldAnchor = function () {
+  if (!this._wb || this._wbW !== this.world) { this._wb = new CANNON.Body({ mass: 0, type: CANNON.Body.STATIC }); this.world.addBody(this._wb); this._wbW = this.world; }
+  return this._wb;
+};
+const _rebuild3 = Phys.rebuildConstraint.bind(Phys);
+Phys.rebuildConstraint = function (c) {
+  if (c.type !== 'hinge' && c.type !== 'ball') return _rebuild3(c);
+  if (!Game.authority() || !this.world || (c.type === 'hinge' && !c.axisA)) return;
+  const A = c.a ? c.a.body : this.worldAnchor(), B = c.b ? c.b.body : this.worldAnchor(); if (!A || !B) return;
+  const sa = c.a ? c.a.scale : 1, sb = c.b ? c.b.scale : 1, pA = new CANNON.Vec3(c.la[0] * sa, c.la[1] * sa, c.la[2] * sa), pB = new CANNON.Vec3(c.lb[0] * sb, c.lb[1] * sb, c.lb[2] * sb);
+  c.cn = c.type === 'hinge' ? new CANNON.HingeConstraint(A, B, { pivotA: pA, axisA: new CANNON.Vec3(...c.axisA), pivotB: pB, axisB: new CANNON.Vec3(...c.axisB), maxForce: 1e6, collideConnected: false }) : new CANNON.PointToPointConstraint(A, pA, B, pB, 1e6);
+  c.cn.collideConnected = false; this.world.addConstraint(c.cn); A.wakeUp(); B.wakeUp();
+};
+
+/* late joiners and saves carry the new state too */
+const _snap3 = Sandbox.snapshotAll.bind(Sandbox);
+Sandbox.snapshotAll = function () {
+  const st = _snap3();
+  st.props.forEach(ev => {
+    const p = Phys.byId.get(ev.id); if (!p) return;
+    if (p.bright) ev.br = p.bright;
+    if (p.manual !== undefined || p.period || p.sig || p.door) ev.ws = { m: p.manual, per: p.period, sg: !!p.sig && !p.def.logic && !p.def.door, dr: p.door ? p.door.dir : undefined };
+    if (p.door && p.door.t > 0) { ev.pos = p.door.pos.slice(); ev.quat = p.door.q.slice(); }
+  });
+  st.cons.forEach(ev => { const c = Phys.constraints.find(x => x.id === ev.id); if (c && (c.type === 'hinge' || c.type === 'ball')) { ev.axisA = c.axisA; ev.axisB = c.axisB; } });
+  st.veh = Game.vehicles.filter(v => v.noRespawn && v.alive).map(v => ({ e: 'veh', id: v.id, x: +v.pos.x.toFixed(3), y: +v.pos.y.toFixed(3), z: +v.pos.z.toFixed(3), yaw: v.yaw, k: v.kind, col: v.paint, fr: v.frozen || undefined, hp: Math.round(v.hp) }));
+  return st;
+};
+
+/* ── per frame ─────────────────────────────────────────────────────────── */
+const _start3 = Sandbox.start.bind(Sandbox);
+Sandbox.start = function () { _start3(); LightPool.init(Game.scene); Wiring.t = 0; };
+const _stop3 = Sandbox.stop.bind(Sandbox);
+Sandbox.stop = function () { try { if (Phys.props.length || Game.soldiers.some(s => s.npc) || Game.vehicles.some(v => v.noRespawn)) Saves.write('Autosave', this.serialize(), 'auto'); } catch (e) { } LightPool.clear(); _stop3(); };
+const _update3 = Sandbox.update.bind(Sandbox);
+Sandbox.update = function (dt) {
+  _update3(dt);
+  if (!this.on) return;
+  const auth = Game.authority(), now = Game.now;
+  if (auth) {
+    // physics gun holding a vehicle
+    for (const by in this.hold) {
+      const h = this.hold[by]; if (!h.vid) continue;
+      const v = vehById(h.vid); if (!v || !v.alive || v.driver) { if (v) v.held = false; delete this.hold[by]; continue; }
+      if (h.rot) { for (const r of h.rot) v.yaw = angWrap(v.yaw + new THREE.Euler().setFromQuaternion(new THREE.Quaternion(...r), 'YXZ').y); h.rot = null; }
+      const want = new V3(...h.target).sub(new V3(...h.off).applyAxisAngle(Y_AXIS, v.yaw)); want.y = Math.max(0, want.y);
+      const prev = v.pos.clone(); v.pos.lerp(want, 1 - Math.exp(-dt * 12)); h.vel = v.pos.clone().sub(prev).multiplyScalar(1 / Math.max(dt, 1e-3));
+      v.model.position.copy(v.pos); v.model.rotation.y = v.yaw;
+    }
+    this.wireT = (this.wireT || 0) - dt; if (this.wireT <= 0) { this.wireT = 0.05; Wiring.tick(); }
+    for (const p of Phys.props) if (p.def.door) doorTick(p, dt);
+  }
+  for (const p of Phys.props) if (p.def.parts === 'alarm' && p.mesh.userData.dome) {
+    const d = p.mesh.userData.dome;
+    if (p.sig) { const blink = Math.sin(now * 12) > 0; d.material.color.set(blink ? 0xff2a1a : 0x7a1010); p.alT = (p.alT || 0) - dt; if (p.alT <= 0) { p.alT = 0.5; Sfx.play('beep', new V3(p.x, p.y, p.z), { vol: 1.4 }); } }
+    else d.material.color.set(0x5a1010);
+  }
+  for (const v of Game.vehicles) if (v.burnT > 0 && v.alive) {
+    v.burnT -= dt; FX.emit('add', v.pos.x + rand(-1, 1), v.pos.y + 1.2, v.pos.z + rand(-1, 1), 3, 2, [1, 0.5, 0.1], 0.5, 3, 0.5);
+    if (Math.random() < 0.3) FX.emit('big', v.pos.x, v.pos.y + 1.6, v.pos.z, 1, 1, [0.15, 0.14, 0.13], 1.8, 1.5, 0.4);
+    if (auth) { v.burnTick = (v.burnTick || 0) - dt; if (v.burnTick <= 0) { v.burnTick = 0.5; v.damage(v.maxHp * 0.025, null); } }
+  }
+  LightPool.update();
+};
+
+/* the physics gun beam to a held vehicle */
+function drawCurve(beam, M, T, G) {
+  const a = beam.geometry.attributes.position.array;
+  for (let i = 0; i < 24; i++) { const t = i / 23, u = 1 - t; a[i * 3] = u * u * M.x + 2 * u * t * T.x + t * t * G.x; a[i * 3 + 1] = u * u * M.y + 2 * u * t * T.y + t * t * G.y; a[i * 3 + 2] = u * u * M.z + 2 * u * t * T.z + t * t * G.z; }
+  beam.geometry.attributes.position.needsUpdate = true; beam.visible = true;
+}
+const _drawBeam3 = Sandbox.drawBeam.bind(Sandbox);
+Sandbox.drawBeam = function () {
+  const h = this.myHold; if (!h || !h.vid) return _drawBeam3();
+  const L = Game.local; this.beam.visible = false; this.marker.visible = false;
+  if (!L || !L.alive || L.cur !== 'physgun') return;
+  const v = vehById(h.vid); if (!v || !v.alive || v.driver) { this.myHold = null; return; }
+  const G = new V3(...h.off).applyAxisAngle(Y_AXIS, v.yaw).add(v.pos);
+  const M = Game.view && !Game.view.third ? Game.view.muzzleWorld(new V3()) : L.eye(new V3()), T = L.eye(new V3()).addScaledVector(L.forward(new V3()), h.dist);
+  drawCurve(this.beam, M, T, G); this.marker.position.copy(G); this.marker.visible = true;
+};
+
+/* ── E: doors, buttons, switches, timers, lights ──────────────────────── */
+Sandbox.useTarget = function (s) {
+  if (this.myHold) return null;
+  const tr = this.trace(s, 3.6); if (tr.kind !== 'prop' || tr.t > 3.6) return null;
+  const p = tr.prop, d = p.def; return d.usable || d.door || d.light ? p : null;
+};
+Sandbox.tryUse = function (s) { const p = this.useTarget(s); if (!p) return false; this.exec({ op: 'use', id: p.id }); return true; };
+Sandbox.useHint = function (s) {
+  const p = this.useTarget(s); if (!p) return '';
+  const d = p.def, wired = Wiring.wired(p);
+  if (d.logic === 'button') return 'E — press button';
+  if (d.logic === 'switch') return `E — flip switch (${p.sig ? 'on' : 'off'})`;
+  if (d.logic === 'timer') return `E — timer: every ${p.period || 1} s`;
+  if (d.door) return wired ? 'Door — controlled by its wiring' : `E — ${p.sig ? 'close' : 'open'} ${d.name.toLowerCase()}`;
+  if (d.light) return wired ? 'Light — controlled by its wiring' : `E — turn ${p.sig === false ? 'on' : 'off'} ${d.name.toLowerCase()}`;
+  return '';
+};
+
+/* ── placing things flush on surfaces ─────────────────────────────────── */
+const shapeHalf = d => { const s = d.shapes[0]; return d.shapes.length > 1 ? 0.02 : s.t === 'box' ? s.h[1] : s.t === 'cyl' ? s.h / 2 : s.r; };
+Sandbox.placement = function (s, d) {
+  const tr = this.trace(s, 60); let P = tr.p.clone(), n = tr.n.clone();
+  if (tr.kind === 'none' || tr.kind === 'npc' || tr.kind === 'veh' || n.lengthSq() < 0.5) { P = s.eye(new V3()).addScaledVector(s.forward(new V3()), 3); n.set(0, 1, 0); }
+  n.normalize();
+  const prop = tr.kind === 'prop' ? tr.prop : null, yawQ = new THREE.Quaternion().setFromAxisAngle(Y_AXIS, s.yaw);
+  if (d.door) {
+    const b = P.clone().addScaledVector(n, 0.15), t = World.raycast(b.x, b.y + 0.05, b.z, 0, -1, 0, 60), ph = Phys.ray(new V3(b.x, b.y + 0.05, b.z), new V3(0, -1, 0), t >= 0 ? t : 60);
+    const fy = Math.max(0, ph ? b.y + 0.05 - ph.t : t >= 0 ? b.y + 0.05 - t : 0);
+    return { pos: [b.x, fy + d.shapes[0].h[1] + 0.01, b.z], quat: [yawQ.x, yawQ.y, yawQ.z, yawQ.w], fr: true };
+  }
+  const q = new THREE.Quaternion().setFromUnitVectors(Y_AXIS, n).multiply(yawQ), pos = P.addScaledVector(n, shapeHalf(d) + 0.004);
+  return { pos: [pos.x, pos.y, pos.z], quat: [q.x, q.y, q.z, q.w], fr: !prop, weld: prop ? prop.id : null };
+};
+const _spawn3 = Sandbox.spawn.bind(Sandbox);
+Sandbox.spawn = function (kind, key, extra) {
+  const d = kind === 'prop' && PROPS[key];
+  if (!d || !(d.flush || d.door)) return _spawn3(kind, key);
+  const L = Game.local; if (!L || !L.alive) return;
+  this.exec(Object.assign({ op: 'prop', k: key }, this.placement(L, d), extra || {}));
+};
+
+/* ── tool gun + physics gun ───────────────────────────────────────────── */
+const _useTool3 = Sandbox.useTool.bind(Sandbox);
+Sandbox.useTool = function (s, dt) {
+  const I = Input, O = this.opts;
+  if (s.cur === 'physgun') {
+    if (!this.myHold && (I.mouse.leftPressed || I.hit('KeyR'))) {
+      const tr = this.trace(s, 450);
+      if (tr.kind === 'veh' && !tr.v.driver) {
+        const v = tr.v;
+        if (I.hit('KeyR')) { this.exec({ op: 'vset', id: v.id, fr: false }); HUD.center('Unfrozen', 0.6); return; }
+        const off = tr.p.clone().sub(v.pos).applyAxisAngle(Y_AXIS, -v.yaw);
+        this.myHold = { vid: v.id, dist: tr.t, off: [off.x, off.y, off.z] }; this.exec({ op: 'grab', vid: v.id, off: this.myHold.off, target: [tr.p.x, tr.p.y, tr.p.z] }); Sfx.play('ui');
+      }
+    }
+    return _useTool3(s, dt);
+  }
+  const tool = O.tool, mine = ['wire', 'hinge', 'ball', 'repair', 'light'].includes(tool);
+  if (!(I.mouse.leftPressed || I.mouse.rightPressed || I.hit('KeyR'))) return;
+  if (I.hit('KeyR')) return _useTool3(s, dt);
+  const tr = this.trace(s), rmb = I.mouse.rightPressed, prop = tr.kind === 'prop' ? tr.prop : null;
+  // vehicles take a few of the tools
+  if (tr.kind === 'veh' && tool !== 'remover') {
+    const v = tr.v; this.toolFx(s, tr);
+    switch (tool) {
+      case 'color': if (rmb) { if (v.paint) { O.color = v.paint; this.saveOpts(); } } else this.exec({ op: 'vset', id: v.id, col: O.color }); return;
+      case 'freezer': this.exec({ op: 'vset', id: v.id, fr: !rmb }); HUD.center(rmb ? 'Unfrozen' : 'Frozen', 0.6); return;
+      case 'ignite': this.exec({ op: 'vset', id: v.id, burn: rmb ? 0 : 20 }); return;
+      case 'repair': this.exec({ op: 'vset', id: v.id, fix: 1, burn: 0 }); HUD.center(v.K.name + ' repaired', 0.8); return;
+      case 'duplicator': if (rmb) { this.clip = { veh: v.kind, col: v.paint, items: [] }; HUD.center('Copied the ' + v.K.name.toLowerCase(), 1); return; } break;
+      default: HUD.center(TOOLS[tool].name + ' does not work on vehicles', 1); return;
+    }
+  }
+  if (tool === 'duplicator' && !rmb && this.clip && this.clip.veh) {
+    if (tr.kind === 'none') return; this.toolFx(s, tr);
+    const K = VKIND[this.clip.veh], p = tr.p.clone().addScaledVector(tr.n, K.r); this.exec({ op: 'vdupe', k: this.clip.veh, col: this.clip.col, pos: [p.x, Math.max(0, p.y - K.r), p.z], yaw: s.yaw }); return;
+  }
+  if (tool === 'duplicator' && rmb && prop && this.clip && this.clip.veh) this.clip = null;
+  if (!mine) return _useTool3(s, dt);
+  this.toolFx(s, tr);
+  const local = prop ? Phys.worldToLocal(prop, tr.p) : [tr.p.x, tr.p.y, tr.p.z];
+  switch (tool) {
+    case 'wire':
+      if (rmb) { if (prop) { this.exec({ op: 'unwire', id: prop.id }); HUD.center('Wires cut', 0.6); } this.pick = null; break; }
+      if (!prop) break;
+      if (!this.pick) { this.pick = { id: prop.id, l: local }; HUD.center(`Wire from ${prop.def.name}: now click what it powers`, 1.4); }
+      else if (this.pick.id !== prop.id) { this.exec({ op: 'con', type: 'wire', a: this.pick.id, la: this.pick.l, b: prop.id, lb: local }); this.pick = null; HUD.center('Wired', 0.6); }
+      break;
+    case 'hinge': case 'ball':
+      if (rmb) { this.pick = null; break; }
+      if (!this.pick) { if (!prop) { HUD.center('Click a prop first', 0.8); break; } this.pick = { id: prop.id, w: tr.p.clone(), n: tr.n.clone().normalize() }; HUD.center(`${TOOLS[tool].name}: now click the other prop, or the world`, 1.3); break; }
+      {
+        const A = Phys.byId.get(this.pick.id); if (!A || prop === A) { this.pick = null; break; }
+        const W = this.pick.w, N = this.pick.n, iA = A.q.clone().invert(), nA = N.clone().applyQuaternion(iA), nB = prop ? N.clone().applyQuaternion(prop.q.clone().invert()) : N;
+        this.exec({ op: 'con', type: tool, a: A.id, la: Phys.worldToLocal(A, W), b: prop ? prop.id : null, lb: prop ? Phys.worldToLocal(prop, W) : [W.x, W.y, W.z], axisA: [nA.x, nA.y, nA.z], axisB: [nB.x, nB.y, nB.z] });
+        this.pick = null; HUD.center(tool === 'hinge' ? 'Axis made' : 'Ball socket made', 0.7);
+      }
+      break;
+    case 'repair':
+      if (rmb) { for (const v of Game.vehicles) if (v.alive && dist2(v.pos.x, v.pos.z, s.pos.x, s.pos.z) < 25) this.exec({ op: 'vset', id: v.id, fix: 1, burn: 0 }); HUD.center('Vehicles nearby repaired', 0.8); }
+      else if (prop && prop.burnT > 0) this.exec({ op: 'ignite', id: prop.id, off: true });
+      break;
+    case 'light':
+      if (rmb) { if (prop && prop.def.light) this.exec({ op: 'use', id: prop.id }); break; }
+      this.spawn('prop', PROPS[O.lightKind] ? O.lightKind : 'lightbulb', { col: O.color, br: O.bright !== 1 ? O.bright : undefined });
+      break;
+  }
+};
+
+/* ── saves ─────────────────────────────────────────────────────────────── */
+const Saves = {
+  list() { return Store.get('sbx_saves', []); },
+  write(name, data, id) {
+    const list = this.list(), old = list.find(s => (id && s.id === id) || s.name === name);
+    const sid = id || (old ? old.id : uid(8)), meta = { id: sid, name, map: data.map, t: Date.now(), count: data.props.length + (data.veh || []).length + (data.npc || []).length };
+    try { localStorage.removeItem('bp_sbx_save_' + sid); } catch (e) { }
+    Store.set('sbx_save_' + sid, data);
+    if (!Store.get('sbx_save_' + sid, null)) return false;   // storage full
+    Store.set('sbx_saves', [meta].concat(list.filter(s => s.id !== sid)).slice(0, 60)); return true;
+  },
+  read(id) { return Store.get('sbx_save_' + id, null); },
+  remove(id) { try { localStorage.removeItem('bp_sbx_save_' + id); } catch (e) { } Store.set('sbx_saves', this.list().filter(s => s.id !== id)); },
+};
+Sandbox.serialize = function () {
+  const st = this.snapshotAll();
+  const npc = Game.soldiers.filter(s => s.npc && s.alive).map(s => { const w = [1, 2].map(k => s.weapons[k]).find(Boolean) || null; return { e: 'npc', k: s.npc, name: s.name, team: s.team, w, pos: [+s.pos.x.toFixed(2), +s.pos.y.toFixed(2), +s.pos.z.toFixed(2)], yaw: s.yaw, att: {} }; });
+  return { v: 1, map: Game.cfg.map, props: st.props, cons: st.cons, veh: st.veh, npc };
+};
+Sandbox.load = function (d) {
+  if (!d || !Array.isArray(d.props)) { HUD.center('That save is damaged', 1.5); return; }
+  if (!Game.authority()) { HUD.center('Only the host can load a save', 1.5); return; }
+  const play = Sfx.play; Sfx.play = () => { };
+  try {
+    for (const by in this.hold) { const h = this.hold[by], v = h.vid && vehById(h.vid); if (v) v.held = false; }
+    this.hold = {}; this.myHold = null; this.pick = null; this.undo = {};
+    for (const p of Phys.props.slice()) this.emit({ e: 'del', id: p.id });
+    for (const s of Game.soldiers.filter(x => x.npc)) this.emit({ e: 'npcdel', id: s.id });
+    for (const v of Game.vehicles.filter(x => x.noRespawn)) this.emit({ e: 'vehdel', id: v.id });
+    let max = Phys.nextId; for (const ev of d.props.concat(d.cons || [])) { const n = parseInt(String(ev.id).slice(1), 10); if (n >= max) max = n + 1; }
+    Phys.nextId = max;
+    for (const ev of d.props) if (PROPS[ev.k]) this.emit(Object.assign({}, ev, { e: 'add' }));
+    for (const ev of d.cons || []) if ((!ev.a || Phys.byId.has(ev.a)) && (!ev.b || Phys.byId.has(ev.b))) this.emit(Object.assign({}, ev, { e: 'con' }));
+    for (const ev of d.veh || []) this.emit(Object.assign({}, ev, { e: 'veh', id: 'v' + uid(5) }));
+    for (const ev of d.npc || []) if (NPCS[ev.k]) this.emit(Object.assign({}, ev, { e: 'npc', id: 'n' + (this.nextNpc++) + uid(3) }));
+  } finally { Sfx.play = play; }
+  Wiring.tick();
+  HUD.center(`Loaded ${d.props.length} props`, 1.4);
+};
+Sandbox.loadSaved = function (d) {
+  if (d && d.map && d.map !== Game.cfg.map && MAPS[d.map]) {
+    if (Net.role === 'off') { UI.toggleSpawnMenu(false); UI.leaveGame(); UI.playCfg.mode = 'sandbox'; UI.playCfg.map = d.map; UI.startSolo(); setTimeout(() => Sandbox.load(d), 250); return; }
+    HUD.center(`Saved on ${MAPS[d.map].name}, loading it here anyway`, 2);
+  }
+  UI.toggleSpawnMenu(false); this.load(d);
+};
+
+/* ── spawn menu: Saves tab, light and wiring options ───────────────────── */
+UI.savesHtml = function () {
+  const list = Saves.list(), n = Phys.props.length;
+  return `<div class="sv"><div class="sv-new"><input id="svName" maxlength="40" placeholder="Name this save" value="${escapeHtml(this.lastSaveName || '')}"><button class="btn" id="svSave">Save (${n} prop${n === 1 ? '' : 's'})</button><button class="btn ghost" id="svImport">Import file…</button><input type="file" id="svFile" accept=".json,application/json" hidden></div>
+    ${list.length ? `<div class="sv-list">${list.map(s => `<div class="sv-row"><div class="sv-info"><b>${escapeHtml(s.name)}</b><small>${escapeHtml(MAPS[s.map] ? MAPS[s.map].name : s.map || '?')} · ${s.count} thing${s.count === 1 ? '' : 's'} · ${new Date(s.t).toLocaleString()}</small></div><button class="btn" data-svload="${s.id}">Load</button><button class="btn ghost" data-svexp="${s.id}">Export</button><button class="btn warn" data-svdel="${s.id}">Delete</button></div>`).join('')}</div>` : '<p class="muted">No saves yet. Type a name and press Save.</p>'}
+    <p class="muted">A save keeps every prop, weld, rope, wire, door, light, vehicle and NPC. Saves live in this browser; Export gives you a file to back up or share, Import loads one. Leaving a sandbox also keeps an Autosave.${Net.role === 'client' ? ' Only the host can load saves.' : ''}</p></div>`;
+};
+UI.bindSaves = function (M) {
+  const ren = () => this.renderSpawnMenu();
+  $('svSave').onclick = () => { const name = ($('svName').value || '').trim() || `Build ${new Date().toLocaleString()}`; this.lastSaveName = name; if (Saves.write(name, Sandbox.serialize())) { Sfx.play('buy'); HUD.center('Saved: ' + name, 1.2); } else HUD.center('Not enough browser storage for this save — try Export', 2.5); ren(); };
+  $('svImport').onclick = () => $('svFile').click();
+  $('svFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result); if (!d || !Array.isArray(d.props)) throw 0; const name = (f.name || 'Imported').replace(/\.(bpsave\.)?json$/i, ''); Saves.write(name, d); ren(); HUD.center('Imported ' + name, 1.2); } catch (err) { HUD.center('That file is not a Breachpoint save', 2); } }; r.readAsText(f); };
+  M.querySelectorAll('[data-svload]').forEach(b => b.onclick = () => { const d = Saves.read(b.dataset.svload); if (!d) { HUD.center('Save not found', 1.2); return; } Sandbox.loadSaved(d); });
+  M.querySelectorAll('[data-svdel]').forEach(b => b.onclick = () => { const s = Saves.list().find(x => x.id === b.dataset.svdel); if (s && confirm(`Delete "${s.name}"?`)) { Saves.remove(s.id); ren(); } });
+  M.querySelectorAll('[data-svexp]').forEach(b => b.onclick = () => {
+    const s = Saves.list().find(x => x.id === b.dataset.svexp), d = s && Saves.read(s.id); if (!d) return;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)], { type: 'application/json' })); a.download = s.name.replace(/[^\w\- ]+/g, '_') + '.bpsave.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  });
+};
+UI.toolExtra = function (O) {
+  if (O.tool === 'light') return `<label>Light</label><div class="mats">${Object.entries(LIGHT_KINDS).map(([k, n]) => `<button data-lk="${k}" class="${O.lightKind === k ? 'on' : ''}">${n}</button>`).join('')}</div><label>Brightness <input type="range" id="optBright" min="0.25" max="3" step="0.05" value="${O.bright}"></label><p class="muted">E switches a light on and off. Wire a switch or a button + toggle latch to it to control it remotely.</p>`;
+  if (O.tool === 'wire') return `<p class="muted">Outputs: button, switch, pressure plate, proximity sensor, timer, and the gates. Anything can take inputs: doors open, lights turn on, alarms sound, thrusters fire, wheels drive, lamps and emitters switch, dynamite goes off. Several wires into one thing act as OR (except gates). Get parts from the <b>Wiring</b> tab.</p>`;
+  if (O.tool === 'hinge') return `<p class="muted">The axis runs through the surface you click first. Click a door's edge, then the wall (or empty world) to make it swing.</p>`;
+  if (O.tool === 'repair') return `<p class="muted">Fixes vehicles to full health and puts out fires.</p>`;
+  return '';
+};
+UI.bindToolExtra = function (M, O) {
+  M.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => { O.lightKind = b.dataset.lk; Sandbox.saveOpts(); this.renderSpawnMenu(); });
+  const e = $('optBright'); if (e) e.oninput = () => { O.bright = +e.value; Sandbox.saveOpts(); };
 };
 
 /* ── 99_main.js ── */

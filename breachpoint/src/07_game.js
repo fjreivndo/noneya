@@ -440,7 +440,7 @@ const Game = {
       if (owner && owner.team === s.team && owner !== s) continue;
       this.damage(s, dmg * f, owner, weapon, 'chest');
     }
-    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); }
+    for (const v of this.vehicles) { if (!v.alive) continue; const d = dist3(v.pos, p), R = radius + v.K.r + 0.3; if (d < R) { v.damage(dmg * v.K.blast * (weapon === 'rpg' || weapon === 'm79' || weapon === 'tankshell' ? v.K.at : 1) * (1 - d / R), owner); if (v.ext && v.kind !== 'tank' && !v.frozen && !v.held) { const f = dmg * 0.09 * (1 - d / R), dx = v.pos.x - p.x, dz = v.pos.z - p.z, l = Math.hypot(dx, dz) || 1; v.ext.x += dx / l * f; v.ext.z += dz / l * f; v.ext.y = Math.max(v.ext.y, f * 0.6); } } }
     if (Phys.active) { Phys.blast(p, radius * 1.6, 10); for (const q of Phys.props.slice()) if (q.def.explosive && dist3(new V3(q.x, q.y, q.z), p) < radius) Phys.damage(q, dmg, owner); }
   },
   flashbang(p, owner) {
@@ -552,7 +552,7 @@ const Game = {
     }
     for (const v of this.vehicles) {
       if (v.driver && v.driver.ctrl === 'local') v.drive(Player.vehicleInput(), dt);
-      if (!v.driver || v.driver.ctrl === 'local' || v.driver.ctrl === 'bot' || this.authority() && !v.driver) v.physics(dt);
+      if (this.authority() ? (!v.driver || v.driver.ctrl === 'local' || v.driver.ctrl === 'bot') : (v.driver && v.driver.ctrl === 'local') || !v.net) v.physics(dt);
       else Net.interpVehicle(v, dt);
     }
     for (let i = this.nades.length - 1; i >= 0; i--) { this.nades[i].update(dt); if (this.nades[i].done) this.nades.splice(i, 1); }
