@@ -103,7 +103,7 @@ class Soldier {
     let sp = w.type === 'sniper' ? (this.ads && this.adsT > 0.8 ? w.spread : w.hipSpread) : w.spread * (this.ads ? 0.6 : (w.hipK || 1));
     const hs = Math.hypot(this.vel.x, this.vel.z), frac = hs / (PHYS.walk * w.speed);
     if (frac > 0.34) sp += w.moveSpread * Math.pow(frac, 1.4) * (this.ads ? 0.6 : 1);
-    if (!this.grounded) sp += 0.14;
+    if (!this.grounded) sp += 0.07;
     if (this.crouch > 0.5 && this.grounded) sp *= 0.75;
     if (w.type !== 'sniper' && w.type !== 'shotgun') sp += Math.min(this.recoilIdx, 12) * 0.0012 * w.recoil;
     return sp;
@@ -243,7 +243,7 @@ function fireWeapon(s, now, recoilControl = 0) {
       const falloff = rangeMult(w, sh.t);
       const mult = { head: Game.mode.headMult, chest: 1, stomach: 1.25, legs: 0.75 }[sh.zone];
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
-      FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
+      FX.blood(_e, _d, sh.zone === 'head' ? 1.4 : 1);
     } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * vehHit.v.K.bullet, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
     else if (wt < range) {
       FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e);
@@ -269,6 +269,7 @@ function knifeAttack(s, now) {
     // backstab: facing the same way as the victim
     const back = Math.abs(angDiff(s.yaw, sh.s.yaw)) < 0.9;
     Game.reportHit(s, sh.s, back ? 180 : WEAPONS.knife.dmg * (sh.zone === 'head' ? 1.3 : 1), sh.zone, 'knife', eye);
+    FX.blood(eye.clone().addScaledVector(d, sh.t), d, 1.2);
   } else { const t = World.raycast(eye.x, eye.y, eye.z, d.x, d.y, d.z, WEAPONS.knife.range); if (t >= 0) { _e.copy(eye).addScaledVector(d, t); FX.impact(_e, { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz }); } }
   return true;
 }

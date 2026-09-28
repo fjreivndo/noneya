@@ -15,10 +15,28 @@ const HUD = {
       if (e.key === 'Escape') this.closeChat();
     });
   },
-  applyCrosshair() {
-    const x = this.el.xh, c = Settings.xhColor, s = Settings.xhSize, g = Settings.xhGap;
-    x.innerHTML = `<i style="left:${-g - s}px;top:-1px;width:${s}px;height:2px"></i><i style="left:${g}px;top:-1px;width:${s}px;height:2px"></i><i style="top:${-g - s}px;left:-1px;height:${s}px;width:2px"></i><i style="top:${g}px;left:-1px;height:${s}px;width:2px"></i>` + (Settings.xhDot ? '<i style="left:-1px;top:-1px;width:2px;height:2px"></i>' : '');
-    x.querySelectorAll('i').forEach(i => i.style.background = c);
+  /* crosshair styles: cross, T, dot, circle, chevron, cross + circle. The
+     lines and the ring open up with spread. */
+  applyCrosshair(target) {
+    const x = target || this.el.xh, S = Settings, c = S.xhColor, s = S.xhSize, g = S.xhGap, st = S.xhStyle || 'cross', o = 'box-shadow:0 0 0 1px rgba(0,0,0,.45)';
+    const line = (k, css) => `<i data-k="${k}" style="${css};background:${c};${o}"></i>`;
+    let h = '';
+    if (st === 'cross' || st === 'tshape' || st === 'crossring') {
+      h += line('l', `left:${-g - s}px;top:-1px;width:${s}px;height:2px`) + line('r', `left:${g}px;top:-1px;width:${s}px;height:2px`) + line('b', `top:${g}px;left:-1px;height:${s}px;width:2px`);
+      if (st !== 'tshape') h += line('t', `top:${-g - s}px;left:-1px;height:${s}px;width:2px`);
+    }
+    if (st === 'circle' || st === 'crossring') { const R = g + s * (st === 'circle' ? 0.6 : 1.4); h += `<i data-k="ring" style="left:${-R}px;top:${-R}px;width:${R * 2}px;height:${R * 2}px;border:2px solid ${c};border-radius:50%;box-sizing:border-box;background:none;${o}"></i>`; }
+    if (st === 'chevron') h += `<i data-k="chev" style="left:${-s}px;top:${g * 0.5}px;width:${s * 2}px;height:${s}px;background:none"><svg width="${s * 2}" height="${s}" viewBox="0 0 20 10" style="display:block;overflow:visible"><path d="M1 9 L10 1 L19 9" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round" style="filter:drop-shadow(0 0 1px #000)"/></svg></i>`;
+    if (st === 'dot' || st === 'circle' || st === 'chevron' || S.xhDot) { const d = st === 'dot' ? Math.max(3, Math.round(s / 2)) : 2; h += line('dot', `left:${-d / 2}px;top:${-d / 2}px;width:${d}px;height:${d}px;border-radius:${st === 'dot' ? '50%' : '0'}`); }
+    x.innerHTML = h;
+  },
+  spreadCrosshair(x, g) {
+    const s = Settings.xhSize, st = Settings.xhStyle || 'cross';
+    for (const i of x.children) {
+      const k = i.dataset.k;
+      if (k === 'l') i.style.left = (-g - s) + 'px'; else if (k === 'r') i.style.left = g + 'px'; else if (k === 't') i.style.top = (-g - s) + 'px'; else if (k === 'b') i.style.top = g + 'px';
+      else if (k === 'ring') { const R = g + s * (st === 'circle' ? 0.6 : 1.4); i.style.left = i.style.top = -R + 'px'; i.style.width = i.style.height = R * 2 + 'px'; }
+    }
   },
   onMatchStart() {
     this.el.hud.classList.remove('hidden'); this.feed = []; this.el.killfeed.innerHTML = ''; this.el.radio.innerHTML = ''; this.el.chatlog.innerHTML = '';
@@ -128,7 +146,7 @@ const HUD = {
     const scopeK = L.alive && w && w.scope && !L.vehicle ? clamp((L.adsT - 0.7) / 0.2, 0, 1) : 0, scoped = scopeK > 0.5;
     E.scope.classList.toggle('hidden', scopeK <= 0); if (scopeK > 0) { this.setScope(w.overlay || 'sniper'); E.scope.style.opacity = scopeK; }
     E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L && L.vehicle.kind !== 'tank'));
-    if (L.alive && w && !scoped) { const g = Settings.xhGap + L.spread() * 900; E.xh.querySelectorAll('i').forEach((i, k) => { const s = Settings.xhSize; if (k === 0) i.style.left = (-g - s) + 'px'; if (k === 1) i.style.left = g + 'px'; if (k === 2) i.style.top = (-g - s) + 'px'; if (k === 3) i.style.top = g + 'px'; }); }
+    if (L.alive && w && !scoped) this.spreadCrosshair(E.xh, Settings.xhGap + L.spread() * 900);
     E.vign.style.opacity = L.alive ? clamp((50 - L.hp) / 50, 0, 0.8) : 0;
     this.drawDamage(dt);
     // progress bars

@@ -519,8 +519,8 @@ const Sandbox = {
   spawn(kind, key) {
     const L = Game.local; if (!L || !L.alive) return;
     if (kind === 'prop') { const d = PROPS[key]; const p = this.spawnPoint(L, d.radius * 0.8); this.exec({ op: 'prop', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
-    else if (kind === 'npc') { const p = this.spawnPoint(L, 0.1); const q = World.nav.walkableAt(p.x, p.z) ? p : World.nav.randomNear(p.x, p.z, 3); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, Math.max(0, p.y - 0.1), q.z], yaw: L.yaw + Math.PI }); }
-    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); p.y = Math.max(0, p.y - (key === 'tank' ? 2.5 : 1.2)); this.exec({ op: 'veh', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
+    else if (kind === 'npc') { const q = this.safeSpot(L, 0.4, 1.8); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, q.y, q.z], yaw: L.yaw + Math.PI }); }
+    else if (kind === 'veh') { const K = VKIND[key] || VKIND.jeep, q = this.safeSpot(L, K.r + 0.4, K.h, 120); this.exec({ op: 'veh', k: key, pos: [q.x, q.y, q.z], yaw: L.yaw }); }
     else if (kind === 'weapon') {
       if (isNade(key)) { L.nades[key] = Math.min(3, L.nades[key] + 1); } else { const w = WEAPONS[key]; if (w.slot === 4) { L.weapons[4] = key; L.fillAmmo(key); L.switchTo(key); } else L.give(key); }
       Sfx.play('buy');

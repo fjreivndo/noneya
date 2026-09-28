@@ -270,6 +270,7 @@ const Net = {
     if (!(w && w.suppressed) && chance(0.7)) FX.tracer(mz, end); if (!(w && w.suppressed)) FX.muzzle(mz);
     const d = end.clone().sub(eye), dist = d.length(); d.multiplyScalar(1 / dist);
     const hit = World.raycast(eye.x, eye.y, eye.z, d.x, d.y, d.z, dist + 0.2); if (hit >= 0 && Math.abs(hit - dist) < 0.3) FX.impact(end, { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz });
+    else { const v = Game.soldiers.find(o => o.alive && o !== s && !(o.vehicle && o.vehicle.K.closed) && Math.hypot(o.pos.x - end.x, o.pos.z - end.z) < 0.55 && end.y > o.pos.y - 0.1 && end.y < o.pos.y + 2); if (v) FX.blood(end, d, 1); }
     if (w) Sfx.play('shot', eye, { w });
     // bullets cracking past your head
     const L = Game.local; if (L && L.alive && s.team !== L.team) { const le = L.eye(new V3()), t = clamp(le.clone().sub(eye).dot(d), 0, dist), cp = eye.clone().addScaledVector(d, t); if (cp.distanceTo(le) < 1.2) Sfx.play('whiz', cp); }

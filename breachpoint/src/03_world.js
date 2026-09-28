@@ -206,12 +206,14 @@ class NavGrid {
     }
   }
   walkableAt(x, z) { const i = this.idx(x, z); return i >= 0 && this.walk[i] === 1; }
-  nearest(x, z, maxR = 12) {
-    let i = this.idx(x, z); if (i >= 0 && this.walk[i]) return i;
+  nearest(x, z, maxR = 12, reachOnly = false) {
+    if (reachOnly) this.ensureReach();
+    const ok = i => this.walk[i] && (!reachOnly || this.reach[i]);
+    let i = this.idx(x, z); if (i >= 0 && ok(i)) return i;
     const cx = Math.floor((x - this.x0) / this.cs), cz = Math.floor((z - this.z0) / this.cs);
     for (let r = 1; r <= maxR; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
       if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue; const nx = cx + dx, nz = cz + dz;
-      if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; i = nz * this.w + nx; if (this.walk[i]) return i;
+      if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; i = nz * this.w + nx; if (ok(i)) return i;
     }
     return -1;
   }
@@ -261,9 +263,30 @@ class NavGrid {
     if (out.length) { out[out.length - 1] = { x: this.walkableAt(tx, tz) ? tx : this.cx(t), z: this.walkableAt(tx, tz) ? tz : this.cz(t) }; }
     return out;
   }
-  randomNear(x, z, r, tries = 20) {
-    for (let k = 0; k < tries; k++) { const a = rand(0, TAU), d = rand(0, r); const px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (this.walkableAt(px, pz)) return { x: px, z: pz }; }
-    const i = this.nearest(x, z); return i >= 0 ? { x: this.cx(i), z: this.cz(i) } : { x, z };
+  /* cells connected to the spawns and flags. Walkable pockets sealed off by
+     walls (inside solid buildings, behind the map edge) are never used. */
+  ensureReach() {
+    if (this.reach) return;
+    const r = this.reach = new Uint8Array(this.w * this.h), q = [];
+    const seeds = [].concat(World.spawns.T || [], World.spawns.CT || [], World.flags || []);
+    for (const p of seeds) { const i = this.nearest(p.x, p.z, 6); if (i >= 0 && !r[i]) { r[i] = 1; q.push(i); } }
+    if (!q.length) { r.fill(1); return; }
+    while (q.length) {
+      const i = q.pop(), x = i % this.w, z = (i / this.w) | 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; const j = nz * this.w + nx; if (this.walk[j] && !r[j]) { r[j] = 1; q.push(j); } }
+    }
+  }
+  /* somewhere a body can stand: walkable, reachable, not inside a sandbox prop */
+  spawnable(x, z) {
+    const i = this.idx(x, z); if (i < 0 || !this.walk[i]) return false;
+    this.ensureReach(); if (!this.reach[i]) return false;
+    if (typeof Phys !== 'undefined' && Phys.active) for (const d of Phys.dyn) if (d.y0 < 1.7 && d.y1 > 0.3 && x + 0.4 > d.x0 && x - 0.4 < d.x1 && z + 0.4 > d.z0 && z - 0.4 < d.z1) return false;
+    return true;
+  }
+  /* a random standing spot near (x, z) on the same side of any wall */
+  randomNear(x, z, r, tries = 24) {
+    for (let k = 0; k < tries; k++) { const a = rand(0, TAU), d = rand(0, r); const px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (this.spawnable(px, pz) && (k > 17 || d < 0.3 || World.los(x, 1.1, z, px, 1.1, pz))) return { x: px, z: pz }; }
+    const i = this.nearest(x, z, 16, true); return i >= 0 ? { x: this.cx(i), z: this.cz(i) } : { x, z };
   }
 }
 

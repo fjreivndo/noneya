@@ -295,12 +295,16 @@ const UI = {
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
       ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label>Crosshair <select data-k="xhStyle">${[['cross', 'Cross'], ['tshape', 'T-shape'], ['dot', 'Dot'], ['circle', 'Circle'], ['crossring', 'Cross + circle'], ['chevron', 'Chevron']].map(([k, n]) => `<option value="${k}" ${S.xhStyle === k ? 'selected' : ''}>${n}</option>`).join('')}</select><span class="xh-prev"><span id="xhPrev" class="xh-in"></span></span></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
-      <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>`;
+      <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>
+      <label><input type="checkbox" data-k="blood" ${S.blood ? 'checked' : ''}> Blood</label>
+      <label>Mouse cursor <select data-k="cursor"><option value="themed" ${S.cursor !== 'system' ? 'selected' : ''}>Breachpoint</option><option value="system" ${S.cursor === 'system' ? 'selected' : ''}>System</option></select></label>`;
+    HUD.applyCrosshair($('xhPrev'));
     $('setForm').querySelectorAll('[data-k]').forEach(el => el.oninput = () => {
       const k = el.dataset.k; S[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
       if (el.nextElementSibling && el.nextElementSibling.tagName === 'OUTPUT') el.nextElementSibling.textContent = el.value;
-      saveSettings(); HUD.applyCrosshair(); Game.applyViewDist(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
+      saveSettings(); HUD.applyCrosshair(); HUD.applyCrosshair($('xhPrev')); applyCursor(); Game.applyViewDist(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
     });
   },
 
@@ -319,7 +323,7 @@ const UI = {
   canBuy(s) {
     const R = Game.round; if (!Game.mode.buy || !R || !s.alive) return false;
     if (!(R.phase === 'freeze' || (R.phase === 'live' && Game.mode.roundTime - R.timeLeft < 25))) return false;
-    const sp = World.spawns[s.team][0]; return dist2(s.pos.x, s.pos.z, sp.x, sp.z) < 22;
+    return World.spawns[s.team].some(sp => dist2(s.pos.x, s.pos.z, sp.x, sp.z) < 22);   // any of the team's spawn points
   },
   buyItems(team) {
     const w = id => ({ id, name: WEAPONS[id].name, price: WEAPONS[id].price });

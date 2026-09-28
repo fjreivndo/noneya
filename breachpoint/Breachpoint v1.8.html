@@ -92,6 +92,8 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 /* ── HUD ── */
 #hud{position:fixed;inset:0;pointer-events:none;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 #xh{position:absolute;left:50%;top:50%}#xh i{position:absolute;display:block;box-shadow:0 0 1px #000}
+.xh-prev{display:inline-block;position:relative;width:64px;height:64px;background:linear-gradient(#5a6a4a,#3a4a3a);border:1px solid var(--line);border-radius:4px;margin-left:12px;vertical-align:middle}.xh-in{position:absolute;left:50%;top:50%}.xh-in i{position:absolute;display:block}
+body.cur-themed{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M3 2 L3 19 L7.8 14.6 L11.2 21.8 L14.4 20.4 L11 13.2 L17.4 13.2 Z' fill='%23ff7a2f' stroke='%23140a03' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 3 2,auto}body.cur-themed :is(button,a,select,summary,label,input[type=checkbox],input[type=range],input[type=color],.sp-tile,.sw,[data-tab],[data-tool],.swatches i){cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M3 2 L3 19 L7.8 14.6 L11.2 21.8 L14.4 20.4 L11 13.2 L17.4 13.2 Z' fill='%23fff3e6' stroke='%23ff7a2f' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='3.2' cy='2.2' r='1.6' fill='%23ff7a2f'/%3E%3C/svg%3E") 3 2,pointer}body.cur-themed input[type=text]{cursor:text}
 #hitm{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px;opacity:0;background:linear-gradient(45deg,transparent 45%,#fff 45% 55%,transparent 55%),linear-gradient(-45deg,transparent 45%,#fff 45% 55%,transparent 55%);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px)}
 #hitm.head{filter:drop-shadow(0 0 2px red) sepia(1) saturate(9) hue-rotate(-30deg)}
 #dmgind{position:absolute;inset:0;width:100%;height:100%}
@@ -307,7 +309,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.7';
+const VERSION = '1.8';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -343,7 +345,7 @@ const Settings = Object.assign({
   name: 'Player' + randi(100, 999),
   sens: 1.0, fov: 85, vol: 0.55, diff: 'normal',
   xhColor: '#4dff88', xhSize: 6, xhGap: 4, xhDot: false,
-  showFps: false, viewDist: 1, botSight: 1, dmgCooldown: 0.1,
+  showFps: false, viewDist: 1, botSight: 1, dmgCooldown: 0.1, xhStyle: 'cross', cursor: 'themed', blood: true,
 }, Store.get('settings', {}));
 function saveSettings() { Store.set('settings', Settings); if (Sfx.master) Sfx.master.gain.value = Settings.vol; }
 
@@ -498,7 +500,7 @@ const WEAPONS = {
   ssg:    { name: 'SSG 08', slot: 1, type: 'sniper', dmg: 88, rpm: 48, mag: 10, reserve: 90, reload: 3.7, spread: 0.0015, hipSpread: 0.05, moveSpread: 0.06, recoil: 3, falloff: 0.99, pen: 0.85, price: 1700, kill: 300, speed: 0.97, sound: 1.2, zoom: 30, scope: true, bolt: 1.2 },
   awp:    { name: 'AWP', slot: 1, type: 'sniper', dmg: 115, rpm: 41, mag: 5, reserve: 30, reload: 3.6, spread: 0.001, hipSpread: 0.09, moveSpread: 0.15, recoil: 5, falloff: 0.99, pen: 0.975, price: 4750, kill: 100, speed: 0.8, sound: 1.8, zoom: 20, scope: true, bolt: 1.46, nohead: false },
   m249:   { name: 'M249', slot: 1, type: 'lmg', dmg: 32, rpm: 750, mag: 100, reserve: 200, reload: 5.7, spread: 0.010, moveSpread: 0.11, recoil: 0.9, falloff: 0.97, pen: 0.8, price: 5200, kill: 300, speed: 0.8, sound: 1.1, zoom: 55, auto: true },
-  rpg:    { name: 'RPG-7', slot: 4, type: 'launcher', dmg: 170, radius: 5.5, rpm: 30, mag: 1, reserve: 3, reload: 3.2, spread: 0.004, moveSpread: 0.04, recoil: 6, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.85, sound: 1.5, zoom: 50, projectile: 55 },
+  rpg:    { name: 'RPG-7', slot: 4, type: 'launcher', dmg: 170, radius: 5.5, rpm: 30, mag: 1, reserve: 1, reload: 3.2, spread: 0.004, moveSpread: 0.04, recoil: 6, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.85, sound: 1.5, zoom: 50, projectile: 55 },
 };
 Object.assign(WEAPONS, {
   // pistols
@@ -518,7 +520,7 @@ Object.assign(WEAPONS, {
   minigun:    { name: 'Minigun', slot: 1, type: 'lmg', dmg: 22, rpm: 1400, mag: 200, reserve: 400, reload: 7, spread: 0.018, moveSpread: 0.08, recoil: 0.35, falloff: 0.95, pen: 0.7, price: 0, kill: 300, speed: 0.72, sound: 0.9, zoom: 62, auto: true, spinup: 0.7, special: true },
   autosniper: { name: 'Auto-Sniper', slot: 1, type: 'sniper', dmg: 80, rpm: 240, mag: 20, reserve: 90, reload: 3.1, spread: 0.002, hipSpread: 0.07, moveSpread: 0.12, recoil: 1.8, falloff: 0.99, pen: 0.82, price: 5000, kill: 300, speed: 0.78, sound: 1.3, zoom: 28, scope: true },
   crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true, scope: true, overlay: 'bow' },
-  m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 8, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
+  m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 4, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
 });
 WEAPONS.rpg.gravity = 0.7; WEAPONS.rpg.explosive = true;
 for (const id in WEAPONS) WEAPONS[id].id = id;
@@ -1116,12 +1118,14 @@ class NavGrid {
     }
   }
   walkableAt(x, z) { const i = this.idx(x, z); return i >= 0 && this.walk[i] === 1; }
-  nearest(x, z, maxR = 12) {
-    let i = this.idx(x, z); if (i >= 0 && this.walk[i]) return i;
+  nearest(x, z, maxR = 12, reachOnly = false) {
+    if (reachOnly) this.ensureReach();
+    const ok = i => this.walk[i] && (!reachOnly || this.reach[i]);
+    let i = this.idx(x, z); if (i >= 0 && ok(i)) return i;
     const cx = Math.floor((x - this.x0) / this.cs), cz = Math.floor((z - this.z0) / this.cs);
     for (let r = 1; r <= maxR; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
       if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue; const nx = cx + dx, nz = cz + dz;
-      if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; i = nz * this.w + nx; if (this.walk[i]) return i;
+      if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; i = nz * this.w + nx; if (ok(i)) return i;
     }
     return -1;
   }
@@ -1171,9 +1175,30 @@ class NavGrid {
     if (out.length) { out[out.length - 1] = { x: this.walkableAt(tx, tz) ? tx : this.cx(t), z: this.walkableAt(tx, tz) ? tz : this.cz(t) }; }
     return out;
   }
-  randomNear(x, z, r, tries = 20) {
-    for (let k = 0; k < tries; k++) { const a = rand(0, TAU), d = rand(0, r); const px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (this.walkableAt(px, pz)) return { x: px, z: pz }; }
-    const i = this.nearest(x, z); return i >= 0 ? { x: this.cx(i), z: this.cz(i) } : { x, z };
+  /* cells connected to the spawns and flags. Walkable pockets sealed off by
+     walls (inside solid buildings, behind the map edge) are never used. */
+  ensureReach() {
+    if (this.reach) return;
+    const r = this.reach = new Uint8Array(this.w * this.h), q = [];
+    const seeds = [].concat(World.spawns.T || [], World.spawns.CT || [], World.flags || []);
+    for (const p of seeds) { const i = this.nearest(p.x, p.z, 6); if (i >= 0 && !r[i]) { r[i] = 1; q.push(i); } }
+    if (!q.length) { r.fill(1); return; }
+    while (q.length) {
+      const i = q.pop(), x = i % this.w, z = (i / this.w) | 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= this.w || nz >= this.h) continue; const j = nz * this.w + nx; if (this.walk[j] && !r[j]) { r[j] = 1; q.push(j); } }
+    }
+  }
+  /* somewhere a body can stand: walkable, reachable, not inside a sandbox prop */
+  spawnable(x, z) {
+    const i = this.idx(x, z); if (i < 0 || !this.walk[i]) return false;
+    this.ensureReach(); if (!this.reach[i]) return false;
+    if (typeof Phys !== 'undefined' && Phys.active) for (const d of Phys.dyn) if (d.y0 < 1.7 && d.y1 > 0.3 && x + 0.4 > d.x0 && x - 0.4 < d.x1 && z + 0.4 > d.z0 && z - 0.4 < d.z1) return false;
+    return true;
+  }
+  /* a random standing spot near (x, z) on the same side of any wall */
+  randomNear(x, z, r, tries = 24) {
+    for (let k = 0; k < tries; k++) { const a = rand(0, TAU), d = rand(0, r); const px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (this.spawnable(px, pz) && (k > 17 || d < 0.3 || World.los(x, 1.1, z, px, 1.1, pz))) return { x: px, z: pz }; }
+    const i = this.nearest(x, z, 16, true); return i >= 0 ? { x: this.cx(i), z: this.cz(i) } : { x, z };
   }
 }
 
@@ -1790,7 +1815,7 @@ class Soldier {
     let sp = w.type === 'sniper' ? (this.ads && this.adsT > 0.8 ? w.spread : w.hipSpread) : w.spread * (this.ads ? 0.6 : (w.hipK || 1));
     const hs = Math.hypot(this.vel.x, this.vel.z), frac = hs / (PHYS.walk * w.speed);
     if (frac > 0.34) sp += w.moveSpread * Math.pow(frac, 1.4) * (this.ads ? 0.6 : 1);
-    if (!this.grounded) sp += 0.14;
+    if (!this.grounded) sp += 0.07;
     if (this.crouch > 0.5 && this.grounded) sp *= 0.75;
     if (w.type !== 'sniper' && w.type !== 'shotgun') sp += Math.min(this.recoilIdx, 12) * 0.0012 * w.recoil;
     return sp;
@@ -1930,7 +1955,7 @@ function fireWeapon(s, now, recoilControl = 0) {
       const falloff = rangeMult(w, sh.t);
       const mult = { head: Game.mode.headMult, chest: 1, stomach: 1.25, legs: 0.75 }[sh.zone];
       Game.reportHit(s, sh.s, w.dmg * falloff * mult, sh.zone, s.cur, eye);
-      FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }, true);
+      FX.blood(_e, _d, sh.zone === 'head' ? 1.4 : 1);
     } else if (vehHit) { Game.reportVehicleHit(s, vehHit.v, w.dmg * vehHit.v.K.bullet, s.cur); FX.impact(_e, { x: -_d.x, y: -_d.y, z: -_d.z }); }
     else if (wt < range) {
       FX.impact(_e, wallN); if (p === 0) Sfx.play('impact', _e);
@@ -1956,6 +1981,7 @@ function knifeAttack(s, now) {
     // backstab: facing the same way as the victim
     const back = Math.abs(angDiff(s.yaw, sh.s.yaw)) < 0.9;
     Game.reportHit(s, sh.s, back ? 180 : WEAPONS.knife.dmg * (sh.zone === 'head' ? 1.3 : 1), sh.zone, 'knife', eye);
+    FX.blood(eye.clone().addScaledVector(d, sh.t), d, 1.2);
   } else { const t = World.raycast(eye.x, eye.y, eye.z, d.x, d.y, d.z, WEAPONS.knife.range); if (t >= 0) { _e.copy(eye).addScaledVector(d, t); FX.impact(_e, { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz }); } }
   return true;
 }
@@ -2819,7 +2845,7 @@ const Game = {
     if (cfg.roster) return cfg.roster;
     const size = cfg.teamSize != null ? cfg.teamSize : MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, att: p.att || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
     const names = cfg.botNames || shuffle(BOT_NAMES.slice()); let ni = 0;
-    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
+    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: botClass(roster, team, size), skins: {}, att }); n++; } }
     return cfg.roster = roster;
   },
   /* the View distance setting stretches the map's fog */
@@ -3233,7 +3259,7 @@ const Game = {
       for (const s of this.soldiers) {
         if (!s.alive || dist2(s.pos.x, s.pos.z, k.pos.x, k.pos.z) > 1.1) continue;
         if (k.kind === 'hp') { if (s.hp >= 100) continue; s.hp = Math.min(100, s.hp + 35); }
-        else { if (s.ctrl === 'local' || s.ctrl === 'bot') { for (const id in s.ammo) { const w = s.stat(id); s.ammo[id].res = Math.min(w.reserve * 1.5, s.ammo[id].res + w.mag); } if (s.ctrl === 'local') HUD.center('Ammo +', 0.8); } else { const pr = Net.peerOf(s.id); if (pr) Net.to(pr.id, { t: 'ev', e: { t: 'ammo', s: s.id } }); } }
+        else { if (s.ctrl === 'local' || s.ctrl === 'bot') { for (const id in s.ammo) { const w = s.stat(id); if (w.type === 'launcher') continue; s.ammo[id].res = Math.min(w.reserve * 1.5, s.ammo[id].res + w.mag); } if (s.ctrl === 'local') HUD.center('Ammo +', 0.8); } else { const pr = Net.peerOf(s.id); if (pr) Net.to(pr.id, { t: 'ev', e: { t: 'ammo', s: s.id } }); } }
         if (s.ctrl === 'local') Sfx.play('ui');
         this.removePickup(k.id); break;
       }
@@ -3638,10 +3664,28 @@ const HUD = {
       if (e.key === 'Escape') this.closeChat();
     });
   },
-  applyCrosshair() {
-    const x = this.el.xh, c = Settings.xhColor, s = Settings.xhSize, g = Settings.xhGap;
-    x.innerHTML = `<i style="left:${-g - s}px;top:-1px;width:${s}px;height:2px"></i><i style="left:${g}px;top:-1px;width:${s}px;height:2px"></i><i style="top:${-g - s}px;left:-1px;height:${s}px;width:2px"></i><i style="top:${g}px;left:-1px;height:${s}px;width:2px"></i>` + (Settings.xhDot ? '<i style="left:-1px;top:-1px;width:2px;height:2px"></i>' : '');
-    x.querySelectorAll('i').forEach(i => i.style.background = c);
+  /* crosshair styles: cross, T, dot, circle, chevron, cross + circle. The
+     lines and the ring open up with spread. */
+  applyCrosshair(target) {
+    const x = target || this.el.xh, S = Settings, c = S.xhColor, s = S.xhSize, g = S.xhGap, st = S.xhStyle || 'cross', o = 'box-shadow:0 0 0 1px rgba(0,0,0,.45)';
+    const line = (k, css) => `<i data-k="${k}" style="${css};background:${c};${o}"></i>`;
+    let h = '';
+    if (st === 'cross' || st === 'tshape' || st === 'crossring') {
+      h += line('l', `left:${-g - s}px;top:-1px;width:${s}px;height:2px`) + line('r', `left:${g}px;top:-1px;width:${s}px;height:2px`) + line('b', `top:${g}px;left:-1px;height:${s}px;width:2px`);
+      if (st !== 'tshape') h += line('t', `top:${-g - s}px;left:-1px;height:${s}px;width:2px`);
+    }
+    if (st === 'circle' || st === 'crossring') { const R = g + s * (st === 'circle' ? 0.6 : 1.4); h += `<i data-k="ring" style="left:${-R}px;top:${-R}px;width:${R * 2}px;height:${R * 2}px;border:2px solid ${c};border-radius:50%;box-sizing:border-box;background:none;${o}"></i>`; }
+    if (st === 'chevron') h += `<i data-k="chev" style="left:${-s}px;top:${g * 0.5}px;width:${s * 2}px;height:${s}px;background:none"><svg width="${s * 2}" height="${s}" viewBox="0 0 20 10" style="display:block;overflow:visible"><path d="M1 9 L10 1 L19 9" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round" style="filter:drop-shadow(0 0 1px #000)"/></svg></i>`;
+    if (st === 'dot' || st === 'circle' || st === 'chevron' || S.xhDot) { const d = st === 'dot' ? Math.max(3, Math.round(s / 2)) : 2; h += line('dot', `left:${-d / 2}px;top:${-d / 2}px;width:${d}px;height:${d}px;border-radius:${st === 'dot' ? '50%' : '0'}`); }
+    x.innerHTML = h;
+  },
+  spreadCrosshair(x, g) {
+    const s = Settings.xhSize, st = Settings.xhStyle || 'cross';
+    for (const i of x.children) {
+      const k = i.dataset.k;
+      if (k === 'l') i.style.left = (-g - s) + 'px'; else if (k === 'r') i.style.left = g + 'px'; else if (k === 't') i.style.top = (-g - s) + 'px'; else if (k === 'b') i.style.top = g + 'px';
+      else if (k === 'ring') { const R = g + s * (st === 'circle' ? 0.6 : 1.4); i.style.left = i.style.top = -R + 'px'; i.style.width = i.style.height = R * 2 + 'px'; }
+    }
   },
   onMatchStart() {
     this.el.hud.classList.remove('hidden'); this.feed = []; this.el.killfeed.innerHTML = ''; this.el.radio.innerHTML = ''; this.el.chatlog.innerHTML = '';
@@ -3751,7 +3795,7 @@ const HUD = {
     const scopeK = L.alive && w && w.scope && !L.vehicle ? clamp((L.adsT - 0.7) / 0.2, 0, 1) : 0, scoped = scopeK > 0.5;
     E.scope.classList.toggle('hidden', scopeK <= 0); if (scopeK > 0) { this.setScope(w.overlay || 'sniper'); E.scope.style.opacity = scopeK; }
     E.xh.classList.toggle('hidden', !L.alive || scoped || L.adsT > 0.5 || (w && w.type === 'sniper') || (L.vehicle && L.vehicle.driver === L && L.vehicle.kind !== 'tank'));
-    if (L.alive && w && !scoped) { const g = Settings.xhGap + L.spread() * 900; E.xh.querySelectorAll('i').forEach((i, k) => { const s = Settings.xhSize; if (k === 0) i.style.left = (-g - s) + 'px'; if (k === 1) i.style.left = g + 'px'; if (k === 2) i.style.top = (-g - s) + 'px'; if (k === 3) i.style.top = g + 'px'; }); }
+    if (L.alive && w && !scoped) this.spreadCrosshair(E.xh, Settings.xhGap + L.spread() * 900);
     E.vign.style.opacity = L.alive ? clamp((50 - L.hp) / 50, 0, 0.8) : 0;
     this.drawDamage(dt);
     // progress bars
@@ -4188,6 +4232,7 @@ const Net = {
     if (!(w && w.suppressed) && chance(0.7)) FX.tracer(mz, end); if (!(w && w.suppressed)) FX.muzzle(mz);
     const d = end.clone().sub(eye), dist = d.length(); d.multiplyScalar(1 / dist);
     const hit = World.raycast(eye.x, eye.y, eye.z, d.x, d.y, d.z, dist + 0.2); if (hit >= 0 && Math.abs(hit - dist) < 0.3) FX.impact(end, { x: World.hit.nx, y: World.hit.ny, z: World.hit.nz });
+    else { const v = Game.soldiers.find(o => o.alive && o !== s && !(o.vehicle && o.vehicle.K.closed) && Math.hypot(o.pos.x - end.x, o.pos.z - end.z) < 0.55 && end.y > o.pos.y - 0.1 && end.y < o.pos.y + 2); if (v) FX.blood(end, d, 1); }
     if (w) Sfx.play('shot', eye, { w });
     // bullets cracking past your head
     const L = Game.local; if (L && L.alive && s.team !== L.team) { const le = L.eye(new V3()), t = clamp(le.clone().sub(eye).dot(d), 0, dist), cp = eye.clone().addScaledVector(d, t); if (cp.distanceTo(le) < 1.2) Sfx.play('whiz', cp); }
@@ -4613,12 +4658,16 @@ const UI = {
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
       ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label>Crosshair <select data-k="xhStyle">${[['cross', 'Cross'], ['tshape', 'T-shape'], ['dot', 'Dot'], ['circle', 'Circle'], ['crossring', 'Cross + circle'], ['chevron', 'Chevron']].map(([k, n]) => `<option value="${k}" ${S.xhStyle === k ? 'selected' : ''}>${n}</option>`).join('')}</select><span class="xh-prev"><span id="xhPrev" class="xh-in"></span></span></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
-      <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>`;
+      <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>
+      <label><input type="checkbox" data-k="blood" ${S.blood ? 'checked' : ''}> Blood</label>
+      <label>Mouse cursor <select data-k="cursor"><option value="themed" ${S.cursor !== 'system' ? 'selected' : ''}>Breachpoint</option><option value="system" ${S.cursor === 'system' ? 'selected' : ''}>System</option></select></label>`;
+    HUD.applyCrosshair($('xhPrev'));
     $('setForm').querySelectorAll('[data-k]').forEach(el => el.oninput = () => {
       const k = el.dataset.k; S[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
       if (el.nextElementSibling && el.nextElementSibling.tagName === 'OUTPUT') el.nextElementSibling.textContent = el.value;
-      saveSettings(); HUD.applyCrosshair(); Game.applyViewDist(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
+      saveSettings(); HUD.applyCrosshair(); HUD.applyCrosshair($('xhPrev')); applyCursor(); Game.applyViewDist(); if (k === 'fov' && Game.camera) { Game.camera.fov = S.fov; Game.camera.updateProjectionMatrix(); }
     });
   },
 
@@ -4637,7 +4686,7 @@ const UI = {
   canBuy(s) {
     const R = Game.round; if (!Game.mode.buy || !R || !s.alive) return false;
     if (!(R.phase === 'freeze' || (R.phase === 'live' && Game.mode.roundTime - R.timeLeft < 25))) return false;
-    const sp = World.spawns[s.team][0]; return dist2(s.pos.x, s.pos.z, sp.x, sp.z) < 22;
+    return World.spawns[s.team].some(sp => dist2(s.pos.x, s.pos.z, sp.x, sp.z) < 22);   // any of the team's spawn points
   },
   buyItems(team) {
     const w = id => ({ id, name: WEAPONS[id].name, price: WEAPONS[id].price });
@@ -5710,8 +5759,8 @@ const Sandbox = {
   spawn(kind, key) {
     const L = Game.local; if (!L || !L.alive) return;
     if (kind === 'prop') { const d = PROPS[key]; const p = this.spawnPoint(L, d.radius * 0.8); this.exec({ op: 'prop', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
-    else if (kind === 'npc') { const p = this.spawnPoint(L, 0.1); const q = World.nav.walkableAt(p.x, p.z) ? p : World.nav.randomNear(p.x, p.z, 3); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, Math.max(0, p.y - 0.1), q.z], yaw: L.yaw + Math.PI }); }
-    else if (kind === 'veh') { const p = this.spawnPoint(L, key === 'tank' ? 2.5 : 1.2); p.y = Math.max(0, p.y - (key === 'tank' ? 2.5 : 1.2)); this.exec({ op: 'veh', k: key, pos: [p.x, p.y, p.z], yaw: L.yaw }); }
+    else if (kind === 'npc') { const q = this.safeSpot(L, 0.4, 1.8); this.exec({ op: 'npc', k: key, w: this.opts.npcWeapon, pos: [q.x, q.y, q.z], yaw: L.yaw + Math.PI }); }
+    else if (kind === 'veh') { const K = VKIND[key] || VKIND.jeep, q = this.safeSpot(L, K.r + 0.4, K.h, 120); this.exec({ op: 'veh', k: key, pos: [q.x, q.y, q.z], yaw: L.yaw }); }
     else if (kind === 'weapon') {
       if (isNade(key)) { L.nades[key] = Math.min(3, L.nades[key] + 1); } else { const w = WEAPONS[key]; if (w.slot === 4) { L.weapons[4] = key; L.fillAmmo(key); L.switchTo(key); } else L.give(key); }
       Sfx.play('buy');
@@ -6039,6 +6088,16 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.8', date: 'Sep 2026', title: 'Sharper guns, tank crews and blood', items: [
+    ['Change', 'Guns are much more accurate: about 60% less spread, half the movement inaccuracy and 40% less recoil (shotguns and snipers a bit less). Jumping hurts accuracy half as much.'],
+    ['Change', 'Launchers are rarer: only Engineers carry them, the RPG has 2 rockets and the M79 5 grenades, ammo boxes no longer refill launchers, and only about 1 in 7 bots per team plays Engineer. Tanks no longer melt.'],
+    ['New', 'Bots crew tanks. A free tank is taken by a nearby bot, who drives it to the objective, hunts enemy tanks first, aims the turret, and runs people over who get too close. Sandbox soldiers climb into tanks too.'],
+    ['New', 'Blood: sprays on hits, spatter on the wall and floor behind, and a small pool where someone falls. It fades after half a minute. Settings can turn it off.'],
+    ['New', 'Crosshair styles in Settings: cross, T-shape, dot, circle, cross + circle and chevron, with a live preview.'],
+    ['New', 'A Breachpoint mouse cursor in the menus (or switch back to the system one in Settings).'],
+    ['Fix', 'Players, bots and NPCs no longer spawn behind walls or inside sealed-off spaces. Sandbox NPCs and vehicles appear on your side of whatever you aim at, with room to stand.'],
+    ['Fix', 'Defuse: you can buy from every spawn point, not only the first one.'],
+  ] },
   { v: '1.7', date: 'Sep 2026', title: 'Sandbox: saves, wiring, doors, lights', items: [
     ['New', 'Sandbox saves: name a save in the new Saves tab, load it any time, export it as a file to share or back up, and import files. Leaving a sandbox keeps an Autosave. Loading a save made on another map switches to that map.'],
     ['New', 'Wiring: buttons, switches, pressure plates, proximity sensors, timers, AND / OR / NOT / XOR gates, delays and toggle latches. The new Wire tool connects an output to anything: doors open, lights switch, alarms sound, thrusters fire, wheels drive, lamps and emitters toggle, dynamite goes off.'],
@@ -6711,6 +6770,220 @@ UI.toolExtra = function (O) {
 UI.bindToolExtra = function (M, O) {
   M.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => { O.lightKind = b.dataset.lk; Sandbox.saveOpts(); this.renderSpawnMenu(); });
   const e = $('optBright'); if (e) e.oninput = () => { O.bright = +e.value; Sandbox.saveOpts(); };
+};
+
+/* ── 19_combat_ai.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Combat round:
+   · Tighter guns: much less spread, movement bloom and recoil for everyone.
+   · Launchers only for Engineers, fewer rockets, and only a few Engineer bots
+     per team, so tanks don't melt.
+   · Bots crew tanks: a free tank is handed to a nearby bot, who walks over,
+     climbs in, drives toward the objective (or the enemy), and aims and
+     fires the cannon.
+   · Blood: sprays on hits, spatter on walls and floors, a small pool where
+     someone dies. Fades out after a while. Settings can turn it off.
+   · Crosshair styles and a themed mouse cursor (styles live in the HUD).
+   · Safer sandbox placement: NPCs and vehicles appear on your side of walls.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── accuracy ──────────────────────────────────────────────────────────── */
+for (const id in WEAPONS) {
+  const w = WEAPONS[id]; if (!w || w.hidden || !w.type || w.type === 'knife' || w.type === 'physgun' || w.type === 'tool') continue;
+  const k = w.type === 'shotgun' ? { sp: 0.75, mv: 0.5, rc: 0.7 } : w.type === 'sniper' ? { sp: 0.5, mv: 0.5, rc: 0.7 } : w.type === 'launcher' ? { sp: 0.5, mv: 0.5, rc: 1 } : { sp: 0.4, mv: 0.45, rc: 0.6 };
+  if (w.spread) w.spread *= k.sp; if (w.hipSpread) w.hipSpread *= k.sp + 0.05; if (w.moveSpread) w.moveSpread *= k.mv; if (w.recoil) w.recoil *= k.rc;
+}
+
+/* ── launchers: only a handful of Engineer bots per team ──────────────── */
+function botClass(roster, team, size) {
+  const cap = Math.max(1, Math.round(size * 0.15)), eng = roster.filter(r => r.team === team && r.cls === 'engineer').length;
+  return pick(Object.keys(CLASSES).filter(k => k !== 'engineer' || eng < cap));
+}
+
+/* ── mouse cursor ─────────────────────────────────────────────────────── */
+function applyCursor() { if (document.body) document.body.classList.toggle('cur-themed', Settings.cursor !== 'system'); }
+if (document.body) applyCursor(); else addEventListener('DOMContentLoaded', applyCursor);
+
+/* ── blood ─────────────────────────────────────────────────────────────── */
+const BloodDecals = {
+  N: 64, list: [], i: 0, scene: null, tex: null,
+  textures() {
+    if (this.tex) return this.tex;
+    this.tex = [];
+    for (let v = 0; v < 4; v++) {
+      const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+      const blob = (cx, cy, r, a) => { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, `rgba(95,0,0,${a})`); g.addColorStop(0.7, `rgba(120,6,6,${a * 0.9})`); g.addColorStop(1, 'rgba(120,6,6,0)'); x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r, 0, TAU); x.fill(); };
+      for (let i = 0; i < 7; i++) blob(64 + rand(-16, 16), 64 + rand(-16, 16), rand(14, 30), 0.85);
+      for (let i = 0; i < 14; i++) { const a = rand(0, TAU), d = rand(28, 58); blob(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, rand(2, 6), 0.9); }
+      for (let i = 0; i < 3; i++) { const a = rand(0, TAU); x.strokeStyle = 'rgba(100,0,0,.8)'; x.lineWidth = rand(2, 4); x.beginPath(); x.moveTo(64, 64); x.lineTo(64 + Math.cos(a) * rand(35, 58), 64 + Math.sin(a) * rand(35, 58)); x.stroke(); }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; this.tex.push(t);
+    }
+    return this.tex;
+  },
+  ensure() {
+    if (this.scene === Game.scene && this.list.length) return true;
+    if (!Game.scene) return false;
+    this.scene = Game.scene; this.list = []; this.i = 0; const T = this.textures(), geo = new THREE.PlaneGeometry(1, 1);
+    for (let i = 0; i < this.N; i++) {
+      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: T[i % 4], transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+      m.visible = false; m.renderOrder = 1; this.scene.add(m); this.list.push(m);
+    }
+    return true;
+  },
+  put(p, n, size) {
+    if (!Settings.blood || !this.ensure()) return;
+    const m = this.list[this.i++ % this.N];
+    m.position.set(p.x + n.x * 0.015, p.y + n.y * 0.015, p.z + n.z * 0.015); m.lookAt(p.x + n.x, p.y + n.y, p.z + n.z); m.rotateZ(rand(0, TAU));
+    m.scale.setScalar(size); m.material.map = this.tex[randi(0, 3)]; m.material.opacity = 0.92; m.userData.t0 = Game.now; m.visible = true;
+  },
+  update() {
+    if (this.scene !== Game.scene) return;
+    for (const m of this.list) if (m.visible) { const age = Game.now - m.userData.t0; if (age > 30 || age < 0) m.visible = false; else if (age > 20) m.material.opacity = 0.92 * (1 - (age - 20) / 10); }
+  },
+};
+FX.blood = function (p, dir, k = 1) {
+  if (!Settings.blood) { this.emit('norm', p.x, p.y, p.z, 4, 2, [0.5, 0.05, 0.05], 0.3, -6, 0.5); return; }
+  const d = new V3(dir.x, dir.y, dir.z).normalize();
+  this.emit('norm', p.x, p.y, p.z, Math.round(12 * k), 2.6, [0.45, 0.02, 0.02], 0.55, -9, 0.8, d.clone().multiplyScalar(2.5));
+  this.emit('norm', p.x, p.y, p.z, Math.round(6 * k), 1.2, [0.3, 0, 0], 0.8, -3, 0.35);
+  const t = World.raycast(p.x, p.y, p.z, d.x, d.y, d.z, 2.6);
+  if (t >= 0) BloodDecals.put(new V3(p.x + d.x * t, p.y + d.y * t, p.z + d.z * t), new V3(World.hit.nx, World.hit.ny, World.hit.nz), rand(0.35, 0.75) * k);
+  if (Math.random() < 0.55) {
+    const gx = p.x + d.x * 0.5 + rand(-0.3, 0.3), gz = p.z + d.z * 0.5 + rand(-0.3, 0.3), g = World.raycast(gx, p.y, gz, 0, -1, 0, 4);
+    const gy = g >= 0 ? p.y - g : p.y < 3 ? 0 : null; if (gy != null) BloodDecals.put(new V3(gx, gy, gz), new V3(0, 1, 0), rand(0.3, 0.6));
+  }
+};
+const _fxUpdate19 = FX.update.bind(FX);
+FX.update = function (dt) { _fxUpdate19(dt); BloodDecals.update(); };
+const _onKill19 = Game.onKillEvent.bind(Game);
+Game.onKillEvent = function (ev) {
+  _onKill19(ev);
+  const v = this.byId(ev.v); if (!v || !Settings.blood || v.vehicle || ev.w === 'fall') return;
+  const scene = this.scene, x = v.pos.x, y = v.pos.y, z = v.pos.z;
+  setTimeout(() => { if (this.scene === scene) BloodDecals.put(new V3(x + rand(-0.3, 0.3), y, z + rand(-0.3, 0.3)), new V3(0, 1, 0), rand(0.9, 1.3)); }, 500);
+};
+
+/* ── sandbox placement on your side of walls ───────────────────────────── */
+function spaceClear(x0, y0, z0, x1, y1, z1) {
+  for (const b of World.near(x0, z0, x1, z1)) if (b.x1 > x0 && b.x0 < x1 && b.z1 > z0 && b.z0 < z1 && b.y1 > y0 && b.y0 < y1) return false;
+  if (Phys.active) for (const d of Phys.dyn) if (d.x1 > x0 && d.x0 < x1 && d.z1 > z0 && d.z0 < z1 && d.y1 > y0 && d.y0 < y1) return false;
+  return true;
+}
+function floorBelow(x, fromY, z) {
+  const t = World.raycast(x, fromY, z, 0, -1, 0, 80), ph = Phys.active ? Phys.ray(new V3(x, fromY, z), new V3(0, -1, 0), t >= 0 ? t : 80) : null;
+  const tt = ph ? ph.t : t; return tt >= 0 ? Math.max(0, fromY - tt) : 0;
+}
+/* walk back from where you aim toward you until there's room to stand and you can see the spot */
+Sandbox.safeSpot = function (s, r, h, maxD = 80) {
+  const tr = this.trace(s, maxD), eye = s.eye(new V3());
+  const P = tr.kind === 'none' ? eye.clone().addScaledVector(s.forward(new V3()), Math.min(12, maxD)) : tr.p.clone().addScaledVector(tr.n, 0.05);
+  const bx = eye.x - P.x, bz = eye.z - P.z, len = Math.hypot(bx, bz) || 1, ux = bx / len, uz = bz / len;
+  for (let d = 0; d <= len; d += 0.3) {
+    const x = P.x + ux * d, z = P.z + uz * d, y = floorBelow(x, Math.max(P.y, 0) + 0.4, z);
+    if (!spaceClear(x - r, y + 0.25, z - r, x + r, y + h, z + r)) continue;
+    if (!World.los(eye.x, eye.y, eye.z, x, y + Math.min(1.2, h * 0.6), z)) continue;
+    return { x, y, z };
+  }
+  const q = World.nav.randomNear(s.pos.x, s.pos.z, 3); return { x: q.x, y: 0, z: q.z };
+};
+
+/* ── bots in tanks ─────────────────────────────────────────────────────── */
+const TankAI = {
+  t: 0,
+  update(dt) {
+    if (!Game.authority() || !Game.running) return;
+    this.t -= dt; if (this.t > 0) return; this.t = 1.5;
+    const sbx = Game.mode.id === 'sandbox'; if (!Game.mode.vehicles && !sbx) return;
+    for (const v of Game.vehicles) {
+      if (v.kind !== 'tank' || !v.alive || v.driver || v.held || v.frozen) continue;
+      if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle) continue;   // someone is on the way
+      let best = null, bd = sbx ? 45 : 90;
+      for (const s of Game.soldiers) {
+        if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.heldBy || s.planting) continue;
+        if (sbx ? !(s.team === 'T' || s.team === 'CT') : (s.team !== v.team || s.cls === 'engineer')) continue;
+        const d = dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z); if (d < bd) { bd = d; best = s; }
+      }
+      if (best) { best.brain.crew = v; v.crew = best; if (!sbx && Game.cmd[best.team]) Game.cmd[best.team].say(best, 'Taking the tank!', 4); }
+    }
+  },
+};
+const _aiUpdate19 = AI.update.bind(AI);
+AI.update = function (dt) { _aiUpdate19(dt); TankAI.update(dt); };
+const _brainReset19 = Brain.prototype.reset;
+Brain.prototype.reset = function () { _brainReset19.call(this); this.crew = null; this.tank = null; this.tankTarget = null; };
+const _brainUpdate19 = Brain.prototype.update;
+Brain.prototype.update = function (dt) {
+  const s = this.s; if (!s.alive) return;
+  if (s.vehicle) { if (s.vehicle.driver === s && s.vehicle.kind === 'tank') return this.driveTank(dt); if (s.vehicle.driver === s) { Game.exitVehicle(s); } return; }
+  const v = this.crew;
+  if (v) {
+    if (!v.alive || v.driver || v.held || (Game.mode.id !== 'sandbox' && v.team !== s.team)) { if (v.crew === s) v.crew = null; this.crew = null; }
+    else {
+      this.senseT -= dt; if (this.senseT <= 0) { this.senseT = 0.12; this.sense(); }
+      if (!(this.target && this.target.alive)) {
+        const in_ = s.moveIn; in_.f = in_.s = 0; in_.jump = in_.crouch = in_.walk = in_.sprint = false;
+        if (dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z) < v.K.enter) {
+          v.driver = s; s.vehicle = v; v.crew = null; this.crew = null; if (Game.mode.id === 'sandbox') v.team = s.team;
+          this.tank = null; Net.vehicleSeat(v); return;
+        }
+        this.moveTo(v.pos, dt, false, false, true); this.turnTo(Math.atan2(-(v.pos.x - s.pos.x), -(v.pos.z - s.pos.z)), 0, dt, 6);
+        return;
+      }
+    }
+  }
+  return _brainUpdate19.call(this, dt);
+};
+Brain.prototype.driveTank = function (dt) {
+  const s = this.s, v = s.vehicle, now = Game.now, inp = { f: 0, s: 0, brake: false };
+  const T = this.tank || (this.tank = { stuckT: 0, revT: 0, revS: 1, path: null, pi: 0, repathT: 0, goal: null, errT: 0, ex: 0, ey: 0, senseT: 0 });
+  s.pos.set(v.pos.x, v.pos.y, v.pos.z); s.vel.set(0, 0, 0); s.moveIn.f = s.moveIn.s = 0;
+  if (v.hp < v.maxHp * 0.12 || v.burnT > 0) { Game.exitVehicle(s); return; }   // bail out of a wreck
+  // targets: anything hostile the turret can see, other tanks included
+  T.senseT -= dt;
+  if (T.senseT <= 0) {
+    T.senseT = 0.25; const e0 = new V3(v.pos.x, v.pos.y + 2.3, v.pos.z); let best = null, bd = 160;
+    for (const e of Game.soldiers) {
+      if (!e.alive || !Game.hostile(s, e)) continue;
+      const p = e.vehicle ? e.vehicle.pos : e.pos, d = dist2(p.x, p.z, v.pos.x, v.pos.z); if (d > bd) continue;
+      if (!World.los(e0.x, e0.y, e0.z, p.x, p.y + 1.1, p.z)) continue;
+      best = e; bd = d * (e.vehicle && e.vehicle.kind === 'tank' ? 0.6 : 1);   // other tanks first
+    }
+    this.tankTarget = best;
+  }
+  const tgt = this.tankTarget && this.tankTarget.alive ? this.tankTarget : null;
+  const tp = tgt ? (tgt.vehicle ? tgt.vehicle.pos : tgt.pos) : null, tDist = tp ? dist2(tp.x, tp.z, v.pos.x, v.pos.z) : 1e9;
+  // where to go: the objective, the enemy, or crush someone who got too close
+  let goal = null;
+  if (tgt && tDist < 14 && !tgt.vehicle) goal = { x: tp.x, z: tp.z, r: 0.5 };
+  else if (tgt && tDist < 70) goal = null;   // good firing position: hold and shoot
+  else if (Game.mode.id === 'conquest') {
+    const q = s.squad && s.squad.target, f = q || World.flags.filter(f => f.owner !== s.team).sort((a, b) => dist2(a.x, a.z, v.pos.x, v.pos.z) - dist2(b.x, b.z, v.pos.x, v.pos.z))[0];
+    if (f) goal = { x: f.x, z: f.z, r: 8 };
+  } else if (tgt) goal = { x: tp.x, z: tp.z, r: 30 };
+  else { const cmd = Game.cmd[s.team], it = cmd && [...cmd.intel.values()].filter(i => now - i.t < 15).sort((a, b) => b.t - a.t)[0]; if (it) goal = { x: it.pos.x, z: it.pos.z, r: 22 }; }
+  if (goal && dist2(goal.x, goal.z, v.pos.x, v.pos.z) > goal.r) {
+    if (!T.path || now > T.repathT || !T.goal || dist2(T.goal.x, T.goal.z, goal.x, goal.z) > 6) {
+      if (AI.budget > 0) { AI.budget--; T.goal = goal; T.path = World.nav.find(v.pos.x, v.pos.z, goal.x, goal.z); T.pi = 0; T.repathT = now + 4; }
+    }
+    let wp = T.path && T.path[T.pi];
+    while (wp && dist2(v.pos.x, v.pos.z, wp.x, wp.z) < 3.5 && T.pi < T.path.length - 1) wp = T.path[++T.pi];
+    if (T.path) for (let j = Math.min(T.path.length - 1, T.pi + 6); j > T.pi; j--) if (World.nav.lineClear(v.pos.x, v.pos.z, T.path[j].x, T.path[j].z)) { T.pi = j; wp = T.path[j]; break; }
+    const tx = wp ? wp.x : goal.x, tz = wp ? wp.z : goal.z, want = Math.atan2(-(tx - v.pos.x), -(tz - v.pos.z)), diff = angDiff(v.yaw, want);
+    inp.s = clamp(-diff * 2.5, -1, 1); inp.f = Math.abs(diff) < 0.5 ? 1 : 0;
+    if (T.revT > 0) { T.revT -= dt; inp.f = -1; inp.s = T.revS; }
+    else if (inp.f > 0 && Math.abs(v.speed) < 0.7) { T.stuckT += dt; if (T.stuckT > 1.6) { T.stuckT = 0; T.revT = 1.3; T.revS = chance(0.5) ? 1 : -1; T.path = null; } }
+    else T.stuckT = 0;
+  } else inp.brake = true;
+  v.drive(inp, dt);
+  // turret: lead nothing, allow for drop, wobble by skill
+  if (tgt) {
+    const p = new V3(tp.x, tp.y + (tgt.vehicle ? 1.2 : 1.0), tp.z), m = new V3(v.pos.x, v.pos.y + 2.2, v.pos.z), dx = p.x - m.x, dz = p.z - m.z, hd = Math.hypot(dx, dz);
+    T.errT -= dt; if (T.errT <= 0) { T.errT = 1; const e = this.d.err * 0.004; T.ex = rand(-e, e); T.ey = rand(-e, e) * 0.5; }
+    const W = WEAPONS.tankshell, drop = (W.gravity || 0) * hd * hd / (2 * W.projectile * W.projectile);
+    s.yaw = Math.atan2(-dx, -dz) + T.ex; s.pitch = Math.atan2(p.y - m.y, hd) + drop / Math.max(hd, 1) + T.ey;
+    const aligned = Math.abs(angDiff(v.yaw + v.tYaw, s.yaw)) < 0.05 && Math.abs(v.tPitch - clamp(s.pitch, -0.12, 0.32)) < 0.06;
+    if (aligned && v.reloadT <= 0 && hd > 14) v.fire(s);
+  } else { s.yaw = angWrap(v.yaw); s.pitch = 0.02; }
 };
 
 /* ── 99_main.js ── */

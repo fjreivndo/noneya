@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.7.html     the game (built, self-contained, works offline)
+Breachpoint v1.8.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.7.html
+build.js                  npm install && node build.js  →  Breachpoint v1.8.html
 ```
 
 ## Modes
@@ -77,6 +77,21 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v1.8
+
+- **Much more accurate guns** for everyone (less spread, bloom and recoil).
+- **Fewer launchers:** Engineers only, 2 RPG rockets / 5 M79 grenades, no
+  launcher refills from ammo boxes, and only a couple of Engineer bots per
+  team.
+- **Bots drive tanks:** they take free tanks, push objectives, hunt enemy
+  armour and fire the cannon. Sandbox soldiers use tanks too.
+- **Blood** on hits: sprays, wall and floor spatter, pools; fades out. Can be
+  turned off in Settings.
+- **Crosshair styles** (cross, T, dot, circle, cross + circle, chevron) and a
+  themed **mouse cursor**, both in Settings.
+- **Spawn fixes:** nobody spawns behind walls or in sealed-off pockets;
+  sandbox NPCs and vehicles appear on your side of what you aim at.
 
 ## New in v1.7
 

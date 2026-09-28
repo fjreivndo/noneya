@@ -79,7 +79,7 @@ const Game = {
     if (cfg.roster) return cfg.roster;
     const size = cfg.teamSize != null ? cfg.teamSize : MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, att: p.att || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
     const names = cfg.botNames || shuffle(BOT_NAMES.slice()); let ni = 0;
-    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
+    for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: botClass(roster, team, size), skins: {}, att }); n++; } }
     return cfg.roster = roster;
   },
   /* the View distance setting stretches the map's fog */
@@ -493,7 +493,7 @@ const Game = {
       for (const s of this.soldiers) {
         if (!s.alive || dist2(s.pos.x, s.pos.z, k.pos.x, k.pos.z) > 1.1) continue;
         if (k.kind === 'hp') { if (s.hp >= 100) continue; s.hp = Math.min(100, s.hp + 35); }
-        else { if (s.ctrl === 'local' || s.ctrl === 'bot') { for (const id in s.ammo) { const w = s.stat(id); s.ammo[id].res = Math.min(w.reserve * 1.5, s.ammo[id].res + w.mag); } if (s.ctrl === 'local') HUD.center('Ammo +', 0.8); } else { const pr = Net.peerOf(s.id); if (pr) Net.to(pr.id, { t: 'ev', e: { t: 'ammo', s: s.id } }); } }
+        else { if (s.ctrl === 'local' || s.ctrl === 'bot') { for (const id in s.ammo) { const w = s.stat(id); if (w.type === 'launcher') continue; s.ammo[id].res = Math.min(w.reserve * 1.5, s.ammo[id].res + w.mag); } if (s.ctrl === 'local') HUD.center('Ammo +', 0.8); } else { const pr = Net.peerOf(s.id); if (pr) Net.to(pr.id, { t: 'ev', e: { t: 'ammo', s: s.id } }); } }
         if (s.ctrl === 'local') Sfx.play('ui');
         this.removePickup(k.id); break;
       }

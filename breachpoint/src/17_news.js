@@ -4,6 +4,16 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '1.8', date: 'Sep 2026', title: 'Sharper guns, tank crews and blood', items: [
+    ['Change', 'Guns are much more accurate: about 60% less spread, half the movement inaccuracy and 40% less recoil (shotguns and snipers a bit less). Jumping hurts accuracy half as much.'],
+    ['Change', 'Launchers are rarer: only Engineers carry them, the RPG has 2 rockets and the M79 5 grenades, ammo boxes no longer refill launchers, and only about 1 in 7 bots per team plays Engineer. Tanks no longer melt.'],
+    ['New', 'Bots crew tanks. A free tank is taken by a nearby bot, who drives it to the objective, hunts enemy tanks first, aims the turret, and runs people over who get too close. Sandbox soldiers climb into tanks too.'],
+    ['New', 'Blood: sprays on hits, spatter on the wall and floor behind, and a small pool where someone falls. It fades after half a minute. Settings can turn it off.'],
+    ['New', 'Crosshair styles in Settings: cross, T-shape, dot, circle, cross + circle and chevron, with a live preview.'],
+    ['New', 'A Breachpoint mouse cursor in the menus (or switch back to the system one in Settings).'],
+    ['Fix', 'Players, bots and NPCs no longer spawn behind walls or inside sealed-off spaces. Sandbox NPCs and vehicles appear on your side of whatever you aim at, with room to stand.'],
+    ['Fix', 'Defuse: you can buy from every spawn point, not only the first one.'],
+  ] },
   { v: '1.7', date: 'Sep 2026', title: 'Sandbox: saves, wiring, doors, lights', items: [
     ['New', 'Sandbox saves: name a save in the new Saves tab, load it any time, export it as a file to share or back up, and import files. Leaving a sandbox keeps an Autosave. Loading a save made on another map switches to that map.'],
     ['New', 'Wiring: buttons, switches, pressure plates, proximity sensors, timers, AND / OR / NOT / XOR gates, delays and toggle latches. The new Wire tool connects an output to anything: doors open, lights switch, alarms sound, thrusters fire, wheels drive, lamps and emitters toggle, dynamite goes off.'],

@@ -23,7 +23,7 @@ const WEAPONS = {
   ssg:    { name: 'SSG 08', slot: 1, type: 'sniper', dmg: 88, rpm: 48, mag: 10, reserve: 90, reload: 3.7, spread: 0.0015, hipSpread: 0.05, moveSpread: 0.06, recoil: 3, falloff: 0.99, pen: 0.85, price: 1700, kill: 300, speed: 0.97, sound: 1.2, zoom: 30, scope: true, bolt: 1.2 },
   awp:    { name: 'AWP', slot: 1, type: 'sniper', dmg: 115, rpm: 41, mag: 5, reserve: 30, reload: 3.6, spread: 0.001, hipSpread: 0.09, moveSpread: 0.15, recoil: 5, falloff: 0.99, pen: 0.975, price: 4750, kill: 100, speed: 0.8, sound: 1.8, zoom: 20, scope: true, bolt: 1.46, nohead: false },
   m249:   { name: 'M249', slot: 1, type: 'lmg', dmg: 32, rpm: 750, mag: 100, reserve: 200, reload: 5.7, spread: 0.010, moveSpread: 0.11, recoil: 0.9, falloff: 0.97, pen: 0.8, price: 5200, kill: 300, speed: 0.8, sound: 1.1, zoom: 55, auto: true },
-  rpg:    { name: 'RPG-7', slot: 4, type: 'launcher', dmg: 170, radius: 5.5, rpm: 30, mag: 1, reserve: 3, reload: 3.2, spread: 0.004, moveSpread: 0.04, recoil: 6, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.85, sound: 1.5, zoom: 50, projectile: 55 },
+  rpg:    { name: 'RPG-7', slot: 4, type: 'launcher', dmg: 170, radius: 5.5, rpm: 30, mag: 1, reserve: 1, reload: 3.2, spread: 0.004, moveSpread: 0.04, recoil: 6, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.85, sound: 1.5, zoom: 50, projectile: 55 },
 };
 Object.assign(WEAPONS, {
   // pistols
@@ -43,7 +43,7 @@ Object.assign(WEAPONS, {
   minigun:    { name: 'Minigun', slot: 1, type: 'lmg', dmg: 22, rpm: 1400, mag: 200, reserve: 400, reload: 7, spread: 0.018, moveSpread: 0.08, recoil: 0.35, falloff: 0.95, pen: 0.7, price: 0, kill: 300, speed: 0.72, sound: 0.9, zoom: 62, auto: true, spinup: 0.7, special: true },
   autosniper: { name: 'Auto-Sniper', slot: 1, type: 'sniper', dmg: 80, rpm: 240, mag: 20, reserve: 90, reload: 3.1, spread: 0.002, hipSpread: 0.07, moveSpread: 0.12, recoil: 1.8, falloff: 0.99, pen: 0.82, price: 5000, kill: 300, speed: 0.78, sound: 1.3, zoom: 28, scope: true },
   crossbow:   { name: 'Crossbow', slot: 1, type: 'bow', dmg: 125, rpm: 40, mag: 1, reserve: 20, reload: 2.2, spread: 0.001, hipSpread: 0.02, moveSpread: 0.03, recoil: 2, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.95, sound: 0.2, zoom: 34, projectile: 95, gravity: 3.5, suppressed: true, special: true, scope: true, overlay: 'bow' },
-  m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 8, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
+  m79:        { name: 'M79 Launcher', slot: 4, type: 'launcher', dmg: 115, radius: 4.5, rpm: 60, mag: 1, reserve: 4, reload: 2.4, spread: 0.006, moveSpread: 0.03, recoil: 5, falloff: 1, pen: 1, price: 0, kill: 300, speed: 0.92, sound: 1.1, zoom: 55, projectile: 40, gravity: 9.8, explosive: true },
 });
 WEAPONS.rpg.gravity = 0.7; WEAPONS.rpg.explosive = true;
 for (const id in WEAPONS) WEAPONS[id].id = id;
