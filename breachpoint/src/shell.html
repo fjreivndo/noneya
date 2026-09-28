@@ -143,6 +143,39 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 .bcat h4{margin:0 0 6px;color:var(--acc2);text-transform:uppercase;letter-spacing:.1em;font-size:12px}
 .bi{display:flex;justify-content:space-between;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);padding:10px 12px;margin-bottom:5px;cursor:pointer;border-radius:3px;font-weight:600}
 .bi:hover{background:rgba(255,122,47,.2);border-color:var(--acc)}.bi b{color:#7dff9a}.bi:disabled{opacity:.35;cursor:not-allowed}.bi.own{border-color:var(--ok)}
+/* update log */
+#newsBody{max-width:780px}.cl{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--mut);border-radius:4px;padding:14px 18px;margin-bottom:12px}
+.cl.latest{border-left-color:var(--acc)}.clh{display:flex;gap:12px;align-items:baseline}.clh b{font-size:20px;color:var(--acc2)}.clh span{font-weight:700;font-size:16px}.clh small{margin-left:auto;color:var(--mut)}
+.cl ul{margin:10px 0 0;padding:0;list-style:none}.cl li{padding:4px 0;line-height:1.45;display:flex;gap:10px}.cl em{font-style:normal;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;height:fit-content;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;flex:none}
+.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
+.ndot{background:var(--acc);color:#1a0f06;font-size:10px;padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:6px}
+/* keys */
+.keychip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:3px solid var(--kc);padding:5px 10px;border-radius:3px;font-size:12px}.keychip b{color:var(--kc);font-size:15px}
+.keyic{vertical-align:middle;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}
+/* lobby slots */
+.lteam h3{color:var(--tc)}.lteam h3 small{color:var(--mut);font-size:12px;font-weight:400;margin-left:6px}
+.lp .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tc);margin-right:8px}.lp.bot{color:var(--mut)}.lp.bot .dot{background:transparent;border:1px solid var(--mut)}.lp.bot i{font-size:10px;font-style:normal;border:1px solid var(--mut);border-radius:2px;padding:0 3px;margin-right:4px}.lp.warn{color:#ffb03a;font-size:12px;border:0}
+#lobbySettings{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+/* results */
+#results{overflow:auto;align-items:flex-start;padding:30px 0}
+.rbox2{width:min(1180px,95vw);margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;animation:pop .35s}
+.rhead{padding:26px 30px 18px;background:linear-gradient(135deg,color-mix(in srgb,var(--wc) 30%,transparent),transparent 70%);border-bottom:1px solid var(--line)}
+.rhead h1{font:900 72px/0.9 Impact,sans-serif;margin:0;letter-spacing:.05em}.rhead.win h1{color:var(--ok);text-shadow:0 0 30px rgba(77,255,136,.35)}.rhead.loss h1{color:var(--bad);text-shadow:0 0 30px rgba(255,77,77,.3)}
+.rsub{color:var(--mut);margin-top:6px}
+.rgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;padding:20px 30px}
+.rt{border:1px solid var(--line);border-top:3px solid var(--tc);border-radius:4px;margin-bottom:14px;overflow:hidden}.rt.won{box-shadow:0 0 0 1px color-mix(in srgb,var(--tc) 40%,transparent)}
+.rth{display:flex;align-items:center;gap:10px;padding:8px 12px;background:color-mix(in srgb,var(--tc) 12%,transparent)}.rth b{color:var(--tc);font-size:16px}.wtag{font-size:10px;font-weight:800;background:var(--tc);color:#111;padding:2px 6px;border-radius:3px}
+.rt table{width:100%;border-collapse:collapse;font-size:13px}.rt th{color:var(--mut);font-size:10px;text-transform:uppercase;text-align:right;padding:4px 10px}.rt th:first-child{text-align:left}
+.rt td{padding:5px 10px;border-top:1px solid rgba(255,255,255,.04);text-align:right}.rt td:first-child{text-align:left}.rt tr.me td{background:rgba(255,200,80,.12);font-weight:700}
+.rt i{font-size:10px;color:var(--mut);font-style:normal;border:1px solid var(--line);padding:0 3px;border-radius:2px}.rt .star{color:#ffd24a;margin-right:4px}.rt .mv{color:#ffd24a;font-size:11px}
+.rme h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--acc2)}.rme h3:not(:first-child){margin-top:18px}
+.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.rs{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:4px;padding:8px}.rs b{display:block;font-size:20px}.rs small{color:var(--mut);font-size:10px;text-transform:uppercase}
+.rlines div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:13px}.rlines b{color:var(--acc2)}.rlines .tot{border:0;font-size:15px;padding-top:6px}.rlines .tot b{color:var(--ok)}
+.xpbar{margin-top:14px}.xpl{display:flex;justify-content:space-between}.xpl span{color:#8fd4ff;font-weight:700}.xpt{height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden;margin:5px 0 2px}.xpt i{display:block;height:100%;background:linear-gradient(90deg,#3a8aff,#8fd4ff);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}.xpbar small{color:var(--mut);font-size:11px}
+.rdrops{display:flex;gap:10px;flex-wrap:wrap}.rdrops .card{width:190px}.dropc{width:150px;border:1px solid var(--line);border-bottom:3px solid var(--dc);border-radius:4px;padding:10px;text-align:center;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--dc) 22%,transparent),transparent 70%);animation:pop .5s}
+.dropc small{display:block;font-size:11px;margin-top:6px}.crate.mini{--cc:var(--dc);width:110px;height:60px;font-size:14px;margin:auto}.lvbadge{width:60px;height:60px;margin:auto;border-radius:50%;border:3px solid #ffd24a;display:flex;align-items:center;justify-content:center;font:900 26px Impact,sans-serif;color:#ffd24a;box-shadow:0 0 20px rgba(255,210,74,.4)}
+.rbtns{padding:0 30px 24px;justify-content:flex-start}
+@media (max-width:900px){.rgrid{grid-template-columns:1fr}}
 /* spawn menu */
 #spawnmenu{background:rgba(5,6,8,.55)}
 .sp-box{width:min(1180px,94vw);height:min(720px,88vh);background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
@@ -222,6 +255,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
       <button data-go="mp">Multiplayer<small>Host a room or join friends with a code</small></button>
       <button data-go="armory">Armory<small>Cases, skins, trade-ups — <span id="equipCount"></span></small></button>
       <button data-go="settings">Settings<small>Sensitivity, crosshair, audio</small></button>
+      <button data-go="news">What's new <span id="newsDot" class="ndot hidden">NEW</span><small>Update log</small></button>
     </div>
     <div class="stats" id="mainStats"></div>
     <label class="muted">Callsign <input type="text" id="mainName" maxlength="16"></label>
@@ -239,6 +273,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
     <div class="row"><button class="btn big" id="lobbyStart">Start match</button><button class="btn ghost" id="lobbyLeave">Leave</button></div></section>
   <section class="screen" id="scr-armory"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Armory</h1>
     <div id="armTabs"><button data-t="inv">Inventory</button><button data-t="cases">Cases</button><button data-t="gunsmith">Gunsmith</button><button data-t="trade">Trade-Up</button><button data-t="stats">Stats</button></div><div id="armBody"></div></section>
+  <section class="screen" id="scr-news"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Update log</h1><div id="newsBody"></div></section>
   <section class="screen" id="scr-settings"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Settings</h1><div id="setForm"></div>
     <div class="keys"><div><b>WASD</b> move</div><div><b>Shift</b> walk (Defuse) / sprint</div><div><b>Ctrl / C</b> crouch</div><div><b>Space</b> jump</div><div><b>LMB / RMB</b> fire / aim</div><div><b>R</b> reload</div><div><b>1-5</b> weapons, grenades, RPG</div><div><b>X</b> last weapon</div><div><b>E</b> plant / defuse / jeep</div><div><b>B</b> buy menu</div><div><b>Q</b> spot enemy</div><div><b>G</b> class gadget</div><div><b>F</b> inspect weapon</div><div><b>Tab</b> scoreboard</div><div><b>Y / Enter</b> chat</div><div><b>Esc</b> pause</div></div></section>
 </div>

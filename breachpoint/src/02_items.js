@@ -324,13 +324,17 @@ const Inv = {
   load() {
     this.data = Store.get('inv', null);
     if (!this.data) {
-      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0, arsenal: 1 }, keys: 2, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
+      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0, arsenal: 1 }, keys: { ember: 1, glacier: 1, arsenal: 1 }, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
       // a starter so the armory isn't empty
       const s = this.newItem('ak47_safari_mesh'); this.data.items.push(s); this.data.equipped.ak47 = s.uid;
     }
     this.data.cases = Object.assign({ ember: 0, glacier: 0, neon: 0, arsenal: 0 }, this.data.cases);
     this.data.stats = Object.assign({ kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, this.data.stats);
     this.data.attach = this.data.attach || {}; this.data.unlocked = this.data.unlocked || ['reddot'];
+    // keys used to be one shared count; old keys become master keys that open anything
+    if (typeof this.data.keys === 'number') this.data.keys = { master: this.data.keys };
+    this.data.keys = Object.assign({ master: 0 }, Object.fromEntries(CASES.map(c => [c.id, 0])), this.data.keys);
+    this.data.xp = this.data.xp || 0; this.data.level = this.data.level || 1;
     this.save();
   },
   save() { Store.set('inv', this.data); },
@@ -396,6 +400,31 @@ function tradeUp(items) {
 }
 
 /* Match reward: credits plus a chance at a drop (field skin or a case). */
+/* ── keys: each case has its own; master keys open any case ── */
+const KEY_PRICE = { ember: 250, glacier: 250, neon: 250, arsenal: 300 };
+const KEY_BUNDLE = { n: 5, discount: 0.85 };
+Object.assign(Inv, {
+  keysFor(caseId) { return (this.data.keys[caseId] || 0) + (this.data.keys.master || 0); },
+  totalKeys() { return Object.values(this.data.keys).reduce((a, b) => a + b, 0); },
+  useKey(caseId) { const k = this.data.keys; if (k[caseId] > 0) { k[caseId]--; return caseId; } if (k.master > 0) { k.master--; return 'master'; } return null; },
+  keyName(id) { return id === 'master' ? 'Master Key' : (CASES.find(c => c.id === id) || { name: id }).name.replace(' Case', '') + ' Key'; },
+  keyColor(id) { return id === 'master' ? '#ffd24a' : (CASES.find(c => c.id === id) || { color: '#ccc' }).color; },
+  /* XP and levels: every level pays credits and a key; every fifth adds a case and a master key */
+  xpFor(level) { return 600 + level * 150; },
+  addXp(n) {
+    const d = this.data, ups = []; d.xp += n;
+    while (d.xp >= this.xpFor(d.level)) {
+      d.xp -= this.xpFor(d.level); d.level++;
+      const c = pick(CASES), r = { level: d.level, credits: 100 + d.level * 10, key: c.id };
+      d.credits += r.credits; d.keys[c.id] = (d.keys[c.id] || 0) + 1;
+      if (d.level % 5 === 0) { const c2 = pick(CASES); d.cases[c2.id]++; d.keys.master++; r.case = c2.id; r.master = true; }
+      ups.push(r);
+    }
+    return ups;
+  },
+});
+function keySvg(color, size = 22) { return `<svg class="keyic" width="${size}" height="${size}" viewBox="0 0 24 24"><circle cx="7" cy="12" r="4.5" fill="none" stroke="${color}" stroke-width="2.6"/><path d="M11 12h11M18 12v4M21 12v3" stroke="${color}" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>`; }
+
 function matchDrop() {
   const x = Math.random();
   if (x < 0.35) { const c = pick(CASES); return { kind: 'case', caseId: c.id }; }

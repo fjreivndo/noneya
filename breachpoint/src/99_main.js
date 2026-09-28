@@ -7,6 +7,7 @@ function boot() {
   HUD.init();
   UI.init();
   MenuBG.start();
+  UI.maybeShowNews();
   let last = performance.now();
   const frame = now => {
     requestAnimationFrame(frame);

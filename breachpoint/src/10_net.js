@@ -71,7 +71,7 @@ const Net = {
   /* ── lobby ── */
   host(code, opts) {
     this.leave(); this.role = 'host'; this.code = code; this.connected = true;
-    this.lobby = { players: [{ id: 'host', name: Settings.name, team: 'CT', skins: Inv.loadoutSkins(), cls: 'assault' }], mode: opts.mode, map: opts.map, diff: opts.diff, teamSize: opts.teamSize, started: false };
+    this.lobby = { players: [{ id: 'host', name: Settings.name, team: 'CT', skins: Inv.loadoutSkins(), cls: 'assault' }], mode: opts.mode, map: opts.map, diff: opts.diff, teamSize: opts.teamSize, bots: true, botNames: shuffle(BOT_NAMES.slice()), started: false };
     this.link = this.makeLink(code, true, {
       ready: () => { this.status = 'Hosting ' + code; this.pushLobby(); },
       connect: id => { this.peers.set(id, { id, sid: null }); },
@@ -100,6 +100,11 @@ const Net = {
   to(id, m) { if (this.role === 'host' && this.link) this.link.send(id, m); },
   toAll(m, except) { if (this.role !== 'host') return; for (const id of this.peers.keys()) if (id !== except) this.to(id, m); },
   pushLobby() { if (this.role !== 'host') return; this.toAll({ t: 'lobby', l: this.lobby }); this.onLobby && this.onLobby(this.lobby); },
+  /* host: even out humans across the teams */
+  balance() {
+    if (this.role !== 'host' || !this.lobby) return;
+    const P = this.lobby.players; shuffle(P); P.forEach((p, i) => p.team = i % 2 ? 'T' : 'CT'); this.pushLobby();
+  },
   setTeam(team) { if (this.role === 'host') { this.lobby.players[0].team = team; this.pushLobby(); } else this.send({ t: 'team', team }); },
   peerOf(sid) { for (const p of this.peers.values()) if (p.sid === sid) return p; return null; },
   dropPeer(id) {
@@ -172,7 +177,7 @@ const Net = {
   /* host: start the match for everyone */
   startMatch() {
     const L = this.lobby; L.started = true;
-    const cfg = { mode: L.mode, map: L.map, diff: L.diff, teamSize: L.mode === 'sandbox' ? 0 : L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, att: p.id === 'host' ? Inv.data.attach : p.att, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
+    const cfg = { mode: L.mode, map: L.map, diff: L.diff, botNames: L.botNames, teamSize: L.mode === 'sandbox' || !L.bots ? 0 : L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, att: p.id === 'host' ? Inv.data.attach : p.att, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
     // clients must be in the match before the first round's spawn events reach them
     Game.prepareRoster(cfg);
     this.toAll({ t: 'start', cfg: this.startCfgFor(cfg) });
@@ -195,6 +200,7 @@ const Net = {
   clientData(m) {
     switch (m.t) {
       case 'lobby': this.lobby = m.l; this.onLobby && this.onLobby(m.l); break;
+      case 'tolobby': if (Game.running) Game.stop(); UI.resultsOpen = false; $('results').classList.add('hidden'); $('hud').classList.add('hidden'); MenuBG.start(); UI.openLobby(); break;
       case 'you': this.myId = m.id; this.sid = m.id; break;
       case 'start': {
         const cfg = m.cfg; cfg.localId = this.sid;
@@ -232,6 +238,7 @@ const Net = {
       const alive = !!a[9];
       if (s === L) {
         L.hp = a[7]; L.armor = a[8]; L.money = a[11]; L.helmet = !!(a[12] & 1);
+        if (a.length > 13) { L.kills = a[13]; L.deaths = a[14]; L.assists = a[15]; L.score = a[16]; L.mvps = a[17]; }
         if (!alive && L.alive) { L.alive = false; }
         L.spotT = (a[12] & 2) ? Game.now + 1 : 0; L.spotCT = (a[12] & 4) ? Game.now + 1 : 0;
         continue;
@@ -240,6 +247,7 @@ const Net = {
       if (alive && !s.alive) { s.pos.set(a[1], a[2], a[3]); s.deadT = 0; if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; } }
       s.alive = alive; if (a[10] && (WEAPONS[a[10]] || isNade(a[10]))) s.cur = a[10]; s.money = a[11];
       s.spotT = (a[12] & 2) ? Game.now + 1 : 0; s.spotCT = (a[12] & 4) ? Game.now + 1 : 0; s.planting = (a[12] & 8) ? {} : null;
+      if (a.length > 13) { s.kills = a[13]; s.deaths = a[14]; s.assists = a[15]; s.score = a[16]; s.mvps = a[17]; }
     }
     const g = m.g; if (g) {
       if (g.r) { Game.round = Game.round || {}; Object.assign(Game.round, { phase: g.r[0], timeLeft: g.r[1], t: g.r[2], num: g.r[3] }); Game.score = { T: g.r[4], CT: g.r[5] }; Game.roundNum = g.r[3]; }
@@ -375,7 +383,7 @@ const Net = {
     this.snapT -= dt; if (this.snapT > 0 || !this.peers.size) return;
     this.snapT = 1 / 15;
     const s = Game.soldiers.map(o => [o.id, +o.pos.x.toFixed(2), +o.pos.y.toFixed(2), +o.pos.z.toFixed(2), +o.yaw.toFixed(3), +o.pitch.toFixed(3), +o.crouch.toFixed(2), Math.round(o.hp), Math.round(o.armor), o.alive ? 1 : 0, o.cur, o.money,
-      (o.helmet ? 1 : 0) | ((o.spotT || 0) > Game.now ? 2 : 0) | ((o.spotCT || 0) > Game.now ? 4 : 0) | (o.planting ? 8 : 0)]);
+      (o.helmet ? 1 : 0) | ((o.spotT || 0) > Game.now ? 2 : 0) | ((o.spotCT || 0) > Game.now ? 4 : 0) | (o.planting ? 8 : 0), o.kills, o.deaths, o.assists, o.score, o.mvps]);
     const g = {};
     const R = Game.round; if (R && Game.mode.id === 'defuse') g.r = [R.phase, +R.timeLeft.toFixed(1), +(R.t || 0).toFixed(1), Game.roundNum, Game.score.T, Game.score.CT];
     if (Game.mode.id === 'defuse') { const B = Game.bomb; g.b = [B.state, B.carrier, B.pos ? [+B.pos.x.toFixed(2), +B.pos.y.toFixed(2), +B.pos.z.toFixed(2)] : null, +(B.timer || 0).toFixed(1), B.site, B.defuser, +(B.progress || 0).toFixed(2), B.progressMax || 10]; }

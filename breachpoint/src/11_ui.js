@@ -2,7 +2,6 @@
    Menus, armory (inventory / cases / trade-up), buy menu, lobby, settings.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const KEY_PRICE = 250;
 const UI = {
   cur: 'main', pauseOpen: false, buyOpen: false, resultsOpen: false, invFilter: { rarity: -1, weapon: '', sort: 'rarity' }, tradeSel: [], playCfg: null,
   init() {
@@ -39,7 +38,7 @@ const UI = {
   /* ── main ── */
   render_main() {
     const d = Inv.data, eq = Object.keys(d.equipped).length;
-    $('mainStats').innerHTML = `<div><b>${d.stats.kills}</b><small>kills</small></div><div><b>${d.stats.wins}</b><small>wins</small></div><div><b>${d.items.length}</b><small>skins</small></div><div><b>${Object.values(d.cases).reduce((a, b) => a + b, 0)}</b><small>cases</small></div><div><b>${d.keys}</b><small>keys</small></div>`;
+    $('mainStats').innerHTML = `<div><b>${d.stats.kills}</b><small>kills</small></div><div><b>${d.stats.wins}</b><small>wins</small></div><div><b>${d.items.length}</b><small>skins</small></div><div><b>${Object.values(d.cases).reduce((a, b) => a + b, 0)}</b><small>cases</small></div><div><b>${Inv.totalKeys()}</b><small>keys</small></div><div><b>${d.level}</b><small>level</small></div>`;
     $('mainName').value = Settings.name;
     $('mainName').onchange = () => { Settings.name = $('mainName').value.trim().slice(0, 16) || Settings.name; saveSettings(); };
     $('equipCount').textContent = eq ? `${eq} skin${eq > 1 ? 's' : ''} equipped` : 'No skins equipped yet';
@@ -106,15 +105,31 @@ const UI = {
     $('lobbyStatus').textContent = Net.status || (Net.role === 'client' && !Net.connected ? 'Connecting…' : '');
     if (!L) { $('lobbyTeams').innerHTML = '<p class="muted">Waiting for host…</p>'; $('lobbySettings').innerHTML = ''; $('lobbyStart').classList.add('hidden'); return; }
     const me = host ? 'host' : Net.sid;
-    const col = team => `<div class="lteam"><h3 style="color:${TEAM_STYLE[team].color}">${TEAM_STYLE[team].name}</h3>${L.players.filter(p => p.team === team).map(p => `<div class="lp ${p.id === me ? 'me' : ''}">${escapeHtml(p.name)}${p.id === 'host' ? ' <small>host</small>' : ''}</div>`).join('')}<div class="lp bots">+ bots fill to ${L.teamSize}</div><button class="btn small" data-team="${team}">Join ${TEAM_STYLE[team].name}</button></div>`;
+    /* every slot on the team: people first, then the bots that will fill in
+       for the missing ones (same names the match will use) */
+    const fill = L.mode !== 'sandbox' && L.bots !== false, names = L.botNames || BOT_NAMES;
+    let bi = 0; const botsFor = {};
+    for (const t of ['T', 'CT']) { const n = L.players.filter(p => p.team === t).length, k = fill ? Math.max(0, L.teamSize - n) : 0; botsFor[t] = []; for (let i = 0; i < k; i++) botsFor[t].push(names[bi++ % names.length]); }
+    const col = team => {
+      const hum = L.players.filter(p => p.team === team), over = fill && hum.length > L.teamSize;
+      return `<div class="lteam" style="--tc:${TEAM_STYLE[team].color}"><h3>${TEAM_STYLE[team].name} <small>${hum.length} ${hum.length === 1 ? 'player' : 'players'}${botsFor[team].length ? ' + ' + botsFor[team].length + ' bot' + (botsFor[team].length > 1 ? 's' : '') : ''}</small></h3>
+        ${hum.map(p => `<div class="lp ${p.id === me ? 'me' : ''}"><span class="dot"></span>${escapeHtml(p.name)}${p.id === 'host' ? ' <small>host</small>' : ''}${p.id === me ? ' <small>you</small>' : ''}</div>`).join('')}
+        ${botsFor[team].map(n => `<div class="lp bot"><span class="dot"></span><i>BOT</i> ${escapeHtml(n)} <small>${DIFF[L.diff] ? DIFF[L.diff].label : ''}</small></div>`).join('')}
+        ${over ? `<div class="lp warn">${hum.length - L.teamSize} over the team size, so no bots on this team</div>` : ''}
+        ${!fill && L.mode !== 'sandbox' ? '<div class="lp bots">Bots off: people only</div>' : ''}
+        <button class="btn small" data-team="${team}">Join ${TEAM_STYLE[team].name}</button></div>`;
+    };
     $('lobbyTeams').innerHTML = col('CT') + col('T');
     $('lobbyTeams').querySelectorAll('[data-team]').forEach(b => b.onclick = () => Net.setTeam(b.dataset.team));
     const M = MODES[L.mode];
     if (host) {
       const sel = (k, opts) => `<select data-k="${k}">${opts.map(([v, l]) => `<option value="${v}" ${String(L[k]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
       const sizes = L.mode === 'defuse' ? [3, 5] : L.mode === 'conquest' ? [8, 12, 16] : L.mode === 'sandbox' ? [0] : [4, 6, 8];
-      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label><label>Team size ${sel('teamSize', sizes.map(n => [n, n ? n + 'v' + n : 'no bots']))}</label><label>Bots ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label>`;
-      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } if (k === 'diff') Sandbox.opts.npcSkill = L.diff; Net.pushLobby(); this.render_lobby(); });
+      const allSizes = L.mode === 'sandbox' ? [0] : Array.from({ length: L.mode === 'defuse' ? 8 : 16 }, (_, i) => i + 1);
+      if (!allSizes.includes(+L.teamSize)) L.teamSize = allSizes[Math.min(allSizes.length - 1, 4)];
+      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label>${L.mode === 'sandbox' ? '' : `<label>Team size ${sel('teamSize', allSizes.map(n => [n, n + 'v' + n]))}</label><label>Fill with bots ${sel('bots', [['true', 'On'], ['false', 'Off']])}</label>`}<label>Bot skill ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label><button class="btn small ghost" id="lobbyBalance">Balance teams</button>`;
+      $('lobbyBalance').onclick = () => Net.balance();
+      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = s.value === 'true' ? true : s.value === 'false' ? false : isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } if (k === 'diff') Sandbox.opts.npcSkill = L.diff; Net.pushLobby(); this.render_lobby(); });
       $('lobbyStart').classList.remove('hidden'); $('lobbyStart').onclick = () => Net.startMatch();
     } else {
       $('lobbySettings').innerHTML = `<p>${M.name} · ${MAPS[L.map].name} · ${L.teamSize}v${L.teamSize} · ${DIFF[L.diff].label} bots</p><p class="muted">Waiting for the host to start…</p>`;
@@ -177,24 +192,30 @@ const UI = {
   closeModal() { $('modal').classList.remove('open'); $('modal').innerHTML = ''; },
   renderCases(body) {
     const d = Inv.data;
-    body.innerHTML = `<div class="bar"><span>🔑 Keys: <b>${d.keys}</b></span><button class="btn small" id="buyKey">Buy key ₵${KEY_PRICE}</button><span class="muted">Every case needs one key. Cases drop after matches too.</span></div>
+    const keyChip = id => `<span class="keychip" style="--kc:${Inv.keyColor(id)}">${keySvg(Inv.keyColor(id), 18)}<b>${d.keys[id] || 0}</b> ${Inv.keyName(id)}</span>`;
+    body.innerHTML = `<div class="bar keys">${['master'].concat(CASES.map(c => c.id)).map(keyChip).join('')}<span class="muted">Each case opens with its own key. Master keys open any case. Keys also drop from matches and level-ups.</span></div>
       <div class="cases">${CASES.map(c => {
         const odds = [1, 2, 3, 4, 5, 6].map(r => `<span style="color:${RARITY[r].color}">${RARITY[r].name} ${(CASE_ODDS[r] * 100).toFixed(r >= 5 ? 1 : 0)}%</span>`).join(' · ');
         return `<div class="case" style="--cc:${c.color}"><div class="case-art"><div class="crate"><span>${c.name.split(' ')[0].toUpperCase()}</span></div></div>
         <h3>${c.name}</h3><p class="muted">${c.desc}</p><div class="own">Owned: <b>${d.cases[c.id] || 0}</b></div>
-        <div class="row"><button class="btn small" data-buy="${c.id}">Buy ₵${c.price}</button><button class="btn" data-open="${c.id}" ${d.cases[c.id] && d.keys ? '' : 'disabled'}>Open</button></div>
+        <div class="own">${keySvg(c.color, 16)} Keys: <b>${d.keys[c.id] || 0}</b>${d.keys.master ? ` <span class="muted">+ ${d.keys.master} master</span>` : ''}</div>
+        <div class="row"><button class="btn small" data-buy="${c.id}">Buy case ₵${c.price}</button><button class="btn small" data-key="${c.id}">Buy key ₵${KEY_PRICE[c.id]}</button><button class="btn small ghost" data-bundle="${c.id}">${KEY_BUNDLE.n} keys ₵${Math.round(KEY_PRICE[c.id] * KEY_BUNDLE.n * KEY_BUNDLE.discount)}</button></div>
+        <div class="row"><button class="btn" data-open="${c.id}" ${d.cases[c.id] && Inv.keysFor(c.id) ? '' : 'disabled'}>${!d.cases[c.id] ? 'No case' : !Inv.keysFor(c.id) ? 'Needs a key' : 'Open'}</button></div>
         <div class="odds">${odds}</div>
         <div class="contents">${SKIN_LIST.filter(s => s.caseId === c.id).sort((a, b) => b.rarity - a.rarity).map(s => `<div class="ci" style="--rc:${RARITY[s.rarity].color}" title="${escapeHtml(s.name)}"><canvas width="110" height="55" data-skin="${s.id}"></canvas><small>${s.weapon === 'knife' ? '★ ' + escapeHtml(s.name) : WEAPONS[s.weapon].name + ' | ' + escapeHtml(s.name)}</small></div>`).join('')}</div></div>`;
       }).join('')}</div>`;
     body.querySelectorAll('canvas[data-skin]').forEach(cv => { const s = SKINS[cv.dataset.skin]; drawSkinPreview(cv, { seed: 1, float: 0.03, skinId: s.id }, s.weapon === 'knife' ? Object.assign({}, s, { pattern: 'solid', pal: ['#e4ae39', '#b88a20'] }) : s); });
-    $('buyKey').onclick = () => { if (d.credits < KEY_PRICE) return this.toast('Not enough credits'); d.credits -= KEY_PRICE; d.keys++; Inv.save(); Sfx.play('buy'); this.render_armory(); };
+    const buyKeys = (id, n, price) => { if (d.credits < price) return this.toast('Not enough credits'); d.credits -= price; d.keys[id] = (d.keys[id] || 0) + n; Inv.save(); Sfx.play('buy'); this.toast(`+${n} ${Inv.keyName(id)}${n > 1 ? 's' : ''}`); this.render_armory(); };
+    body.querySelectorAll('[data-key]').forEach(b => b.onclick = () => buyKeys(b.dataset.key, 1, KEY_PRICE[b.dataset.key]));
+    body.querySelectorAll('[data-bundle]').forEach(b => b.onclick = () => buyKeys(b.dataset.bundle, KEY_BUNDLE.n, Math.round(KEY_PRICE[b.dataset.bundle] * KEY_BUNDLE.n * KEY_BUNDLE.discount)));
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const c = CASES.find(x => x.id === b.dataset.buy); if (d.credits < c.price) return this.toast('Not enough credits'); d.credits -= c.price; d.cases[c.id]++; Inv.save(); Sfx.play('buy'); this.render_armory(); });
     body.querySelectorAll('[data-open]').forEach(b => b.onclick = () => this.openCase(b.dataset.open));
   },
   /* the reel: a long strip slides and eases to a stop on the prize */
   openCase(caseId) {
-    const d = Inv.data; if (!d.cases[caseId] || !d.keys) return;
-    d.cases[caseId]--; d.keys--; d.stats.opened++;
+    const d = Inv.data; if (!d.cases[caseId] || !Inv.keysFor(caseId)) return;
+    const used = Inv.useKey(caseId); d.cases[caseId]--; d.stats.opened++;
+    if (used === 'master') this.toast('Used a Master Key');
     const prize = rollCase(caseId); d.items.push(prize); Inv.save();
     const WIN = 52, N = 60, CW = 170;
     const strip = []; for (let i = 0; i < N; i++) strip.push(i === WIN ? { skin: SKINS[prize.skinId], item: prize } : { skin: reelFiller(caseId) });
@@ -216,9 +237,9 @@ const UI = {
   reveal(it, caseId) {
     const s = SKINS[it.skinId], r = RARITY[s.rarity];
     Sfx.play(s.rarity >= 4 ? 'rare' : 'reveal');
-    const el = $('reveal');
+    const el = $('reveal'); if (!el) return;   // the reel was closed mid-spin
     el.innerHTML = `<div class="prize" style="--rc:${r.color}"><canvas width="520" height="240" id="prizeCv"></canvas><div class="pn">${escapeHtml(Inv.displayName(it))}</div><div class="pr" style="color:${r.color}">${r.name} · ${wearOf(it.float).name} · float ${it.float.toFixed(4)}</div>
-      <div class="row"><button class="btn" id="pvEquip">Equip</button><button class="btn warn" id="pvSell">Sell ₵${Inv.value(it)}</button><button class="btn" id="pvAgain" ${Inv.data.cases[caseId] && Inv.data.keys ? '' : 'disabled'}>Open another</button><button class="btn ghost" id="pvClose">Close</button></div></div>`;
+      <div class="row"><button class="btn" id="pvEquip">Equip</button><button class="btn warn" id="pvSell">Sell ₵${Inv.value(it)}</button><button class="btn" id="pvAgain" ${Inv.data.cases[caseId] && Inv.keysFor(caseId) ? '' : 'disabled'}>Open another</button><button class="btn ghost" id="pvClose">Close</button></div></div>`;
     drawSkinPreview($('prizeCv'), it);
     if (s.rarity >= 5) el.querySelector('.prize').classList.add('burst');
     const close = () => { $('opener').classList.remove('open'); $('opener').innerHTML = ''; this.render_armory(); };
@@ -344,20 +365,50 @@ const UI = {
       if (this.applyBuy(L, id)) { Sfx.play('buy'); this.refreshBuy(); } else Sfx.play('empty');
     });
   },
+  /* End of match: result, both scoreboards, your numbers, what you earned. */
   matchResults(r) {
     if (!Game.running) return;
-    this.resultsOpen = true; this.toggleBuy(false); HUD.showDeploy(false);
+    this.resultsOpen = true; this.toggleBuy(false); this.toggleSpawnMenu && this.spawnOpen && this.toggleSpawnMenu(false); HUD.showDeploy(false);
     if (document.pointerLockElement) document.exitPointerLock();
-    const L = Game.local, e = $('results'); e.classList.remove('hidden');
-    let drop = '';
-    if (r.drop) drop = r.drop.kind === 'case' ? `<div class="drop">Drop: <b style="color:${CASES.find(c => c.id === r.drop.caseId).color}">${CASES.find(c => c.id === r.drop.caseId).name}</b></div>` : `<div class="drop">Drop: ${this.itemCard(r.drop.item)}</div>`;
-    e.innerHTML = `<div class="rbox"><h1 class="${r.won ? 'win' : 'loss'}">${r.won ? 'VICTORY' : 'DEFEAT'}</h1><p>${TEAM_STYLE[r.winner].name} wins ${Game.mode.id === 'defuse' ? Game.score[r.winner] + ' – ' + Game.score[other(r.winner)] : ''}</p>
-      <div class="stats"><div><b>${L.kills}</b><small>kills</small></div><div><b>${L.assists}</b><small>assists</small></div><div><b>${L.deaths}</b><small>deaths</small></div><div><b>${L.mvps}</b><small>MVPs</small></div><div><b>+₵${r.credits}</b><small>credits</small></div></div>${drop}
-      <div class="row"><button class="btn" id="resMenu">Main menu</button><button class="btn" id="resArm">Armory</button>${Net.role === 'off' ? '<button class="btn" id="resAgain">Play again</button>' : ''}</div></div>`;
+    const L = Game.local, e = $('results'), S = r.stats, W = TEAM_STYLE[r.winner], M = Game.mode;
+    e.classList.remove('hidden'); e.style.setProperty('--wc', W.color);
+    const score = M.id === 'defuse' ? `${Game.score.CT} – ${Game.score.T}` : M.id === 'conquest' ? `${Math.ceil(Game.tickets.CT)} – ${Math.ceil(Game.tickets.T)} tickets` : M.id === 'tdm' ? `${Game.tdm.kills.CT} – ${Game.tdm.kills.T} kills` : '';
+    const table = team => {
+      const rows = Game.soldiers.filter(s => s.team === team && !s.npc).sort((a, b) => b.score - a.score || b.kills - a.kills);
+      const top = rows[0];
+      return `<div class="rt ${team === r.winner ? 'won' : ''}" style="--tc:${TEAM_STYLE[team].color}"><div class="rth"><b>${TEAM_STYLE[team].name}</b>${team === r.winner ? '<span class="wtag">WINNER</span>' : ''}</div>
+        <table><tr><th></th><th>K</th><th>A</th><th>D</th><th>Score</th></tr>${rows.map(s => `<tr class="${s === L ? 'me' : ''}"><td>${s === top && s.score > 0 ? '<span class="star" title="Top score">★</span>' : ''}${s.isBot ? '<i>BOT</i> ' : ''}${escapeHtml(s.name)}${s.mvps ? ` <span class="mv">${s.mvps}×MVP</span>` : ''}</td><td>${s.kills}</td><td>${s.assists}</td><td>${s.deaths}</td><td>${s.score}</td></tr>`).join('')}</table></div>`;
+    };
+    const tile = (v, l) => `<div class="rs"><b>${v}</b><small>${l}</small></div>`;
+    const kd = S.d ? (S.k / S.d).toFixed(2) : S.k.toFixed(2), hsp = S.k ? Math.round(S.hs / S.k * 100) + '%' : '–', acc = S.shots ? Math.round(S.hits / S.shots * 100) + '%' : '–';
+    let drops = '';
+    if (r.drop) drops += r.drop.kind === 'case' ? `<div class="dropc" style="--dc:${CASES.find(c => c.id === r.drop.caseId).color}"><div class="crate mini"><span>${CASES.find(c => c.id === r.drop.caseId).name.split(' ')[0].toUpperCase()}</span></div><small>${CASES.find(c => c.id === r.drop.caseId).name}</small></div>` : this.itemCard(r.drop.item);
+    if (r.keyDrop) drops += `<div class="dropc" style="--dc:${Inv.keyColor(r.keyDrop)}">${keySvg(Inv.keyColor(r.keyDrop), 64)}<small>${Inv.keyName(r.keyDrop)}</small></div>`;
+    for (const u of r.ups) drops += `<div class="dropc lvl" style="--dc:#ffd24a"><div class="lvbadge">${u.level}</div><small>Level ${u.level}: +₵${u.credits}, ${Inv.keyName(u.key)}${u.master ? ', Master Key, ' + CASES.find(c => c.id === u.case).name : ''}</small></div>`;
+    const D = Inv.data, pctFrom = r.before.xp / r.before.need * 100, pctTo = D.xp / Inv.xpFor(D.level) * 100;
+    const host = Net.role === 'host', client = Net.role === 'client';
+    e.innerHTML = `<div class="rbox2">
+      <div class="rhead ${r.won ? 'win' : 'loss'}"><h1>${r.won ? 'VICTORY' : 'DEFEAT'}</h1><div class="rsub"><b style="color:${W.color}">${W.name} wins</b> · ${score} · ${M.name} · ${World.def.name} · ${fmtTime(r.dur)}</div></div>
+      <div class="rgrid">
+        <div class="rteams">${table(r.winner)}${table(other(r.winner))}</div>
+        <div class="rme">
+          <h3>Your match</h3>
+          <div class="rstats">${tile(S.k, 'kills')}${tile(S.d, 'deaths')}${tile(S.a, 'assists')}${tile(kd, 'K/D')}${tile(hsp, 'headshot %')}${tile(acc, 'accuracy')}${tile(S.dmg, 'damage')}${tile(S.mvps, 'MVPs')}</div>
+          <h3>Earned</h3>
+          <div class="rlines">${r.lines.map(l => `<div><span>${l[0]}</span><b>+₵${l[1]}</b></div>`).join('')}<div class="tot"><span>Total</span><b>+₵${r.credits}</b></div></div>
+          <div class="xpbar"><div class="xpl">Level <b>${D.level}</b> <span>+${r.xp} XP</span></div><div class="xpt"><i style="width:${r.ups.length ? 0 : pctFrom}%" data-to="${pctTo}"></i></div><small>${D.xp} / ${Inv.xpFor(D.level)} XP</small></div>
+          ${drops ? `<h3>Drops</h3><div class="rdrops">${drops}</div>` : ''}
+        </div>
+      </div>
+      <div class="row rbtns">${host ? '<button class="btn big" id="resRematch">Play again</button><button class="btn" id="resLobby">Back to lobby</button>' : client ? '<span class="muted">Waiting for the host to start again…</span>' : '<button class="btn big" id="resAgain">Play again</button>'}<button class="btn ghost" id="resArm">Armory</button><button class="btn ghost" id="resMenu">${Net.role === 'off' ? 'Main menu' : 'Leave'}</button></div></div>`;
     this.paintCards(e);
-    $('resMenu').onclick = () => { this.leaveGame(); };
+    Sfx.play(r.won ? 'win' : 'lose'); if (r.ups.length) setTimeout(() => Sfx.play('rare'), 900);
+    requestAnimationFrame(() => setTimeout(() => { const bar = e.querySelector('.xpt i'); if (bar) bar.style.width = bar.dataset.to + '%'; }, 300));
+    $('resMenu').onclick = () => this.leaveGame();
     $('resArm').onclick = () => { this.leaveGame(); this.armoryTab = 'inv'; this.show('armory'); };
     if ($('resAgain')) $('resAgain').onclick = () => { this.leaveGame(); this.startSolo(); };
+    if ($('resRematch')) $('resRematch').onclick = () => { Game.stop(); this.resultsOpen = false; Net.startMatch(); };
+    if ($('resLobby')) $('resLobby').onclick = () => { Game.stop(); this.resultsOpen = false; e.classList.add('hidden'); $('hud').classList.add('hidden'); Net.lobby.started = false; Net.toAll({ t: 'tolobby' }); MenuBG.start(); this.openLobby(); Net.pushLobby(); };
   },
 };
 

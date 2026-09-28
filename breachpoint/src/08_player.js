@@ -236,10 +236,18 @@ class ViewModel {
       else if (w && w.mag) { this.flashT = w.suppressed ? 0.02 : 0.05; if (this.pose.pump || w.bolt) this.pumpT = 1; }
     }
     this.kick = Math.max(0, this.kick - dt * (w && w.type === 'sniper' ? 5 : 14)); this.slash = Math.max(0, this.slash - dt * 4); this.pumpT = Math.max(0, this.pumpT - dt * 2.2);
-    this.sway.x = lerp(this.sway.x, clamp(-Input.mouse.dx * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
-    this.sway.y = lerp(this.sway.y, clamp(Input.mouse.dy * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
-    const hs = Math.hypot(s.vel.x, s.vel.z), a = s.adsT, bobA = Math.min(hs / 5, 1.3) * (s.grounded ? 1 : 0.25) * (1 - a * 0.9);
-    const bx_ = Math.sin(s.walkPhase) * 0.009 * bobA, by = -Math.abs(Math.cos(s.walkPhase)) * 0.008 * bobA;
+    /* Everything that drives the gun's motion is smoothed twice. Mouse
+       deltas arrive unevenly frame to frame, and speed / grounded flicker, so
+       feeding them in raw makes the gun shiver. */
+    const sw = this.swayT || (this.swayT = { x: 0, y: 0 }), ks = 1 - Math.exp(-dt * 14), kf = 1 - Math.exp(-dt * 7);
+    sw.x = lerp(sw.x, clamp(-Input.mouse.dx * 0.0004, -0.03, 0.03), ks); sw.y = lerp(sw.y, clamp(Input.mouse.dy * 0.0004, -0.03, 0.03), ks);
+    this.sway.x = lerp(this.sway.x, sw.x, kf); this.sway.y = lerp(this.sway.y, sw.y, kf);
+    const hs = Math.hypot(s.vel.x, s.vel.z), a = s.adsT;
+    this.spd = lerp(this.spd || 0, Math.min(hs / 5, 1.2) * (s.grounded ? 1 : 0.3), 1 - Math.exp(-dt * 6));
+    this.sprintK = lerp(this.sprintK || 0, s.moveIn.sprint && hs > 5 && Game.mode.sprint ? 1 : 0, 1 - Math.exp(-dt * 8));
+    const bobA = this.spd * (1 - a * 0.9);
+    // a smooth figure-eight: side to side once per two steps, dipping on each step
+    const bx_ = Math.sin(s.walkPhase) * 0.008 * bobA, by = (Math.cos(s.walkPhase * 2) - 1) * 0.0045 * bobA;
     const idle = Math.sin(Game.now * 1.6) * 0.0015 * (1 - a);
     const p = new V3().lerpVectors(this.hip, this.adsPos, a);
     let rx = lerp(this.hipRot.x, 0, a), ry = lerp(this.hipRot.y, 0, a), rz = lerp(this.hipRot.z, 0, a), oy = 0, oz = 0, ox = 0;
@@ -258,7 +266,7 @@ class ViewModel {
     if (this.pumpT > 0 && w && w.bolt) { const k = Math.sin(this.pumpT * Math.PI); rz += 0.2 * k; oy -= 0.015 * k; }
     if (Player.inspectT > 0) { const q = 1 - Player.inspectT / 2.6, k = Math.sin(q * Math.PI); ry += 1.1 * k; rz += 0.4 * Math.sin(q * Math.PI * 2); ox -= 0.03 * k; oy += 0.02 * k; }
     if (this.slash > 0) { const k = Math.sin((1 - this.slash) * Math.PI); ry -= 1.1 * k; rx -= 0.4 * k; ox -= 0.05 * k; }
-    if (s.moveIn.sprint && hs > 6 && Game.mode.sprint) { rz += 0.35; ry += 0.55; oy -= 0.04; ox -= 0.02; }
+    if (this.sprintK > 0.001) { const k = this.sprintK; rz += 0.35 * k; ry += 0.55 * k; oy -= 0.04 * k; ox -= 0.02 * k; }
     const kickK = w && w.recoil ? Math.min(1.4, 0.4 + w.recoil * 0.5) : 0.5, ak = 1 - a * 0.6;
     g.position.set(p.x + (bx_ + this.sway.x) * (1 - a * 0.7) + ox, p.y + by + idle + this.sway.y * (1 - a * 0.7) + oy, p.z + this.kick * 0.035 * kickK * ak + oz);
     g.rotation.set(rx + this.kick * 0.05 * kickK * ak, ry + this.sway.x * 1.5, rz);

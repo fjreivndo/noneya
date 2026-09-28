@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v1.2.html     the game (built, self-contained, works offline)
+Breachpoint v1.3.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v1.2.html
+build.js                  npm install && node build.js  →  Breachpoint v1.3.html
 ```
 
 ## Modes
@@ -186,7 +186,10 @@ Bot skill has four levels: Recruit, Regular, Veteran and Elite.
 under **Join**, and that works across the internet. It uses WebRTC through
 the free PeerJS broker, so there's no server to run. The host simulates the
 bots and all the rules; clients move themselves and report their hits.
-Empty slots fill with bots. If someone leaves, a bot takes over their
+Empty slots fill with bots, and the lobby shows exactly which. With a team
+size of 4 and 3 people on a team, that team gets 1 named bot. Hosts can turn
+bot fill off, set any team size, balance teams, and use Play again or Back to
+lobby after a match. If someone leaves, a bot takes over their
 soldier. People can also join a match that's already running.
 
 Other codes:
@@ -214,8 +217,16 @@ If a strict NAT blocks WebRTC, use the LAN relay.
   on your soldier for other players), inspect, sell for credits, and sign
   **trade-up contracts** (10 of one rarity → 1 of the next, from the same
   collections, output float = input average).
-- **Credits** come from matches: kills, wins and MVPs. Matches also drop
-  cases and field-collection skins.
+- **Keys:** each case opens with its own key (Ember, Glacier, Neon,
+  Arsenal); Master Keys open any case. Buy keys one at a time or in bundles
+  of 5 at 15% off.
+- **Levels and drops:** matches give XP, and each level pays credits plus a
+  key; every fifth level adds a case and a Master Key. Matches also drop
+  cases, field-collection skins and keys.
+- **Credits** come from matches: kills, assists, headshots, wins and MVPs.
+  The victory screen itemises them.
+- **Update log:** the What's New screen on the main menu lists every
+  version's changes and opens by itself after an update.
 
 Everything is saved in the browser's localStorage.
 

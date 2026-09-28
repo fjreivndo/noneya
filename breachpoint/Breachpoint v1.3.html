@@ -143,6 +143,39 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
 .bcat h4{margin:0 0 6px;color:var(--acc2);text-transform:uppercase;letter-spacing:.1em;font-size:12px}
 .bi{display:flex;justify-content:space-between;width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);padding:10px 12px;margin-bottom:5px;cursor:pointer;border-radius:3px;font-weight:600}
 .bi:hover{background:rgba(255,122,47,.2);border-color:var(--acc)}.bi b{color:#7dff9a}.bi:disabled{opacity:.35;cursor:not-allowed}.bi.own{border-color:var(--ok)}
+/* update log */
+#newsBody{max-width:780px}.cl{background:rgba(255,255,255,.035);border:1px solid var(--line);border-left:3px solid var(--mut);border-radius:4px;padding:14px 18px;margin-bottom:12px}
+.cl.latest{border-left-color:var(--acc)}.clh{display:flex;gap:12px;align-items:baseline}.clh b{font-size:20px;color:var(--acc2)}.clh span{font-weight:700;font-size:16px}.clh small{margin-left:auto;color:var(--mut)}
+.cl ul{margin:10px 0 0;padding:0;list-style:none}.cl li{padding:4px 0;line-height:1.45;display:flex;gap:10px}.cl em{font-style:normal;font-size:10px;font-weight:800;padding:2px 6px;border-radius:3px;height:fit-content;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;flex:none}
+.t-new{background:rgba(77,255,136,.18);color:var(--ok)}.t-fix{background:rgba(90,160,255,.18);color:var(--ct)}
+.ndot{background:var(--acc);color:#1a0f06;font-size:10px;padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:6px}
+/* keys */
+.keychip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:3px solid var(--kc);padding:5px 10px;border-radius:3px;font-size:12px}.keychip b{color:var(--kc);font-size:15px}
+.keyic{vertical-align:middle;filter:drop-shadow(0 0 4px rgba(0,0,0,.6))}
+/* lobby slots */
+.lteam h3{color:var(--tc)}.lteam h3 small{color:var(--mut);font-size:12px;font-weight:400;margin-left:6px}
+.lp .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tc);margin-right:8px}.lp.bot{color:var(--mut)}.lp.bot .dot{background:transparent;border:1px solid var(--mut)}.lp.bot i{font-size:10px;font-style:normal;border:1px solid var(--mut);border-radius:2px;padding:0 3px;margin-right:4px}.lp.warn{color:#ffb03a;font-size:12px;border:0}
+#lobbySettings{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+/* results */
+#results{overflow:auto;align-items:flex-start;padding:30px 0}
+.rbox2{width:min(1180px,95vw);margin:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;animation:pop .35s}
+.rhead{padding:26px 30px 18px;background:linear-gradient(135deg,color-mix(in srgb,var(--wc) 30%,transparent),transparent 70%);border-bottom:1px solid var(--line)}
+.rhead h1{font:900 72px/0.9 Impact,sans-serif;margin:0;letter-spacing:.05em}.rhead.win h1{color:var(--ok);text-shadow:0 0 30px rgba(77,255,136,.35)}.rhead.loss h1{color:var(--bad);text-shadow:0 0 30px rgba(255,77,77,.3)}
+.rsub{color:var(--mut);margin-top:6px}
+.rgrid{display:grid;grid-template-columns:1.25fr 1fr;gap:22px;padding:20px 30px}
+.rt{border:1px solid var(--line);border-top:3px solid var(--tc);border-radius:4px;margin-bottom:14px;overflow:hidden}.rt.won{box-shadow:0 0 0 1px color-mix(in srgb,var(--tc) 40%,transparent)}
+.rth{display:flex;align-items:center;gap:10px;padding:8px 12px;background:color-mix(in srgb,var(--tc) 12%,transparent)}.rth b{color:var(--tc);font-size:16px}.wtag{font-size:10px;font-weight:800;background:var(--tc);color:#111;padding:2px 6px;border-radius:3px}
+.rt table{width:100%;border-collapse:collapse;font-size:13px}.rt th{color:var(--mut);font-size:10px;text-transform:uppercase;text-align:right;padding:4px 10px}.rt th:first-child{text-align:left}
+.rt td{padding:5px 10px;border-top:1px solid rgba(255,255,255,.04);text-align:right}.rt td:first-child{text-align:left}.rt tr.me td{background:rgba(255,200,80,.12);font-weight:700}
+.rt i{font-size:10px;color:var(--mut);font-style:normal;border:1px solid var(--line);padding:0 3px;border-radius:2px}.rt .star{color:#ffd24a;margin-right:4px}.rt .mv{color:#ffd24a;font-size:11px}
+.rme h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--acc2)}.rme h3:not(:first-child){margin-top:18px}
+.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.rs{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:4px;padding:8px}.rs b{display:block;font-size:20px}.rs small{color:var(--mut);font-size:10px;text-transform:uppercase}
+.rlines div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:13px}.rlines b{color:var(--acc2)}.rlines .tot{border:0;font-size:15px;padding-top:6px}.rlines .tot b{color:var(--ok)}
+.xpbar{margin-top:14px}.xpl{display:flex;justify-content:space-between}.xpl span{color:#8fd4ff;font-weight:700}.xpt{height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden;margin:5px 0 2px}.xpt i{display:block;height:100%;background:linear-gradient(90deg,#3a8aff,#8fd4ff);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}.xpbar small{color:var(--mut);font-size:11px}
+.rdrops{display:flex;gap:10px;flex-wrap:wrap}.rdrops .card{width:190px}.dropc{width:150px;border:1px solid var(--line);border-bottom:3px solid var(--dc);border-radius:4px;padding:10px;text-align:center;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--dc) 22%,transparent),transparent 70%);animation:pop .5s}
+.dropc small{display:block;font-size:11px;margin-top:6px}.crate.mini{--cc:var(--dc);width:110px;height:60px;font-size:14px;margin:auto}.lvbadge{width:60px;height:60px;margin:auto;border-radius:50%;border:3px solid #ffd24a;display:flex;align-items:center;justify-content:center;font:900 26px Impact,sans-serif;color:#ffd24a;box-shadow:0 0 20px rgba(255,210,74,.4)}
+.rbtns{padding:0 30px 24px;justify-content:flex-start}
+@media (max-width:900px){.rgrid{grid-template-columns:1fr}}
 /* spawn menu */
 #spawnmenu{background:rgba(5,6,8,.55)}
 .sp-box{width:min(1180px,94vw);height:min(720px,88vh);background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
@@ -222,6 +255,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
       <button data-go="mp">Multiplayer<small>Host a room or join friends with a code</small></button>
       <button data-go="armory">Armory<small>Cases, skins, trade-ups — <span id="equipCount"></span></small></button>
       <button data-go="settings">Settings<small>Sensitivity, crosshair, audio</small></button>
+      <button data-go="news">What's new <span id="newsDot" class="ndot hidden">NEW</span><small>Update log</small></button>
     </div>
     <div class="stats" id="mainStats"></div>
     <label class="muted">Callsign <input type="text" id="mainName" maxlength="16"></label>
@@ -239,6 +273,7 @@ h1.sh{font:800 34px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:
     <div class="row"><button class="btn big" id="lobbyStart">Start match</button><button class="btn ghost" id="lobbyLeave">Leave</button></div></section>
   <section class="screen" id="scr-armory"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Armory</h1>
     <div id="armTabs"><button data-t="inv">Inventory</button><button data-t="cases">Cases</button><button data-t="gunsmith">Gunsmith</button><button data-t="trade">Trade-Up</button><button data-t="stats">Stats</button></div><div id="armBody"></div></section>
+  <section class="screen" id="scr-news"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Update log</h1><div id="newsBody"></div></section>
   <section class="screen" id="scr-settings"><button class="btn ghost small back" data-go="main">← Back</button><h1 class="sh">Settings</h1><div id="setForm"></div>
     <div class="keys"><div><b>WASD</b> move</div><div><b>Shift</b> walk (Defuse) / sprint</div><div><b>Ctrl / C</b> crouch</div><div><b>Space</b> jump</div><div><b>LMB / RMB</b> fire / aim</div><div><b>R</b> reload</div><div><b>1-5</b> weapons, grenades, RPG</div><div><b>X</b> last weapon</div><div><b>E</b> plant / defuse / jeep</div><div><b>B</b> buy menu</div><div><b>Q</b> spot enemy</div><div><b>G</b> class gadget</div><div><b>F</b> inspect weapon</div><div><b>Tab</b> scoreboard</div><div><b>Y / Enter</b> chat</div><div><b>Esc</b> pause</div></div></section>
 </div>
@@ -271,7 +306,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '1.0';
+const VERSION = '1.3';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -763,13 +798,17 @@ const Inv = {
   load() {
     this.data = Store.get('inv', null);
     if (!this.data) {
-      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0, arsenal: 1 }, keys: 2, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
+      this.data = { credits: 1500, items: [], cases: { ember: 1, glacier: 1, neon: 0, arsenal: 1 }, keys: { ember: 1, glacier: 1, arsenal: 1 }, equipped: {}, stats: { kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, history: [] };
       // a starter so the armory isn't empty
       const s = this.newItem('ak47_safari_mesh'); this.data.items.push(s); this.data.equipped.ak47 = s.uid;
     }
     this.data.cases = Object.assign({ ember: 0, glacier: 0, neon: 0, arsenal: 0 }, this.data.cases);
     this.data.stats = Object.assign({ kills: 0, deaths: 0, wins: 0, matches: 0, opened: 0 }, this.data.stats);
     this.data.attach = this.data.attach || {}; this.data.unlocked = this.data.unlocked || ['reddot'];
+    // keys used to be one shared count; old keys become master keys that open anything
+    if (typeof this.data.keys === 'number') this.data.keys = { master: this.data.keys };
+    this.data.keys = Object.assign({ master: 0 }, Object.fromEntries(CASES.map(c => [c.id, 0])), this.data.keys);
+    this.data.xp = this.data.xp || 0; this.data.level = this.data.level || 1;
     this.save();
   },
   save() { Store.set('inv', this.data); },
@@ -835,6 +874,31 @@ function tradeUp(items) {
 }
 
 /* Match reward: credits plus a chance at a drop (field skin or a case). */
+/* ── keys: each case has its own; master keys open any case ── */
+const KEY_PRICE = { ember: 250, glacier: 250, neon: 250, arsenal: 300 };
+const KEY_BUNDLE = { n: 5, discount: 0.85 };
+Object.assign(Inv, {
+  keysFor(caseId) { return (this.data.keys[caseId] || 0) + (this.data.keys.master || 0); },
+  totalKeys() { return Object.values(this.data.keys).reduce((a, b) => a + b, 0); },
+  useKey(caseId) { const k = this.data.keys; if (k[caseId] > 0) { k[caseId]--; return caseId; } if (k.master > 0) { k.master--; return 'master'; } return null; },
+  keyName(id) { return id === 'master' ? 'Master Key' : (CASES.find(c => c.id === id) || { name: id }).name.replace(' Case', '') + ' Key'; },
+  keyColor(id) { return id === 'master' ? '#ffd24a' : (CASES.find(c => c.id === id) || { color: '#ccc' }).color; },
+  /* XP and levels: every level pays credits and a key; every fifth adds a case and a master key */
+  xpFor(level) { return 600 + level * 150; },
+  addXp(n) {
+    const d = this.data, ups = []; d.xp += n;
+    while (d.xp >= this.xpFor(d.level)) {
+      d.xp -= this.xpFor(d.level); d.level++;
+      const c = pick(CASES), r = { level: d.level, credits: 100 + d.level * 10, key: c.id };
+      d.credits += r.credits; d.keys[c.id] = (d.keys[c.id] || 0) + 1;
+      if (d.level % 5 === 0) { const c2 = pick(CASES); d.cases[c2.id]++; d.keys.master++; r.case = c2.id; r.master = true; }
+      ups.push(r);
+    }
+    return ups;
+  },
+});
+function keySvg(color, size = 22) { return `<svg class="keyic" width="${size}" height="${size}" viewBox="0 0 24 24"><circle cx="7" cy="12" r="4.5" fill="none" stroke="${color}" stroke-width="2.6"/><path d="M11 12h11M18 12v4M21 12v3" stroke="${color}" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>`; }
+
 function matchDrop() {
   const x = Math.random();
   if (x < 0.35) { const c = pick(CASES); return { kind: 'case', caseId: c.id }; }
@@ -1801,7 +1865,7 @@ function fireWeapon(s, now, recoilControl = 0) {
   if (a.mag <= 0) { if (s.ctrl === 'local') Sfx.play('empty'); s.fireCd = 0.2; if (!s.startReload() && s.ctrl === 'bot') s.switchTo(s.weapons[2] || 'knife'); return false; }
   if (w.spinup) { s.spinT = now; if (s.spin < 1) return false; }
   if (s.healT > 0) return false;
-  a.mag--; s.fireCd = 60 / w.rpm; s.lastShot = now;
+  a.mag--; s.fireCd = 60 / w.rpm; s.lastShot = now; s.shots = (s.shots || 0) + 1;
   if (w.bolt) { s.boltT = w.bolt; }
   const eye = s.eye(_o);
   const idx = Math.floor(s.recoilIdx), rp = w.recoil ? recoilPattern(w, idx) : { x: 0, y: 0 };
@@ -2669,7 +2733,7 @@ const Game = {
     // NPCs from a running sandbox arrive in the roster as puppets
     for (const r of cfg.roster) if (r.npc) { const s = this.byId(r.id); if (s) { s.npc = r.npc; if (s.ctrl === 'bot') s.brain = r.npc === 'zombie' ? new ZombieBrain(s) : r.npc === 'citizen' ? new CitizenBrain(s) : r.npc === 'dummy' ? new IdleBrain(s) : new Brain(s); } }
     this.soldiers.forEach(s => { s.money = 800; s.buildModel(this.scene); });
-    this.running = true; this.paused = false;
+    this.running = true; this.paused = false; this.finished = false; this.startedAt = performance.now();
     HUD.onMatchStart();
     if (this.authority()) {
       if (this.mode.id === 'defuse') this.startRound(true);
@@ -2685,7 +2749,7 @@ const Game = {
   prepareRoster(cfg) {
     if (cfg.roster) return cfg.roster;
     const size = cfg.teamSize != null ? cfg.teamSize : MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, att: p.att || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
-    const names = shuffle(BOT_NAMES.slice()); let ni = 0;
+    const names = cfg.botNames || shuffle(BOT_NAMES.slice()); let ni = 0;
     for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
     return cfg.roster = roster;
   },
@@ -2829,15 +2893,24 @@ const Game = {
   },
   finishMatch(winner) {
     this.matchOver = true;
-    const L = this.local; if (!L) return;
-    const won = L.team === winner;
-    const credits = 40 + L.kills * 8 + L.assists * 3 + (won ? 80 : 20) + L.mvps * 15;
-    Inv.data.credits += credits; Inv.data.stats.matches++; if (won) Inv.data.stats.wins++;
-    Inv.data.stats.kills += L.kills; Inv.data.stats.deaths += L.deaths;
+    const L = this.local; if (!L || this.finished) return; this.finished = true;
+    const won = L.team === winner, hsk = L.hsKills || 0, D = Inv.data;
+    // credits, itemised
+    const lines = [['Match completed', 40], [`Kills × ${L.kills}`, L.kills * 8], [`Assists × ${L.assists}`, L.assists * 3], [`Headshot kills × ${hsk}`, hsk * 2], [won ? 'Victory bonus' : 'Participation', won ? 80 : 20], [`MVP × ${L.mvps}`, L.mvps * 15]].filter(l => l[1] > 0);
+    const credits = lines.reduce((a, l) => a + l[1], 0);
+    D.credits += credits; D.stats.matches++; if (won) D.stats.wins++;
+    D.stats.kills += L.kills; D.stats.deaths += L.deaths;
+    // experience and level-ups
+    const xp = 150 + L.kills * 30 + L.assists * 12 + (won ? 200 : 50) + L.mvps * 40 + Math.round(Math.max(0, L.score) * 2);
+    const before = { level: D.level, xp: D.xp, need: Inv.xpFor(D.level) }, ups = Inv.addXp(xp);
+    // drops: a case or field skin, and sometimes a key
     const drop = matchDrop();
-    if (drop) { if (drop.kind === 'case') Inv.data.cases[drop.caseId]++; else Inv.data.items.push(drop.item); }
+    if (drop) { if (drop.kind === 'case') D.cases[drop.caseId]++; else D.items.push(drop.item); }
+    const keyDrop = chance(0.3) ? pick(CASES).id : null; if (keyDrop) D.keys[keyDrop] = (D.keys[keyDrop] || 0) + 1;
     Inv.save();
-    setTimeout(() => UI.matchResults({ winner, won, credits, drop }), 2500);
+    const stats = { k: L.kills, d: L.deaths, a: L.assists, mvps: L.mvps, hs: hsk, shots: L.shots || 0, hits: L.hits || 0, dmg: Math.round(L.dmgDealt || L.dmgLocal || 0), score: L.score };
+    const dur = (performance.now() - this.startedAt) / 1000;
+    setTimeout(() => UI.matchResults({ winner, won, credits, lines, xp, before, ups, drop, keyDrop, stats, dur }), 2500);
   },
 
   /* ── per-frame rules (authority) ── */
@@ -2962,7 +3035,8 @@ const Game = {
 
   /* ── damage ── */
   reportHit(att, vic, dmg, zone, weapon, from) {
-    if (att.ctrl === 'local') { HUD.hitmarker(zone === 'head'); Sfx.play(zone === 'head' ? 'headshot' : 'hit'); }
+    if (att.ctrl === 'local') { HUD.hitmarker(zone === 'head'); Sfx.play(zone === 'head' ? 'headshot' : 'hit'); att.dmgLocal = (att.dmgLocal || 0) + Math.min(dmg, Math.max(0, vic.hp)); }
+    if (att._hitShot !== att.lastShot) { att._hitShot = att.lastShot; att.hits = (att.hits || 0) + 1; }   // accuracy: shots that landed
     if (this.authority()) this.damage(vic, dmg, att, weapon, zone, from);
     else if (att.ctrl === 'local') Net.send({ t: 'hit', v: vic.id, d: Math.round(dmg * 10) / 10, z: zone, w: weapon });
   },
@@ -3010,6 +3084,7 @@ const Game = {
     if (v && !this.authority()) { v.alive = false; v.hp = 0; v.deadT = 0; v.planting = null; if (v.vehicle) this.exitVehicle(v, true); if (a && a !== v) { a.kills++; } v.deaths++; }
     if (v && this.mode.respawn) v.respawnT = this.mode.respawnTime;
     HUD.killfeed(a, v, ev.w, ev.hs);
+    if (a && ev.hs && v !== a) a.hsKills = (a.hsKills || 0) + 1;
     if (a && a === this.local && v !== a) { Sfx.play('kill'); if (WEAPONS[ev.w] || ev.w === 'knife') Inv.addKill(ev.w); this.killsThisMatch++; }
     if (v && v === this.local) {
       HUD.died(a, ev.w, ev.hs);
@@ -3419,10 +3494,18 @@ class ViewModel {
       else if (w && w.mag) { this.flashT = w.suppressed ? 0.02 : 0.05; if (this.pose.pump || w.bolt) this.pumpT = 1; }
     }
     this.kick = Math.max(0, this.kick - dt * (w && w.type === 'sniper' ? 5 : 14)); this.slash = Math.max(0, this.slash - dt * 4); this.pumpT = Math.max(0, this.pumpT - dt * 2.2);
-    this.sway.x = lerp(this.sway.x, clamp(-Input.mouse.dx * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
-    this.sway.y = lerp(this.sway.y, clamp(Input.mouse.dy * 0.00045, -0.03, 0.03), 1 - Math.exp(-dt * 10));
-    const hs = Math.hypot(s.vel.x, s.vel.z), a = s.adsT, bobA = Math.min(hs / 5, 1.3) * (s.grounded ? 1 : 0.25) * (1 - a * 0.9);
-    const bx_ = Math.sin(s.walkPhase) * 0.009 * bobA, by = -Math.abs(Math.cos(s.walkPhase)) * 0.008 * bobA;
+    /* Everything that drives the gun's motion is smoothed twice. Mouse
+       deltas arrive unevenly frame to frame, and speed / grounded flicker, so
+       feeding them in raw makes the gun shiver. */
+    const sw = this.swayT || (this.swayT = { x: 0, y: 0 }), ks = 1 - Math.exp(-dt * 14), kf = 1 - Math.exp(-dt * 7);
+    sw.x = lerp(sw.x, clamp(-Input.mouse.dx * 0.0004, -0.03, 0.03), ks); sw.y = lerp(sw.y, clamp(Input.mouse.dy * 0.0004, -0.03, 0.03), ks);
+    this.sway.x = lerp(this.sway.x, sw.x, kf); this.sway.y = lerp(this.sway.y, sw.y, kf);
+    const hs = Math.hypot(s.vel.x, s.vel.z), a = s.adsT;
+    this.spd = lerp(this.spd || 0, Math.min(hs / 5, 1.2) * (s.grounded ? 1 : 0.3), 1 - Math.exp(-dt * 6));
+    this.sprintK = lerp(this.sprintK || 0, s.moveIn.sprint && hs > 5 && Game.mode.sprint ? 1 : 0, 1 - Math.exp(-dt * 8));
+    const bobA = this.spd * (1 - a * 0.9);
+    // a smooth figure-eight: side to side once per two steps, dipping on each step
+    const bx_ = Math.sin(s.walkPhase) * 0.008 * bobA, by = (Math.cos(s.walkPhase * 2) - 1) * 0.0045 * bobA;
     const idle = Math.sin(Game.now * 1.6) * 0.0015 * (1 - a);
     const p = new V3().lerpVectors(this.hip, this.adsPos, a);
     let rx = lerp(this.hipRot.x, 0, a), ry = lerp(this.hipRot.y, 0, a), rz = lerp(this.hipRot.z, 0, a), oy = 0, oz = 0, ox = 0;
@@ -3441,7 +3524,7 @@ class ViewModel {
     if (this.pumpT > 0 && w && w.bolt) { const k = Math.sin(this.pumpT * Math.PI); rz += 0.2 * k; oy -= 0.015 * k; }
     if (Player.inspectT > 0) { const q = 1 - Player.inspectT / 2.6, k = Math.sin(q * Math.PI); ry += 1.1 * k; rz += 0.4 * Math.sin(q * Math.PI * 2); ox -= 0.03 * k; oy += 0.02 * k; }
     if (this.slash > 0) { const k = Math.sin((1 - this.slash) * Math.PI); ry -= 1.1 * k; rx -= 0.4 * k; ox -= 0.05 * k; }
-    if (s.moveIn.sprint && hs > 6 && Game.mode.sprint) { rz += 0.35; ry += 0.55; oy -= 0.04; ox -= 0.02; }
+    if (this.sprintK > 0.001) { const k = this.sprintK; rz += 0.35 * k; ry += 0.55 * k; oy -= 0.04 * k; ox -= 0.02 * k; }
     const kickK = w && w.recoil ? Math.min(1.4, 0.4 + w.recoil * 0.5) : 0.5, ak = 1 - a * 0.6;
     g.position.set(p.x + (bx_ + this.sway.x) * (1 - a * 0.7) + ox, p.y + by + idle + this.sway.y * (1 - a * 0.7) + oy, p.z + this.kick * 0.035 * kickK * ak + oz);
     g.rotation.set(rx + this.kick * 0.05 * kickK * ak, ry + this.sway.x * 1.5, rz);
@@ -3794,7 +3877,7 @@ const Net = {
   /* ── lobby ── */
   host(code, opts) {
     this.leave(); this.role = 'host'; this.code = code; this.connected = true;
-    this.lobby = { players: [{ id: 'host', name: Settings.name, team: 'CT', skins: Inv.loadoutSkins(), cls: 'assault' }], mode: opts.mode, map: opts.map, diff: opts.diff, teamSize: opts.teamSize, started: false };
+    this.lobby = { players: [{ id: 'host', name: Settings.name, team: 'CT', skins: Inv.loadoutSkins(), cls: 'assault' }], mode: opts.mode, map: opts.map, diff: opts.diff, teamSize: opts.teamSize, bots: true, botNames: shuffle(BOT_NAMES.slice()), started: false };
     this.link = this.makeLink(code, true, {
       ready: () => { this.status = 'Hosting ' + code; this.pushLobby(); },
       connect: id => { this.peers.set(id, { id, sid: null }); },
@@ -3823,6 +3906,11 @@ const Net = {
   to(id, m) { if (this.role === 'host' && this.link) this.link.send(id, m); },
   toAll(m, except) { if (this.role !== 'host') return; for (const id of this.peers.keys()) if (id !== except) this.to(id, m); },
   pushLobby() { if (this.role !== 'host') return; this.toAll({ t: 'lobby', l: this.lobby }); this.onLobby && this.onLobby(this.lobby); },
+  /* host: even out humans across the teams */
+  balance() {
+    if (this.role !== 'host' || !this.lobby) return;
+    const P = this.lobby.players; shuffle(P); P.forEach((p, i) => p.team = i % 2 ? 'T' : 'CT'); this.pushLobby();
+  },
   setTeam(team) { if (this.role === 'host') { this.lobby.players[0].team = team; this.pushLobby(); } else this.send({ t: 'team', team }); },
   peerOf(sid) { for (const p of this.peers.values()) if (p.sid === sid) return p; return null; },
   dropPeer(id) {
@@ -3895,7 +3983,7 @@ const Net = {
   /* host: start the match for everyone */
   startMatch() {
     const L = this.lobby; L.started = true;
-    const cfg = { mode: L.mode, map: L.map, diff: L.diff, teamSize: L.mode === 'sandbox' ? 0 : L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, att: p.id === 'host' ? Inv.data.attach : p.att, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
+    const cfg = { mode: L.mode, map: L.map, diff: L.diff, botNames: L.botNames, teamSize: L.mode === 'sandbox' || !L.bots ? 0 : L.teamSize, players: L.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins, att: p.id === 'host' ? Inv.data.attach : p.att, cls: p.cls, ctrl: p.id === 'host' ? 'local' : 'remote' })), localId: 'host' };
     // clients must be in the match before the first round's spawn events reach them
     Game.prepareRoster(cfg);
     this.toAll({ t: 'start', cfg: this.startCfgFor(cfg) });
@@ -3918,6 +4006,7 @@ const Net = {
   clientData(m) {
     switch (m.t) {
       case 'lobby': this.lobby = m.l; this.onLobby && this.onLobby(m.l); break;
+      case 'tolobby': if (Game.running) Game.stop(); UI.resultsOpen = false; $('results').classList.add('hidden'); $('hud').classList.add('hidden'); MenuBG.start(); UI.openLobby(); break;
       case 'you': this.myId = m.id; this.sid = m.id; break;
       case 'start': {
         const cfg = m.cfg; cfg.localId = this.sid;
@@ -3955,6 +4044,7 @@ const Net = {
       const alive = !!a[9];
       if (s === L) {
         L.hp = a[7]; L.armor = a[8]; L.money = a[11]; L.helmet = !!(a[12] & 1);
+        if (a.length > 13) { L.kills = a[13]; L.deaths = a[14]; L.assists = a[15]; L.score = a[16]; L.mvps = a[17]; }
         if (!alive && L.alive) { L.alive = false; }
         L.spotT = (a[12] & 2) ? Game.now + 1 : 0; L.spotCT = (a[12] & 4) ? Game.now + 1 : 0;
         continue;
@@ -3963,6 +4053,7 @@ const Net = {
       if (alive && !s.alive) { s.pos.set(a[1], a[2], a[3]); s.deadT = 0; if (s.model) { s.model.userData.body.rotation.x = 0; s.model.userData.body.position.y = 0; } }
       s.alive = alive; if (a[10] && (WEAPONS[a[10]] || isNade(a[10]))) s.cur = a[10]; s.money = a[11];
       s.spotT = (a[12] & 2) ? Game.now + 1 : 0; s.spotCT = (a[12] & 4) ? Game.now + 1 : 0; s.planting = (a[12] & 8) ? {} : null;
+      if (a.length > 13) { s.kills = a[13]; s.deaths = a[14]; s.assists = a[15]; s.score = a[16]; s.mvps = a[17]; }
     }
     const g = m.g; if (g) {
       if (g.r) { Game.round = Game.round || {}; Object.assign(Game.round, { phase: g.r[0], timeLeft: g.r[1], t: g.r[2], num: g.r[3] }); Game.score = { T: g.r[4], CT: g.r[5] }; Game.roundNum = g.r[3]; }
@@ -4098,7 +4189,7 @@ const Net = {
     this.snapT -= dt; if (this.snapT > 0 || !this.peers.size) return;
     this.snapT = 1 / 15;
     const s = Game.soldiers.map(o => [o.id, +o.pos.x.toFixed(2), +o.pos.y.toFixed(2), +o.pos.z.toFixed(2), +o.yaw.toFixed(3), +o.pitch.toFixed(3), +o.crouch.toFixed(2), Math.round(o.hp), Math.round(o.armor), o.alive ? 1 : 0, o.cur, o.money,
-      (o.helmet ? 1 : 0) | ((o.spotT || 0) > Game.now ? 2 : 0) | ((o.spotCT || 0) > Game.now ? 4 : 0) | (o.planting ? 8 : 0)]);
+      (o.helmet ? 1 : 0) | ((o.spotT || 0) > Game.now ? 2 : 0) | ((o.spotCT || 0) > Game.now ? 4 : 0) | (o.planting ? 8 : 0), o.kills, o.deaths, o.assists, o.score, o.mvps]);
     const g = {};
     const R = Game.round; if (R && Game.mode.id === 'defuse') g.r = [R.phase, +R.timeLeft.toFixed(1), +(R.t || 0).toFixed(1), Game.roundNum, Game.score.T, Game.score.CT];
     if (Game.mode.id === 'defuse') { const B = Game.bomb; g.b = [B.state, B.carrier, B.pos ? [+B.pos.x.toFixed(2), +B.pos.y.toFixed(2), +B.pos.z.toFixed(2)] : null, +(B.timer || 0).toFixed(1), B.site, B.defuser, +(B.progress || 0).toFixed(2), B.progressMax || 10]; }
@@ -4116,7 +4207,6 @@ const Net = {
    Menus, armory (inventory / cases / trade-up), buy menu, lobby, settings.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const KEY_PRICE = 250;
 const UI = {
   cur: 'main', pauseOpen: false, buyOpen: false, resultsOpen: false, invFilter: { rarity: -1, weapon: '', sort: 'rarity' }, tradeSel: [], playCfg: null,
   init() {
@@ -4153,7 +4243,7 @@ const UI = {
   /* ── main ── */
   render_main() {
     const d = Inv.data, eq = Object.keys(d.equipped).length;
-    $('mainStats').innerHTML = `<div><b>${d.stats.kills}</b><small>kills</small></div><div><b>${d.stats.wins}</b><small>wins</small></div><div><b>${d.items.length}</b><small>skins</small></div><div><b>${Object.values(d.cases).reduce((a, b) => a + b, 0)}</b><small>cases</small></div><div><b>${d.keys}</b><small>keys</small></div>`;
+    $('mainStats').innerHTML = `<div><b>${d.stats.kills}</b><small>kills</small></div><div><b>${d.stats.wins}</b><small>wins</small></div><div><b>${d.items.length}</b><small>skins</small></div><div><b>${Object.values(d.cases).reduce((a, b) => a + b, 0)}</b><small>cases</small></div><div><b>${Inv.totalKeys()}</b><small>keys</small></div><div><b>${d.level}</b><small>level</small></div>`;
     $('mainName').value = Settings.name;
     $('mainName').onchange = () => { Settings.name = $('mainName').value.trim().slice(0, 16) || Settings.name; saveSettings(); };
     $('equipCount').textContent = eq ? `${eq} skin${eq > 1 ? 's' : ''} equipped` : 'No skins equipped yet';
@@ -4220,15 +4310,31 @@ const UI = {
     $('lobbyStatus').textContent = Net.status || (Net.role === 'client' && !Net.connected ? 'Connecting…' : '');
     if (!L) { $('lobbyTeams').innerHTML = '<p class="muted">Waiting for host…</p>'; $('lobbySettings').innerHTML = ''; $('lobbyStart').classList.add('hidden'); return; }
     const me = host ? 'host' : Net.sid;
-    const col = team => `<div class="lteam"><h3 style="color:${TEAM_STYLE[team].color}">${TEAM_STYLE[team].name}</h3>${L.players.filter(p => p.team === team).map(p => `<div class="lp ${p.id === me ? 'me' : ''}">${escapeHtml(p.name)}${p.id === 'host' ? ' <small>host</small>' : ''}</div>`).join('')}<div class="lp bots">+ bots fill to ${L.teamSize}</div><button class="btn small" data-team="${team}">Join ${TEAM_STYLE[team].name}</button></div>`;
+    /* every slot on the team: people first, then the bots that will fill in
+       for the missing ones (same names the match will use) */
+    const fill = L.mode !== 'sandbox' && L.bots !== false, names = L.botNames || BOT_NAMES;
+    let bi = 0; const botsFor = {};
+    for (const t of ['T', 'CT']) { const n = L.players.filter(p => p.team === t).length, k = fill ? Math.max(0, L.teamSize - n) : 0; botsFor[t] = []; for (let i = 0; i < k; i++) botsFor[t].push(names[bi++ % names.length]); }
+    const col = team => {
+      const hum = L.players.filter(p => p.team === team), over = fill && hum.length > L.teamSize;
+      return `<div class="lteam" style="--tc:${TEAM_STYLE[team].color}"><h3>${TEAM_STYLE[team].name} <small>${hum.length} ${hum.length === 1 ? 'player' : 'players'}${botsFor[team].length ? ' + ' + botsFor[team].length + ' bot' + (botsFor[team].length > 1 ? 's' : '') : ''}</small></h3>
+        ${hum.map(p => `<div class="lp ${p.id === me ? 'me' : ''}"><span class="dot"></span>${escapeHtml(p.name)}${p.id === 'host' ? ' <small>host</small>' : ''}${p.id === me ? ' <small>you</small>' : ''}</div>`).join('')}
+        ${botsFor[team].map(n => `<div class="lp bot"><span class="dot"></span><i>BOT</i> ${escapeHtml(n)} <small>${DIFF[L.diff] ? DIFF[L.diff].label : ''}</small></div>`).join('')}
+        ${over ? `<div class="lp warn">${hum.length - L.teamSize} over the team size, so no bots on this team</div>` : ''}
+        ${!fill && L.mode !== 'sandbox' ? '<div class="lp bots">Bots off: people only</div>' : ''}
+        <button class="btn small" data-team="${team}">Join ${TEAM_STYLE[team].name}</button></div>`;
+    };
     $('lobbyTeams').innerHTML = col('CT') + col('T');
     $('lobbyTeams').querySelectorAll('[data-team]').forEach(b => b.onclick = () => Net.setTeam(b.dataset.team));
     const M = MODES[L.mode];
     if (host) {
       const sel = (k, opts) => `<select data-k="${k}">${opts.map(([v, l]) => `<option value="${v}" ${String(L[k]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
       const sizes = L.mode === 'defuse' ? [3, 5] : L.mode === 'conquest' ? [8, 12, 16] : L.mode === 'sandbox' ? [0] : [4, 6, 8];
-      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label><label>Team size ${sel('teamSize', sizes.map(n => [n, n ? n + 'v' + n : 'no bots']))}</label><label>Bots ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label>`;
-      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } if (k === 'diff') Sandbox.opts.npcSkill = L.diff; Net.pushLobby(); this.render_lobby(); });
+      const allSizes = L.mode === 'sandbox' ? [0] : Array.from({ length: L.mode === 'defuse' ? 8 : 16 }, (_, i) => i + 1);
+      if (!allSizes.includes(+L.teamSize)) L.teamSize = allSizes[Math.min(allSizes.length - 1, 4)];
+      $('lobbySettings').innerHTML = `<label>Mode ${sel('mode', Object.values(MODES).map(m => [m.id, m.name]))}</label><label>Map ${sel('map', M.maps.map(m => [m, MAPS[m].name]))}</label>${L.mode === 'sandbox' ? '' : `<label>Team size ${sel('teamSize', allSizes.map(n => [n, n + 'v' + n]))}</label><label>Fill with bots ${sel('bots', [['true', 'On'], ['false', 'Off']])}</label>`}<label>Bot skill ${sel('diff', Object.entries(DIFF).map(([k, v]) => [k, v.label]))}</label><button class="btn small ghost" id="lobbyBalance">Balance teams</button>`;
+      $('lobbyBalance').onclick = () => Net.balance();
+      $('lobbySettings').querySelectorAll('select').forEach(s => s.onchange = () => { const k = s.dataset.k; L[k] = s.value === 'true' ? true : s.value === 'false' ? false : isNaN(+s.value) ? s.value : +s.value; if (k === 'mode') { L.map = MODES[L.mode].maps[0]; L.teamSize = MODES[L.mode].teamSize; } if (k === 'diff') Sandbox.opts.npcSkill = L.diff; Net.pushLobby(); this.render_lobby(); });
       $('lobbyStart').classList.remove('hidden'); $('lobbyStart').onclick = () => Net.startMatch();
     } else {
       $('lobbySettings').innerHTML = `<p>${M.name} · ${MAPS[L.map].name} · ${L.teamSize}v${L.teamSize} · ${DIFF[L.diff].label} bots</p><p class="muted">Waiting for the host to start…</p>`;
@@ -4291,24 +4397,30 @@ const UI = {
   closeModal() { $('modal').classList.remove('open'); $('modal').innerHTML = ''; },
   renderCases(body) {
     const d = Inv.data;
-    body.innerHTML = `<div class="bar"><span>🔑 Keys: <b>${d.keys}</b></span><button class="btn small" id="buyKey">Buy key ₵${KEY_PRICE}</button><span class="muted">Every case needs one key. Cases drop after matches too.</span></div>
+    const keyChip = id => `<span class="keychip" style="--kc:${Inv.keyColor(id)}">${keySvg(Inv.keyColor(id), 18)}<b>${d.keys[id] || 0}</b> ${Inv.keyName(id)}</span>`;
+    body.innerHTML = `<div class="bar keys">${['master'].concat(CASES.map(c => c.id)).map(keyChip).join('')}<span class="muted">Each case opens with its own key. Master keys open any case. Keys also drop from matches and level-ups.</span></div>
       <div class="cases">${CASES.map(c => {
         const odds = [1, 2, 3, 4, 5, 6].map(r => `<span style="color:${RARITY[r].color}">${RARITY[r].name} ${(CASE_ODDS[r] * 100).toFixed(r >= 5 ? 1 : 0)}%</span>`).join(' · ');
         return `<div class="case" style="--cc:${c.color}"><div class="case-art"><div class="crate"><span>${c.name.split(' ')[0].toUpperCase()}</span></div></div>
         <h3>${c.name}</h3><p class="muted">${c.desc}</p><div class="own">Owned: <b>${d.cases[c.id] || 0}</b></div>
-        <div class="row"><button class="btn small" data-buy="${c.id}">Buy ₵${c.price}</button><button class="btn" data-open="${c.id}" ${d.cases[c.id] && d.keys ? '' : 'disabled'}>Open</button></div>
+        <div class="own">${keySvg(c.color, 16)} Keys: <b>${d.keys[c.id] || 0}</b>${d.keys.master ? ` <span class="muted">+ ${d.keys.master} master</span>` : ''}</div>
+        <div class="row"><button class="btn small" data-buy="${c.id}">Buy case ₵${c.price}</button><button class="btn small" data-key="${c.id}">Buy key ₵${KEY_PRICE[c.id]}</button><button class="btn small ghost" data-bundle="${c.id}">${KEY_BUNDLE.n} keys ₵${Math.round(KEY_PRICE[c.id] * KEY_BUNDLE.n * KEY_BUNDLE.discount)}</button></div>
+        <div class="row"><button class="btn" data-open="${c.id}" ${d.cases[c.id] && Inv.keysFor(c.id) ? '' : 'disabled'}>${!d.cases[c.id] ? 'No case' : !Inv.keysFor(c.id) ? 'Needs a key' : 'Open'}</button></div>
         <div class="odds">${odds}</div>
         <div class="contents">${SKIN_LIST.filter(s => s.caseId === c.id).sort((a, b) => b.rarity - a.rarity).map(s => `<div class="ci" style="--rc:${RARITY[s.rarity].color}" title="${escapeHtml(s.name)}"><canvas width="110" height="55" data-skin="${s.id}"></canvas><small>${s.weapon === 'knife' ? '★ ' + escapeHtml(s.name) : WEAPONS[s.weapon].name + ' | ' + escapeHtml(s.name)}</small></div>`).join('')}</div></div>`;
       }).join('')}</div>`;
     body.querySelectorAll('canvas[data-skin]').forEach(cv => { const s = SKINS[cv.dataset.skin]; drawSkinPreview(cv, { seed: 1, float: 0.03, skinId: s.id }, s.weapon === 'knife' ? Object.assign({}, s, { pattern: 'solid', pal: ['#e4ae39', '#b88a20'] }) : s); });
-    $('buyKey').onclick = () => { if (d.credits < KEY_PRICE) return this.toast('Not enough credits'); d.credits -= KEY_PRICE; d.keys++; Inv.save(); Sfx.play('buy'); this.render_armory(); };
+    const buyKeys = (id, n, price) => { if (d.credits < price) return this.toast('Not enough credits'); d.credits -= price; d.keys[id] = (d.keys[id] || 0) + n; Inv.save(); Sfx.play('buy'); this.toast(`+${n} ${Inv.keyName(id)}${n > 1 ? 's' : ''}`); this.render_armory(); };
+    body.querySelectorAll('[data-key]').forEach(b => b.onclick = () => buyKeys(b.dataset.key, 1, KEY_PRICE[b.dataset.key]));
+    body.querySelectorAll('[data-bundle]').forEach(b => b.onclick = () => buyKeys(b.dataset.bundle, KEY_BUNDLE.n, Math.round(KEY_PRICE[b.dataset.bundle] * KEY_BUNDLE.n * KEY_BUNDLE.discount)));
     body.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { const c = CASES.find(x => x.id === b.dataset.buy); if (d.credits < c.price) return this.toast('Not enough credits'); d.credits -= c.price; d.cases[c.id]++; Inv.save(); Sfx.play('buy'); this.render_armory(); });
     body.querySelectorAll('[data-open]').forEach(b => b.onclick = () => this.openCase(b.dataset.open));
   },
   /* the reel: a long strip slides and eases to a stop on the prize */
   openCase(caseId) {
-    const d = Inv.data; if (!d.cases[caseId] || !d.keys) return;
-    d.cases[caseId]--; d.keys--; d.stats.opened++;
+    const d = Inv.data; if (!d.cases[caseId] || !Inv.keysFor(caseId)) return;
+    const used = Inv.useKey(caseId); d.cases[caseId]--; d.stats.opened++;
+    if (used === 'master') this.toast('Used a Master Key');
     const prize = rollCase(caseId); d.items.push(prize); Inv.save();
     const WIN = 52, N = 60, CW = 170;
     const strip = []; for (let i = 0; i < N; i++) strip.push(i === WIN ? { skin: SKINS[prize.skinId], item: prize } : { skin: reelFiller(caseId) });
@@ -4330,9 +4442,9 @@ const UI = {
   reveal(it, caseId) {
     const s = SKINS[it.skinId], r = RARITY[s.rarity];
     Sfx.play(s.rarity >= 4 ? 'rare' : 'reveal');
-    const el = $('reveal');
+    const el = $('reveal'); if (!el) return;   // the reel was closed mid-spin
     el.innerHTML = `<div class="prize" style="--rc:${r.color}"><canvas width="520" height="240" id="prizeCv"></canvas><div class="pn">${escapeHtml(Inv.displayName(it))}</div><div class="pr" style="color:${r.color}">${r.name} · ${wearOf(it.float).name} · float ${it.float.toFixed(4)}</div>
-      <div class="row"><button class="btn" id="pvEquip">Equip</button><button class="btn warn" id="pvSell">Sell ₵${Inv.value(it)}</button><button class="btn" id="pvAgain" ${Inv.data.cases[caseId] && Inv.data.keys ? '' : 'disabled'}>Open another</button><button class="btn ghost" id="pvClose">Close</button></div></div>`;
+      <div class="row"><button class="btn" id="pvEquip">Equip</button><button class="btn warn" id="pvSell">Sell ₵${Inv.value(it)}</button><button class="btn" id="pvAgain" ${Inv.data.cases[caseId] && Inv.keysFor(caseId) ? '' : 'disabled'}>Open another</button><button class="btn ghost" id="pvClose">Close</button></div></div>`;
     drawSkinPreview($('prizeCv'), it);
     if (s.rarity >= 5) el.querySelector('.prize').classList.add('burst');
     const close = () => { $('opener').classList.remove('open'); $('opener').innerHTML = ''; this.render_armory(); };
@@ -4458,20 +4570,50 @@ const UI = {
       if (this.applyBuy(L, id)) { Sfx.play('buy'); this.refreshBuy(); } else Sfx.play('empty');
     });
   },
+  /* End of match: result, both scoreboards, your numbers, what you earned. */
   matchResults(r) {
     if (!Game.running) return;
-    this.resultsOpen = true; this.toggleBuy(false); HUD.showDeploy(false);
+    this.resultsOpen = true; this.toggleBuy(false); this.toggleSpawnMenu && this.spawnOpen && this.toggleSpawnMenu(false); HUD.showDeploy(false);
     if (document.pointerLockElement) document.exitPointerLock();
-    const L = Game.local, e = $('results'); e.classList.remove('hidden');
-    let drop = '';
-    if (r.drop) drop = r.drop.kind === 'case' ? `<div class="drop">Drop: <b style="color:${CASES.find(c => c.id === r.drop.caseId).color}">${CASES.find(c => c.id === r.drop.caseId).name}</b></div>` : `<div class="drop">Drop: ${this.itemCard(r.drop.item)}</div>`;
-    e.innerHTML = `<div class="rbox"><h1 class="${r.won ? 'win' : 'loss'}">${r.won ? 'VICTORY' : 'DEFEAT'}</h1><p>${TEAM_STYLE[r.winner].name} wins ${Game.mode.id === 'defuse' ? Game.score[r.winner] + ' – ' + Game.score[other(r.winner)] : ''}</p>
-      <div class="stats"><div><b>${L.kills}</b><small>kills</small></div><div><b>${L.assists}</b><small>assists</small></div><div><b>${L.deaths}</b><small>deaths</small></div><div><b>${L.mvps}</b><small>MVPs</small></div><div><b>+₵${r.credits}</b><small>credits</small></div></div>${drop}
-      <div class="row"><button class="btn" id="resMenu">Main menu</button><button class="btn" id="resArm">Armory</button>${Net.role === 'off' ? '<button class="btn" id="resAgain">Play again</button>' : ''}</div></div>`;
+    const L = Game.local, e = $('results'), S = r.stats, W = TEAM_STYLE[r.winner], M = Game.mode;
+    e.classList.remove('hidden'); e.style.setProperty('--wc', W.color);
+    const score = M.id === 'defuse' ? `${Game.score.CT} – ${Game.score.T}` : M.id === 'conquest' ? `${Math.ceil(Game.tickets.CT)} – ${Math.ceil(Game.tickets.T)} tickets` : M.id === 'tdm' ? `${Game.tdm.kills.CT} – ${Game.tdm.kills.T} kills` : '';
+    const table = team => {
+      const rows = Game.soldiers.filter(s => s.team === team && !s.npc).sort((a, b) => b.score - a.score || b.kills - a.kills);
+      const top = rows[0];
+      return `<div class="rt ${team === r.winner ? 'won' : ''}" style="--tc:${TEAM_STYLE[team].color}"><div class="rth"><b>${TEAM_STYLE[team].name}</b>${team === r.winner ? '<span class="wtag">WINNER</span>' : ''}</div>
+        <table><tr><th></th><th>K</th><th>A</th><th>D</th><th>Score</th></tr>${rows.map(s => `<tr class="${s === L ? 'me' : ''}"><td>${s === top && s.score > 0 ? '<span class="star" title="Top score">★</span>' : ''}${s.isBot ? '<i>BOT</i> ' : ''}${escapeHtml(s.name)}${s.mvps ? ` <span class="mv">${s.mvps}×MVP</span>` : ''}</td><td>${s.kills}</td><td>${s.assists}</td><td>${s.deaths}</td><td>${s.score}</td></tr>`).join('')}</table></div>`;
+    };
+    const tile = (v, l) => `<div class="rs"><b>${v}</b><small>${l}</small></div>`;
+    const kd = S.d ? (S.k / S.d).toFixed(2) : S.k.toFixed(2), hsp = S.k ? Math.round(S.hs / S.k * 100) + '%' : '–', acc = S.shots ? Math.round(S.hits / S.shots * 100) + '%' : '–';
+    let drops = '';
+    if (r.drop) drops += r.drop.kind === 'case' ? `<div class="dropc" style="--dc:${CASES.find(c => c.id === r.drop.caseId).color}"><div class="crate mini"><span>${CASES.find(c => c.id === r.drop.caseId).name.split(' ')[0].toUpperCase()}</span></div><small>${CASES.find(c => c.id === r.drop.caseId).name}</small></div>` : this.itemCard(r.drop.item);
+    if (r.keyDrop) drops += `<div class="dropc" style="--dc:${Inv.keyColor(r.keyDrop)}">${keySvg(Inv.keyColor(r.keyDrop), 64)}<small>${Inv.keyName(r.keyDrop)}</small></div>`;
+    for (const u of r.ups) drops += `<div class="dropc lvl" style="--dc:#ffd24a"><div class="lvbadge">${u.level}</div><small>Level ${u.level}: +₵${u.credits}, ${Inv.keyName(u.key)}${u.master ? ', Master Key, ' + CASES.find(c => c.id === u.case).name : ''}</small></div>`;
+    const D = Inv.data, pctFrom = r.before.xp / r.before.need * 100, pctTo = D.xp / Inv.xpFor(D.level) * 100;
+    const host = Net.role === 'host', client = Net.role === 'client';
+    e.innerHTML = `<div class="rbox2">
+      <div class="rhead ${r.won ? 'win' : 'loss'}"><h1>${r.won ? 'VICTORY' : 'DEFEAT'}</h1><div class="rsub"><b style="color:${W.color}">${W.name} wins</b> · ${score} · ${M.name} · ${World.def.name} · ${fmtTime(r.dur)}</div></div>
+      <div class="rgrid">
+        <div class="rteams">${table(r.winner)}${table(other(r.winner))}</div>
+        <div class="rme">
+          <h3>Your match</h3>
+          <div class="rstats">${tile(S.k, 'kills')}${tile(S.d, 'deaths')}${tile(S.a, 'assists')}${tile(kd, 'K/D')}${tile(hsp, 'headshot %')}${tile(acc, 'accuracy')}${tile(S.dmg, 'damage')}${tile(S.mvps, 'MVPs')}</div>
+          <h3>Earned</h3>
+          <div class="rlines">${r.lines.map(l => `<div><span>${l[0]}</span><b>+₵${l[1]}</b></div>`).join('')}<div class="tot"><span>Total</span><b>+₵${r.credits}</b></div></div>
+          <div class="xpbar"><div class="xpl">Level <b>${D.level}</b> <span>+${r.xp} XP</span></div><div class="xpt"><i style="width:${r.ups.length ? 0 : pctFrom}%" data-to="${pctTo}"></i></div><small>${D.xp} / ${Inv.xpFor(D.level)} XP</small></div>
+          ${drops ? `<h3>Drops</h3><div class="rdrops">${drops}</div>` : ''}
+        </div>
+      </div>
+      <div class="row rbtns">${host ? '<button class="btn big" id="resRematch">Play again</button><button class="btn" id="resLobby">Back to lobby</button>' : client ? '<span class="muted">Waiting for the host to start again…</span>' : '<button class="btn big" id="resAgain">Play again</button>'}<button class="btn ghost" id="resArm">Armory</button><button class="btn ghost" id="resMenu">${Net.role === 'off' ? 'Main menu' : 'Leave'}</button></div></div>`;
     this.paintCards(e);
-    $('resMenu').onclick = () => { this.leaveGame(); };
+    Sfx.play(r.won ? 'win' : 'lose'); if (r.ups.length) setTimeout(() => Sfx.play('rare'), 900);
+    requestAnimationFrame(() => setTimeout(() => { const bar = e.querySelector('.xpt i'); if (bar) bar.style.width = bar.dataset.to + '%'; }, 300));
+    $('resMenu').onclick = () => this.leaveGame();
     $('resArm').onclick = () => { this.leaveGame(); this.armoryTab = 'inv'; this.show('armory'); };
     if ($('resAgain')) $('resAgain').onclick = () => { this.leaveGame(); this.startSolo(); };
+    if ($('resRematch')) $('resRematch').onclick = () => { Game.stop(); this.resultsOpen = false; Net.startMatch(); };
+    if ($('resLobby')) $('resLobby').onclick = () => { Game.stop(); this.resultsOpen = false; e.classList.add('hidden'); $('hud').classList.add('hidden'); Net.lobby.started = false; Net.toAll({ t: 'tolobby' }); MenuBG.start(); this.openLobby(); Net.pushLobby(); };
   },
 };
 
@@ -4577,47 +4719,6 @@ const MenuBG = {
   stop() { this.on = false; },
   update(dt) { if (!this.on) return; this.t += dt * 0.05; const c = Game.camera; c.position.set(Math.sin(this.t) * 48, 26, Math.cos(this.t) * 48); c.lookAt(0, 0, 0); if (c.fov !== 70) { c.fov = 70; c.updateProjectionMatrix(); } },
 };
-
-/* ── 12_main.js ── */
-/* ═══════════════════════════════════════════════════════════════════════════
-   Boot and main loop.
-   ═══════════════════════════════════════════════════════════════════════════ */
-function boot() {
-  Inv.load();
-  Game.initRenderer();
-  HUD.init();
-  UI.init();
-  MenuBG.start();
-  let last = performance.now();
-  const frame = now => {
-    requestAnimationFrame(frame);
-    // slow machines: take up to three sub-steps so the match still runs in real time
-    let dt = Math.min(0.15, Math.max(0, (now - last) / 1000)); last = now;
-    try {
-      if (Game.running) { while (dt > 0.05) { Game.update(0.05); dt -= 0.05; } Game.update(dt); HUD.update(dt); }
-      else MenuBG.update(dt);
-      if (Game.scene) Game.render();
-    } catch (e) { console.error(e); }
-    Input.endFrame();
-  };
-  requestAnimationFrame(frame);
-  /* A hidden tab gets no animation frames. If we're the host, everyone else's
-     match would freeze, so keep simulating from a worker's timer (workers
-     aren't throttled like the page's own timers are). */
-  try {
-    const w = new Worker(URL.createObjectURL(new Blob(['setInterval(() => postMessage(0), 33)'], { type: 'text/javascript' })));
-    let lastBg = performance.now();
-    w.onmessage = () => {
-      const now = performance.now(), dt = Math.min(0.1, (now - lastBg) / 1000); lastBg = now;
-      if (!document.hidden || !Game.running || Net.role !== 'host') return;
-      try { Game.update(dt); } catch (e) { console.error(e); }
-      last = now;
-    };
-  } catch (e) { }
-  addEventListener('beforeunload', () => Net.leave());
-  window.BP = { Game, World, Net, Inv, UI, HUD, AI, SKINS, CASES, Settings };
-}
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
 /* ── 13_attach.js ── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -5814,6 +5915,100 @@ function copyGroup(root) {
 }
 /* the core 'prop' action learns to carry paint, material, scale and physics */
 Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', 'KeyJ', 'KeyL', 'KeyO'].includes(code)) { if (!this.on || !Game.local) return; if (!!this.keysDown[code] === down) return; this.keysDown[code] = down; this.exec({ op: 'key', key: code, down }); return; } return orig.call(this, code, down); }; })(Sandbox.onKey);
+
+/* ── 17_news.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Update log. Opens by itself the first time a new version starts, and is
+   always one click away on the main menu.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const CHANGELOG = [
+  { v: '1.3', date: 'Sep 2026', title: 'Keys, levels and a proper victory screen', items: [
+    ['New', 'Every case now opens with its own key (Ember, Glacier, Neon, Arsenal). Old keys became Master Keys that open anything.'],
+    ['New', 'Buy keys one at a time or in bundles of 5 at 15% off, right on each case.'],
+    ['New', 'Player levels. Matches give XP, and every level pays credits plus a key. Every fifth level adds a case and a Master Key.'],
+    ['New', 'Keys drop from matches too.'],
+    ['New', 'Redesigned victory screen: both scoreboards, your K/D, headshot %, accuracy and damage, an itemised credit breakdown, an XP bar, and every drop.'],
+    ['New', 'Multiplayer hosts can press Play again or Back to lobby from the results screen, and everyone follows.'],
+    ['New', 'The lobby shows every slot: the people, then the named bots that will fill the empty seats. With 3 players and a team size of 4, you see 3 people and 1 bot.'],
+    ['New', 'Lobby options: any team size, Fill with bots on/off, and Balance teams.'],
+    ['Fix', 'The gun no longer jitters when you move: smoother bob, sway and sprint transitions.'],
+    ['New', 'This update log.'],
+  ] },
+  { v: '1.2', date: 'Sep 2026', title: 'Range, arsenal and medkits', items: [
+    ['New', '13 weapons: Five-SeveN, Tec-9, .357 Magnum, MAC-10, UMP-45, XM1014, Galil, FAMAS (burst), AUG, Auto-Sniper, Minigun, Crossbow, M79.'],
+    ['New', 'Medkits on H. Health and ammo drops in Conquest and TDM. Health, armor and ammo stations in Sandbox.'],
+    ['New', 'Sandbox tools: elastic, motor wheels, hoverball, lamp, emitter, ignite, duplicator, physical props, trail.'],
+    ['Fix', 'Weapon damage now falls off by weapon type, and bots close in instead of firing out of range.'],
+    ['Fix', 'Longer view distance, plus View distance and Bot sight distance settings.'],
+    ['Fix', 'Physics forces are applied correctly, so thrusters and balloons are no longer weak and props no longer spin out of control.'],
+  ] },
+  { v: '1.1', date: 'Sep 2026', title: 'Sandbox and attachments', items: [
+    ['New', "Sandbox mode, Garry's Mod style: spawn menu, physics gun, tool gun, NPCs, undo, noclip."],
+    ['New', 'Attachments in the Gunsmith: optics, suppressor, compensator, grip, laser, extended mag.'],
+    ['Fix', 'Reworked first-person view: real sights to aim down, hands, reload motion.'],
+  ] },
+  { v: '1.0', date: 'Sep 2026', title: 'Launch', items: [
+    ['New', 'Defuse, Conquest and Team Deathmatch, with squad AI that plans and calls it out on the radio.'],
+    ['New', 'Peer-to-peer multiplayer with room codes.'],
+    ['New', 'Cases, skins, trade-ups.'],
+  ] },
+];
+
+UI.render_news = function () {
+  $('newsBody').innerHTML = CHANGELOG.map((c, i) => `<div class="cl ${i === 0 ? 'latest' : ''}"><div class="clh"><b>v${c.v}</b><span>${escapeHtml(c.title)}</span><small>${c.date}</small></div>
+    <ul>${c.items.map(([t, x]) => `<li><em class="t-${t.toLowerCase()}">${t}</em>${escapeHtml(x)}</li>`).join('')}</ul></div>`).join('');
+  Store.set('seenVersion', VERSION);
+  const b = $('newsDot'); if (b) b.classList.add('hidden');
+};
+/* first launch of a new version: show what changed */
+UI.maybeShowNews = function () {
+  const seen = Store.get('seenVersion', null);
+  const dot = $('newsDot'); if (dot) dot.classList.toggle('hidden', seen === VERSION);
+  if (seen !== VERSION) setTimeout(() => { if (!Game.running && this.cur === 'main') this.show('news'); }, 400);
+};
+
+/* ── 99_main.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Boot and main loop.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function boot() {
+  Inv.load();
+  Game.initRenderer();
+  HUD.init();
+  UI.init();
+  MenuBG.start();
+  UI.maybeShowNews();
+  let last = performance.now();
+  const frame = now => {
+    requestAnimationFrame(frame);
+    // slow machines: take up to three sub-steps so the match still runs in real time
+    let dt = Math.min(0.15, Math.max(0, (now - last) / 1000)); last = now;
+    try {
+      if (Game.running) { while (dt > 0.05) { Game.update(0.05); dt -= 0.05; } Game.update(dt); HUD.update(dt); }
+      else MenuBG.update(dt);
+      if (Game.scene) Game.render();
+    } catch (e) { console.error(e); }
+    Input.endFrame();
+  };
+  requestAnimationFrame(frame);
+  /* A hidden tab gets no animation frames. If we're the host, everyone else's
+     match would freeze, so keep simulating from a worker's timer (workers
+     aren't throttled like the page's own timers are). */
+  try {
+    const w = new Worker(URL.createObjectURL(new Blob(['setInterval(() => postMessage(0), 33)'], { type: 'text/javascript' })));
+    let lastBg = performance.now();
+    w.onmessage = () => {
+      const now = performance.now(), dt = Math.min(0.1, (now - lastBg) / 1000); lastBg = now;
+      if (!document.hidden || !Game.running || Net.role !== 'host') return;
+      try { Game.update(dt); } catch (e) { console.error(e); }
+      last = now;
+    };
+  } catch (e) { }
+  addEventListener('beforeunload', () => Net.leave());
+  window.BP = { Game, World, Net, Inv, UI, HUD, AI, SKINS, CASES, Settings };
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 </script>
 </body>
 </html>

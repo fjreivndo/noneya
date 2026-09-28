@@ -210,7 +210,7 @@ function fireWeapon(s, now, recoilControl = 0) {
   if (a.mag <= 0) { if (s.ctrl === 'local') Sfx.play('empty'); s.fireCd = 0.2; if (!s.startReload() && s.ctrl === 'bot') s.switchTo(s.weapons[2] || 'knife'); return false; }
   if (w.spinup) { s.spinT = now; if (s.spin < 1) return false; }
   if (s.healT > 0) return false;
-  a.mag--; s.fireCd = 60 / w.rpm; s.lastShot = now;
+  a.mag--; s.fireCd = 60 / w.rpm; s.lastShot = now; s.shots = (s.shots || 0) + 1;
   if (w.bolt) { s.boltT = w.bolt; }
   const eye = s.eye(_o);
   const idx = Math.floor(s.recoilIdx), rp = w.recoil ? recoilPattern(w, idx) : { x: 0, y: 0 };

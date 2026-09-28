@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Update log. Opens by itself the first time a new version starts, and is
+   always one click away on the main menu.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const CHANGELOG = [
+  { v: '1.3', date: 'Sep 2026', title: 'Keys, levels and a proper victory screen', items: [
+    ['New', 'Every case now opens with its own key (Ember, Glacier, Neon, Arsenal). Old keys became Master Keys that open anything.'],
+    ['New', 'Buy keys one at a time or in bundles of 5 at 15% off, right on each case.'],
+    ['New', 'Player levels. Matches give XP, and every level pays credits plus a key. Every fifth level adds a case and a Master Key.'],
+    ['New', 'Keys drop from matches too.'],
+    ['New', 'Redesigned victory screen: both scoreboards, your K/D, headshot %, accuracy and damage, an itemised credit breakdown, an XP bar, and every drop.'],
+    ['New', 'Multiplayer hosts can press Play again or Back to lobby from the results screen, and everyone follows.'],
+    ['New', 'The lobby shows every slot: the people, then the named bots that will fill the empty seats. With 3 players and a team size of 4, you see 3 people and 1 bot.'],
+    ['New', 'Lobby options: any team size, Fill with bots on/off, and Balance teams.'],
+    ['Fix', 'The gun no longer jitters when you move: smoother bob, sway and sprint transitions.'],
+    ['New', 'This update log.'],
+  ] },
+  { v: '1.2', date: 'Sep 2026', title: 'Range, arsenal and medkits', items: [
+    ['New', '13 weapons: Five-SeveN, Tec-9, .357 Magnum, MAC-10, UMP-45, XM1014, Galil, FAMAS (burst), AUG, Auto-Sniper, Minigun, Crossbow, M79.'],
+    ['New', 'Medkits on H. Health and ammo drops in Conquest and TDM. Health, armor and ammo stations in Sandbox.'],
+    ['New', 'Sandbox tools: elastic, motor wheels, hoverball, lamp, emitter, ignite, duplicator, physical props, trail.'],
+    ['Fix', 'Weapon damage now falls off by weapon type, and bots close in instead of firing out of range.'],
+    ['Fix', 'Longer view distance, plus View distance and Bot sight distance settings.'],
+    ['Fix', 'Physics forces are applied correctly, so thrusters and balloons are no longer weak and props no longer spin out of control.'],
+  ] },
+  { v: '1.1', date: 'Sep 2026', title: 'Sandbox and attachments', items: [
+    ['New', "Sandbox mode, Garry's Mod style: spawn menu, physics gun, tool gun, NPCs, undo, noclip."],
+    ['New', 'Attachments in the Gunsmith: optics, suppressor, compensator, grip, laser, extended mag.'],
+    ['Fix', 'Reworked first-person view: real sights to aim down, hands, reload motion.'],
+  ] },
+  { v: '1.0', date: 'Sep 2026', title: 'Launch', items: [
+    ['New', 'Defuse, Conquest and Team Deathmatch, with squad AI that plans and calls it out on the radio.'],
+    ['New', 'Peer-to-peer multiplayer with room codes.'],
+    ['New', 'Cases, skins, trade-ups.'],
+  ] },
+];
+
+UI.render_news = function () {
+  $('newsBody').innerHTML = CHANGELOG.map((c, i) => `<div class="cl ${i === 0 ? 'latest' : ''}"><div class="clh"><b>v${c.v}</b><span>${escapeHtml(c.title)}</span><small>${c.date}</small></div>
+    <ul>${c.items.map(([t, x]) => `<li><em class="t-${t.toLowerCase()}">${t}</em>${escapeHtml(x)}</li>`).join('')}</ul></div>`).join('');
+  Store.set('seenVersion', VERSION);
+  const b = $('newsDot'); if (b) b.classList.add('hidden');
+};
+/* first launch of a new version: show what changed */
+UI.maybeShowNews = function () {
+  const seen = Store.get('seenVersion', null);
+  const dot = $('newsDot'); if (dot) dot.classList.toggle('hidden', seen === VERSION);
+  if (seen !== VERSION) setTimeout(() => { if (!Game.running && this.cur === 'main') this.show('news'); }, 400);
+};

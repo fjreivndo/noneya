@@ -61,7 +61,7 @@ const Game = {
     // NPCs from a running sandbox arrive in the roster as puppets
     for (const r of cfg.roster) if (r.npc) { const s = this.byId(r.id); if (s) { s.npc = r.npc; if (s.ctrl === 'bot') s.brain = r.npc === 'zombie' ? new ZombieBrain(s) : r.npc === 'citizen' ? new CitizenBrain(s) : r.npc === 'dummy' ? new IdleBrain(s) : new Brain(s); } }
     this.soldiers.forEach(s => { s.money = 800; s.buildModel(this.scene); });
-    this.running = true; this.paused = false;
+    this.running = true; this.paused = false; this.finished = false; this.startedAt = performance.now();
     HUD.onMatchStart();
     if (this.authority()) {
       if (this.mode.id === 'defuse') this.startRound(true);
@@ -77,7 +77,7 @@ const Game = {
   prepareRoster(cfg) {
     if (cfg.roster) return cfg.roster;
     const size = cfg.teamSize != null ? cfg.teamSize : MODES[cfg.mode].teamSize, roster = cfg.players.map(p => ({ id: p.id, name: p.name, team: p.team, skins: p.skins || {}, att: p.att || {}, cls: p.cls || pick(Object.keys(CLASSES)), isBot: false }));
-    const names = shuffle(BOT_NAMES.slice()); let ni = 0;
+    const names = cfg.botNames || shuffle(BOT_NAMES.slice()); let ni = 0;
     for (const team of ['T', 'CT']) { let n = roster.filter(s => s.team === team).length; while (n < size) { const att = {}; for (const w in WEAPONS) if (WEAPONS[w].mag && cfg.mode !== 'defuse') att[w] = randomAttach(w); roster.push({ id: 'b' + ni + team, name: names[ni++ % names.length], team, isBot: true, cls: pick(Object.keys(CLASSES)), skins: {}, att }); n++; } }
     return cfg.roster = roster;
   },
@@ -221,15 +221,24 @@ const Game = {
   },
   finishMatch(winner) {
     this.matchOver = true;
-    const L = this.local; if (!L) return;
-    const won = L.team === winner;
-    const credits = 40 + L.kills * 8 + L.assists * 3 + (won ? 80 : 20) + L.mvps * 15;
-    Inv.data.credits += credits; Inv.data.stats.matches++; if (won) Inv.data.stats.wins++;
-    Inv.data.stats.kills += L.kills; Inv.data.stats.deaths += L.deaths;
+    const L = this.local; if (!L || this.finished) return; this.finished = true;
+    const won = L.team === winner, hsk = L.hsKills || 0, D = Inv.data;
+    // credits, itemised
+    const lines = [['Match completed', 40], [`Kills × ${L.kills}`, L.kills * 8], [`Assists × ${L.assists}`, L.assists * 3], [`Headshot kills × ${hsk}`, hsk * 2], [won ? 'Victory bonus' : 'Participation', won ? 80 : 20], [`MVP × ${L.mvps}`, L.mvps * 15]].filter(l => l[1] > 0);
+    const credits = lines.reduce((a, l) => a + l[1], 0);
+    D.credits += credits; D.stats.matches++; if (won) D.stats.wins++;
+    D.stats.kills += L.kills; D.stats.deaths += L.deaths;
+    // experience and level-ups
+    const xp = 150 + L.kills * 30 + L.assists * 12 + (won ? 200 : 50) + L.mvps * 40 + Math.round(Math.max(0, L.score) * 2);
+    const before = { level: D.level, xp: D.xp, need: Inv.xpFor(D.level) }, ups = Inv.addXp(xp);
+    // drops: a case or field skin, and sometimes a key
     const drop = matchDrop();
-    if (drop) { if (drop.kind === 'case') Inv.data.cases[drop.caseId]++; else Inv.data.items.push(drop.item); }
+    if (drop) { if (drop.kind === 'case') D.cases[drop.caseId]++; else D.items.push(drop.item); }
+    const keyDrop = chance(0.3) ? pick(CASES).id : null; if (keyDrop) D.keys[keyDrop] = (D.keys[keyDrop] || 0) + 1;
     Inv.save();
-    setTimeout(() => UI.matchResults({ winner, won, credits, drop }), 2500);
+    const stats = { k: L.kills, d: L.deaths, a: L.assists, mvps: L.mvps, hs: hsk, shots: L.shots || 0, hits: L.hits || 0, dmg: Math.round(L.dmgDealt || L.dmgLocal || 0), score: L.score };
+    const dur = (performance.now() - this.startedAt) / 1000;
+    setTimeout(() => UI.matchResults({ winner, won, credits, lines, xp, before, ups, drop, keyDrop, stats, dur }), 2500);
   },
 
   /* ── per-frame rules (authority) ── */
@@ -354,7 +363,8 @@ const Game = {
 
   /* ── damage ── */
   reportHit(att, vic, dmg, zone, weapon, from) {
-    if (att.ctrl === 'local') { HUD.hitmarker(zone === 'head'); Sfx.play(zone === 'head' ? 'headshot' : 'hit'); }
+    if (att.ctrl === 'local') { HUD.hitmarker(zone === 'head'); Sfx.play(zone === 'head' ? 'headshot' : 'hit'); att.dmgLocal = (att.dmgLocal || 0) + Math.min(dmg, Math.max(0, vic.hp)); }
+    if (att._hitShot !== att.lastShot) { att._hitShot = att.lastShot; att.hits = (att.hits || 0) + 1; }   // accuracy: shots that landed
     if (this.authority()) this.damage(vic, dmg, att, weapon, zone, from);
     else if (att.ctrl === 'local') Net.send({ t: 'hit', v: vic.id, d: Math.round(dmg * 10) / 10, z: zone, w: weapon });
   },
@@ -402,6 +412,7 @@ const Game = {
     if (v && !this.authority()) { v.alive = false; v.hp = 0; v.deadT = 0; v.planting = null; if (v.vehicle) this.exitVehicle(v, true); if (a && a !== v) { a.kills++; } v.deaths++; }
     if (v && this.mode.respawn) v.respawnT = this.mode.respawnTime;
     HUD.killfeed(a, v, ev.w, ev.hs);
+    if (a && ev.hs && v !== a) a.hsKills = (a.hsKills || 0) + 1;
     if (a && a === this.local && v !== a) { Sfx.play('kill'); if (WEAPONS[ev.w] || ev.w === 'knife') Inv.addKill(ev.w); this.killsThisMatch++; }
     if (v && v === this.local) {
       HUD.died(a, ev.w, ev.hs);
