@@ -4,6 +4,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.2', date: 'Sep 2026', title: 'Pilots, armour, gore and a new look', items: [
+    ['New', 'Bots fly attack helicopters: they take off, patrol over the objective, and circle enemies firing the minigun in bursts and rockets at vehicles. Every soldier shoots back at helicopters.'],
+    ['New', 'Body armour in every mode, worn on the model: Support heavy (100), Assault medium (75), Engineer light (50), Recon barely any (25, no helmet). Sandbox players and soldier NPCs get 50 and a helmet. Armour bar under your health.'],
+    ['New', 'Vehicle armour zones: tanks and APCs take 0.6x damage from the front, 1.7x from the rear and 1.5x from above.'],
+    ['New', 'Dismemberment: explosions tear off limbs, and close-range shotgun blasts, sniper shots and heavy headshots can take a head or a limb. Parts fly with a blood trail and the stumps bleed. Settings → Dismemberment.'],
+    ['New', 'Physics-driven motion: soldiers flinch away from hits and stagger from nearby blasts, lean into acceleration and turns, and helmets fly off when they are shot off. Vehicles pitch and roll on their suspension, and boats bob.'],
+    ['New', 'Graphics: new high-resolution textures with surface relief, physically based materials, sun shadows, a gradient sky with a sun, sky reflections, filmic tone mapping, bloom and a vignette. Grass, rocks and rubble are scattered across the maps. Settings → Graphics (Low / Medium / High).'],
+    ['Change', 'The interface is 66% of its old size. Settings → UI scale changes it.'],
+  ] },
   { v: '2.1', date: 'Sep 2026', title: 'Water everywhere', items: [
     ['New', 'Every map has water. Dustyard: a flooded canal through Lower with a dry plank walkway, and a fountain pool in CT spawn. Ridgeline: a river across the valley with three bridges, and a lake around an island. Flatgrass: a deep lake with an island lighthouse, a dock and a footbridge.'],
     ['New', 'A sixth Conquest flag on Ridgeline: F, the Island. Take it over the footbridge, from the dock, by boat, or swim. Each side gets a speedboat on the river.'],

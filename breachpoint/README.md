@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.1.html     the game (built, self-contained, works offline)
+Breachpoint v2.2.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.1.html
+build.js                  npm install && node build.js  →  Breachpoint v2.2.html
 ```
 
 ## Modes
@@ -77,6 +77,21 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.2
+
+- **Helicopter bots:** bots take attack helis up, patrol the objective and
+  strafe enemies; everyone shoots back at helicopters.
+- **Body armour** for every class (Support 100, Assault 75, Engineer 50,
+  Recon 25) with visible vests and helmets; **vehicle armour zones** (front
+  strong, rear and top weak).
+- **Dismemberment** from explosions, close shotgun blasts and heavy
+  headshots; **physics motion**: hit flinches, blast staggers, body lean,
+  helmets that fly off, vehicle suspension.
+- **Graphics:** high-res textures with normal maps, PBR materials, sun
+  shadows, sky dome, tone mapping, bloom, grass/rocks/rubble. Settings →
+  Graphics (Low/Medium/High).
+- The GUI is 66% of its old size (Settings → UI scale).
 
 ## New in v2.1
 

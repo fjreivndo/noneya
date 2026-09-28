@@ -165,17 +165,19 @@ function buildSoldierModel(team) {
   body.add(legL, legR);
   const upper = new THREE.Group(); upper.position.y = 0.9; body.add(upper);
   upper.add(bx(0.48, 0.58, 0.27, U, 0, 0.3, 0));
-  upper.add(bx(0.5, 0.36, 0.31, A, 0, 0.34, 0)); // vest
+  const vest = new THREE.Group(); upper.add(vest); vest.add(bx(0.5, 0.36, 0.31, A, 0, 0.34, 0)); // plate carrier: vest, pouches, shoulder straps
+  for (const x of [-0.14, 0, 0.14]) vest.add(bx(0.11, 0.12, 0.06, A, x, 0.24, -0.17));
+  vest.add(bx(0.07, 0.04, 0.3, A, -0.18, 0.54, 0)); vest.add(bx(0.07, 0.04, 0.3, A, 0.18, 0.54, 0));
   const head = new THREE.Group(); head.position.y = 0.72; upper.add(head);
   head.add(bx(0.22, 0.24, 0.24, Sk, 0, 0, 0));
-  head.add(bx(0.26, 0.1, 0.28, H, 0, 0.11, 0));
+  const helmet = bx(0.26, 0.1, 0.28, H, 0, 0.11, 0); head.add(helmet); helmet.add(bx(0.24, 0.05, 0.05, H, 0, -0.06, 0.12)); // helmet with a neck guard
   head.add(bx(0.2, 0.06, 0.02, Dk, 0, 0.02, -0.125)); // goggles strip
   const arms = new THREE.Group(); arms.position.set(0, 0.45, 0); upper.add(arms);
   const armR = bx(0.12, 0.12, 0.5, U, 0.2, -0.05, -0.2); armR.rotation.y = 0.3; arms.add(armR);
   const armL = bx(0.12, 0.12, 0.55, U, -0.14, -0.05, -0.3); armL.rotation.y = -0.4; arms.add(armL);
   arms.add(bx(0.1, 0.1, 0.1, G, 0.1, -0.05, -0.45));
   const gunMount = new THREE.Group(); gunMount.position.set(0.12, -0.02, -0.35); arms.add(gunMount);
-  root.userData = { body, legL, legR, upper, head, arms, gunMount, gunId: null, skinKey: null };
+  root.userData = { body, legL, legR, upper, head, arms, gunMount, vest, helmet, gunId: null, skinKey: null };
   return root;
 }
 function setSoldierGun(model, weaponId, item, att) {

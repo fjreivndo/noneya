@@ -98,9 +98,10 @@ body.cur-themed{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2
 #hitm.head{filter:drop-shadow(0 0 2px red) sepia(1) saturate(9) hue-rotate(-30deg)}
 #dmgind{position:absolute;inset:0;width:100%;height:100%}
 .hpbox{position:absolute;left:24px;bottom:22px;display:flex;align-items:flex-end;gap:14px}
-#hp{font-size:44px;line-height:1;min-width:80px}.hpwrap{width:170px;height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;margin-bottom:8px}#hpbar{height:100%;background:#e8e8e8;transition:width .15s}
-#armor{position:absolute;left:24px;bottom:74px;font-size:14px;color:#cfd8e0}
-#money{position:absolute;left:24px;bottom:98px;font-size:22px;color:#7dff9a}
+#hp{font-size:44px;line-height:1;min-width:80px}.hpwrap{width:170px;height:6px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;margin-bottom:8px}#hpbar{height:100%;background:#e8e8e8;transition:width .15s}.armwrap{height:4px;margin-top:-4px;margin-bottom:8px}#armorbar{height:100%;background:#5aa8ff;transition:width .15s}
+:root{--ui:.66}#hud>*:not(#blood):not(#vign):not(#scope):not(#flash):not(#xh):not(#hitm):not(#underwater):not(#dmgind),#menu,.ov,#modal,#toast,#opener,#askbox{zoom:var(--ui)}
+#armor{position:absolute;left:24px;bottom:94px;font-size:14px;color:#cfd8e0}
+#money{position:absolute;left:24px;bottom:116px;font-size:22px;color:#7dff9a}
 .ammobox{position:absolute;right:26px;bottom:22px;text-align:right}
 #ammo{font-size:44px;line-height:1}#ammores{font-size:20px;color:#bbb;margin-left:6px}#wname{font-size:13px;color:#ddd;font-weight:600}#stattrak{font:12px monospace;color:#cf6a32}#nades{font-size:12px;color:#aaa;margin-top:2px}
 .top{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px}
@@ -312,7 +313,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '2.1';
+const VERSION = '2.2';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -1542,17 +1543,19 @@ function buildSoldierModel(team) {
   body.add(legL, legR);
   const upper = new THREE.Group(); upper.position.y = 0.9; body.add(upper);
   upper.add(bx(0.48, 0.58, 0.27, U, 0, 0.3, 0));
-  upper.add(bx(0.5, 0.36, 0.31, A, 0, 0.34, 0)); // vest
+  const vest = new THREE.Group(); upper.add(vest); vest.add(bx(0.5, 0.36, 0.31, A, 0, 0.34, 0)); // plate carrier: vest, pouches, shoulder straps
+  for (const x of [-0.14, 0, 0.14]) vest.add(bx(0.11, 0.12, 0.06, A, x, 0.24, -0.17));
+  vest.add(bx(0.07, 0.04, 0.3, A, -0.18, 0.54, 0)); vest.add(bx(0.07, 0.04, 0.3, A, 0.18, 0.54, 0));
   const head = new THREE.Group(); head.position.y = 0.72; upper.add(head);
   head.add(bx(0.22, 0.24, 0.24, Sk, 0, 0, 0));
-  head.add(bx(0.26, 0.1, 0.28, H, 0, 0.11, 0));
+  const helmet = bx(0.26, 0.1, 0.28, H, 0, 0.11, 0); head.add(helmet); helmet.add(bx(0.24, 0.05, 0.05, H, 0, -0.06, 0.12)); // helmet with a neck guard
   head.add(bx(0.2, 0.06, 0.02, Dk, 0, 0.02, -0.125)); // goggles strip
   const arms = new THREE.Group(); arms.position.set(0, 0.45, 0); upper.add(arms);
   const armR = bx(0.12, 0.12, 0.5, U, 0.2, -0.05, -0.2); armR.rotation.y = 0.3; arms.add(armR);
   const armL = bx(0.12, 0.12, 0.55, U, -0.14, -0.05, -0.3); armL.rotation.y = -0.4; arms.add(armL);
   arms.add(bx(0.1, 0.1, 0.1, G, 0.1, -0.05, -0.45));
   const gunMount = new THREE.Group(); gunMount.position.set(0.12, -0.02, -0.35); arms.add(gunMount);
-  root.userData = { body, legL, legR, upper, head, arms, gunMount, gunId: null, skinKey: null };
+  root.userData = { body, legL, legR, upper, head, arms, gunMount, vest, helmet, gunId: null, skinKey: null };
   return root;
 }
 function setSoldierGun(model, weaponId, item, att) {
@@ -2434,7 +2437,7 @@ class Brain {
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
   /* tank crews can't be shot, so only bots carrying a launcher bother with them */
-  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed))); }
+  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed) || e.vehicle.K.type === 'heli')); }   // anyone can shoot at a helicopter
 
   /* ── senses ── */
   sense() {
@@ -4664,13 +4667,13 @@ const UI = {
     const S = Settings;
     const rng = (k, label, min, max, step) => `<label>${label} <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}</output></label>`;
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
-      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}
+      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}${rng('uiScale', 'UI scale', 0.4, 1.2, 0.02)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label>Crosshair <select data-k="xhStyle">${[['cross', 'Cross'], ['tshape', 'T-shape'], ['dot', 'Dot'], ['circle', 'Circle'], ['crossring', 'Cross + circle'], ['chevron', 'Chevron']].map(([k, n]) => `<option value="${k}" ${S.xhStyle === k ? 'selected' : ''}>${n}</option>`).join('')}</select><span class="xh-prev"><span id="xhPrev" class="xh-in"></span></span></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
       <label><input type="checkbox" data-k="xhDot" ${S.xhDot ? 'checked' : ''}> Center dot</label><label><input type="checkbox" data-k="showFps" ${S.showFps ? 'checked' : ''}> Show FPS</label>
-      <label><input type="checkbox" data-k="blood" ${S.blood ? 'checked' : ''}> Blood</label><label><input type="checkbox" data-k="ragdoll" ${S.ragdoll !== false ? 'checked' : ''}> Ragdolls</label>
-      <label>Mouse cursor <select data-k="cursor"><option value="themed" ${S.cursor !== 'system' ? 'selected' : ''}>Breachpoint</option><option value="system" ${S.cursor === 'system' ? 'selected' : ''}>System</option></select></label>`;
+      <label><input type="checkbox" data-k="blood" ${S.blood ? 'checked' : ''}> Blood</label><label><input type="checkbox" data-k="ragdoll" ${S.ragdoll !== false ? 'checked' : ''}> Ragdolls</label><label><input type="checkbox" data-k="gore" ${S.gore !== false ? 'checked' : ''}> Dismemberment</label>
+      <label>Graphics <select data-k="gfx">${[['low', 'Low'], ['medium', 'Medium'], ['high', 'High']].map(([k, n]) => `<option value="${k}" ${(S.gfx || 'high') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label>Mouse cursor <select data-k="cursor"><option value="themed" ${S.cursor !== 'system' ? 'selected' : ''}>Breachpoint</option><option value="system" ${S.cursor === 'system' ? 'selected' : ''}>System</option></select></label>`;
     HUD.applyCrosshair($('xhPrev'));
     $('setForm').querySelectorAll('[data-k]').forEach(el => el.oninput = () => {
       const k = el.dataset.k; S[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
@@ -6097,6 +6100,15 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.2', date: 'Sep 2026', title: 'Pilots, armour, gore and a new look', items: [
+    ['New', 'Bots fly attack helicopters: they take off, patrol over the objective, and circle enemies firing the minigun in bursts and rockets at vehicles. Every soldier shoots back at helicopters.'],
+    ['New', 'Body armour in every mode, worn on the model: Support heavy (100), Assault medium (75), Engineer light (50), Recon barely any (25, no helmet). Sandbox players and soldier NPCs get 50 and a helmet. Armour bar under your health.'],
+    ['New', 'Vehicle armour zones: tanks and APCs take 0.6x damage from the front, 1.7x from the rear and 1.5x from above.'],
+    ['New', 'Dismemberment: explosions tear off limbs, and close-range shotgun blasts, sniper shots and heavy headshots can take a head or a limb. Parts fly with a blood trail and the stumps bleed. Settings → Dismemberment.'],
+    ['New', 'Physics-driven motion: soldiers flinch away from hits and stagger from nearby blasts, lean into acceleration and turns, and helmets fly off when they are shot off. Vehicles pitch and roll on their suspension, and boats bob.'],
+    ['New', 'Graphics: new high-resolution textures with surface relief, physically based materials, sun shadows, a gradient sky with a sun, sky reflections, filmic tone mapping, bloom and a vignette. Grass, rocks and rubble are scattered across the maps. Settings → Graphics (Low / Medium / High).'],
+    ['Change', 'The interface is 66% of its old size. Settings → UI scale changes it.'],
+  ] },
   { v: '2.1', date: 'Sep 2026', title: 'Water everywhere', items: [
     ['New', 'Every map has water. Dustyard: a flooded canal through Lower with a dry plank walkway, and a fountain pool in CT spawn. Ridgeline: a river across the valley with three bridges, and a lake around an island. Flatgrass: a deep lake with an island lighthouse, a dock and a footbridge.'],
     ['New', 'A sixth Conquest flag on Ridgeline: F, the Island. Take it over the footbridge, from the dock, by boat, or swim. Each side gets a speedboat on the river.'],
@@ -7976,6 +7988,689 @@ Game.update = function (dt) {
 };
 const _gstop23 = Game.stop.bind(Game);
 Game.stop = function () { if (UW.el) UW.el.classList.remove('on'); UW.on = false; UW.save = null; return _gstop23(); };
+
+/* ── 24_heli_armour.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Helicopter pilots and armour.
+   · Bots fly attack helicopters: a free one is handed to a nearby bot, who
+     takes off, cruises to the objective, and when it finds enemies circles
+     them, nose on, firing the minigun and rockets. Everyone shoots back.
+   · Body armour in every mode: a plate carrier and helmet per class, worn
+     on the model (and gone when it's shot off), with an armour bar.
+   · Vehicle armour zones: tanks and APCs are tough from the front, weaker
+     from the sides, and weakest from the rear and from above.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── helicopter pilots ─────────────────────────────────────────────────── */
+const HeliAI = {
+  t: 0,
+  update(dt) {
+    if (!Game.authority() || !Game.running) return;
+    this.t -= dt; if (this.t > 0) return; this.t = 2;
+    const sbx = Game.mode.id === 'sandbox'; if (!Game.mode.vehicles && !sbx) return;
+    for (const v of Game.vehicles) {
+      if (v.K.type !== 'heli' || !v.K.guns || !v.alive || v.driver || v.held || v.frozen) continue;
+      if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle) {
+        if (Game.now - (v.crewT || 0) < 25) continue;
+        v.crew.brain.crew = null; v.crew = null;   // taking too long to get there: someone else
+      }
+      let best = null, bd = sbx ? 45 : 110;
+      for (const s of Game.soldiers) {
+        if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.heldBy) continue;
+        if (sbx ? !(s.team === 'T' || s.team === 'CT') : (s.team !== v.team || s.cls === 'engineer')) continue;
+        const d = dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z); if (d < bd) { bd = d; best = s; }
+      }
+      if (best) { best.brain.crew = v; v.crew = best; v.crewT = Game.now; if (!sbx && Game.cmd[best.team]) Game.cmd[best.team].say(best, 'Taking the chopper up!', 4); }
+    }
+  },
+};
+const _aiUpdate24 = AI.update.bind(AI);
+AI.update = function (dt) { _aiUpdate24(dt); HeliAI.update(dt); };
+const _brainUpdate24 = Brain.prototype.update;
+Brain.prototype.update = function (dt) {
+  const s = this.s;
+  if (s.alive && s.vehicle && s.vehicle.driver === s && s.vehicle.K.type === 'heli') return this.driveHeli(dt);
+  return _brainUpdate24.call(this, dt);
+};
+const _brainReset24 = Brain.prototype.reset;
+Brain.prototype.reset = function () { _brainReset24.call(this); this.heli = null; };
+/* height of whatever is under (x, z) */
+function groundUnder(x, z, fromY) { const t = World.raycast(x, fromY, z, 0, -1, 0, fromY + 5); return t >= 0 ? fromY - t : 0; }
+Brain.prototype.driveHeli = function (dt) {
+  const s = this.s, v = s.vehicle, now = Game.now, H = this.heli || (this.heli = { orbit: rand(0, TAU), dir: chance(0.5) ? 1 : -1, senseT: 0, errT: 0, ex: 0, ey: 0, rkT: 0, home: v.pos.clone() });
+  s.pos.set(v.pos.x, v.pos.y, v.pos.z); s.vel.set(0, 0, 0); s.moveIn.f = s.moveIn.s = 0;
+  if (!v.alive) return;
+  if (v.hp < v.maxHp * 0.15 && v.pos.y < 3) { Game.exitVehicle(s); return; }
+  // find something to shoot: soldiers and vehicles we can see from the cockpit
+  H.senseT -= dt;
+  if (H.senseT <= 0) {
+    H.senseT = 0.4; const e0 = new V3(v.pos.x, v.pos.y + 1.2, v.pos.z); let best = null, bd = 170;
+    for (const e of Game.soldiers) {
+      if (!e.alive || !Game.hostile(s, e)) continue;
+      const p = e.vehicle ? e.vehicle.pos : e.pos, d = Math.hypot(p.x - v.pos.x, p.z - v.pos.z); if (d > bd) continue;
+      if (!World.los(e0.x, e0.y, e0.z, p.x, p.y + 1.1, p.z)) continue;
+      best = e; bd = d * (e.vehicle ? 0.7 : 1);
+    }
+    H.tgt = best;
+  }
+  const tgt = H.tgt && H.tgt.alive ? H.tgt : null, tp = tgt ? (tgt.vehicle ? tgt.vehicle.pos : tgt.pos) : null;
+  // where to be: circling the target, or cruising to the objective
+  let P, alt, face;
+  if (tgt) {
+    H.orbit += H.dir * dt * 0.28; const R = tgt.vehicle ? 60 : 48;
+    P = { x: tp.x + Math.cos(H.orbit) * R, z: tp.z + Math.sin(H.orbit) * R }; alt = 24; face = Math.atan2(-(tp.x - v.pos.x), -(tp.z - v.pos.z));
+  } else {
+    let f = null;
+    if (Game.mode.id === 'conquest') { const q = this.order && this.order.flag; f = q || World.flags.filter(x => x.owner !== s.team).sort((a, b) => dist2(a.x, a.z, v.pos.x, v.pos.z) - dist2(b.x, b.z, v.pos.x, v.pos.z))[0] || null; }
+    else { const cmd = Game.cmd[s.team], it = cmd && [...cmd.intel.values()].filter(i => now - i.t < 20).sort((a, b) => b.t - a.t)[0]; if (it) f = it.pos; }
+    const T = f || H.home; H.orbit += H.dir * dt * 0.15;
+    P = { x: T.x + Math.cos(H.orbit) * 35, z: T.z + Math.sin(H.orbit) * 35 }; alt = 32; face = Math.atan2(-(P.x - v.pos.x), -(P.z - v.pos.z));
+  }
+  const B = World.bounds; P.x = clamp(P.x, B.x0 + 12, B.x1 - 12); P.z = clamp(P.z, B.z0 + 12, B.z1 - 12);
+  // stay clear of the ground and of anything ahead
+  const fwdX = -Math.sin(v.yaw), fwdZ = -Math.cos(v.yaw), ahead = World.raycast(v.pos.x, v.pos.y + 1, v.pos.z, fwdX, 0, fwdZ, 30);
+  const floor = Math.max(groundUnder(v.pos.x, v.pos.z, v.pos.y + 1), groundUnder(v.pos.x + fwdX * 20, v.pos.z + fwdZ * 20, 80));
+  let wantY = floor + alt; if (ahead >= 0) wantY = Math.max(wantY, v.pos.y + 8);
+  const dx = P.x - v.pos.x, dz = P.z - v.pos.z, dist = Math.hypot(dx, dz), k = Math.min(1, dist / 18);
+  const mx = dist > 0.1 ? dx / dist * k : 0, mz = dist > 0.1 ? dz / dist * k : 0;
+  const rise = v.pos.y < 2.5 && v.rotorK < 0.95;   // spin up before moving off the pad
+  v.inp = { f: rise ? 0 : mx * fwdX + mz * fwdZ, s: rise ? 0 : mx * Math.cos(v.yaw) - mz * Math.sin(v.yaw), up: v.pos.y < wantY - 1 ? 1 : 0, down: v.pos.y > wantY + 2 ? 1 : 0 };
+  if (ahead >= 0 && ahead < 14) v.inp.f = Math.min(v.inp.f, 0);
+  s.yaw = angWrap(face);
+  // guns: nose on, a little wobble by skill
+  if (tgt) {
+    const m = new V3(v.pos.x, v.pos.y + 0.8, v.pos.z), hd = Math.hypot(tp.x - m.x, tp.z - m.z);
+    H.errT -= dt; if (H.errT <= 0) { H.errT = 0.8; const e = this.d.err * 0.012 + (tgt.vehicle ? 0 : 0.02); H.ex = rand(-e, e); H.ey = rand(-e, e); }
+    s.yaw = angWrap(face + H.ex); s.pitch = Math.atan2(tp.y + 1 - m.y, hd) + H.ey;
+    const aligned = Math.abs(angDiff(v.yaw, face)) < 0.1;
+    H.burst = (H.burst || 0) + dt; const on = H.burst % 3 < 1.4;   // fire in bursts
+    if (aligned && on && hd < 150 && !rise) v.shoot(s, 'lmb');
+    H.rkT -= dt; if (aligned && hd < 110 && H.rkT <= 0 && (tgt.vehicle || hd < 70)) { if (v.shoot(s, 'rmb')) H.rkT = tgt.vehicle ? 0.4 : 3.5; }
+  } else s.pitch = 0;
+};
+
+/* ── body armour for everyone ──────────────────────────────────────────── */
+for (const m of ['conquest', 'tdm', 'sandbox']) if (MODES[m]) MODES[m].armor = true;
+const CLASS_ARMOUR = { assault: [75, true], engineer: [50, true], support: [100, true], recon: [25, false] };
+const _giveClass24 = Game.giveClass.bind(Game);
+Game.giveClass = function (s) { _giveClass24(s); const a = CLASS_ARMOUR[s.cls] || [50, true]; s.armor = a[0]; s.helmet = a[1]; };
+const _sbxLoadout24 = Sandbox.loadout.bind(Sandbox);
+Sandbox.loadout = function (s) { _sbxLoadout24(s); s.armor = 50; s.helmet = true; };
+const _sbxApply24 = Sandbox.apply.bind(Sandbox);
+Sandbox.apply = function (ev) { const r = _sbxApply24(ev); if (ev.e === 'npc') { const s = Game.byId(ev.id); if (s && (ev.k === 'aegis' || ev.k === 'vanta')) { s.armor = 50; s.helmet = true; } } return r; };
+Object.assign(CLASSES.assault, { desc: CLASSES.assault.desc + ' Medium armour.' }); Object.assign(CLASSES.engineer, { desc: CLASSES.engineer.desc + ' Light armour.' });
+Object.assign(CLASSES.support, { desc: CLASSES.support.desc + ' Heavy armour.' }); Object.assign(CLASSES.recon, { desc: CLASSES.recon.desc + ' Barely any armour, no helmet.' });
+/* worn on the model */
+const _sync24 = Soldier.prototype.syncModel;
+Soldier.prototype.syncModel = function (dt, localTeam, viewer) {
+  const u = this.model && this.model.userData;
+  if (u && u.vest) { const armoured = Game.mode && Game.mode.armor && !this.npc || this.armor > 0; u.vest.visible = armoured && this.armor > 0; u.helmet.visible = !!this.helmet || !(Game.mode && Game.mode.armor); }
+  return _sync24.call(this, dt, localTeam, viewer);
+};
+/* armour bar */
+const _hudUpdate24 = HUD.update.bind(HUD);
+HUD.update = function (dt) {
+  _hudUpdate24(dt);
+  const L = Game.local; if (!L || !Game.running) return;
+  let bar = document.getElementById('armorbar');
+  if (!bar) { const hw = this.el.hpbar && this.el.hpbar.parentElement; if (!hw) return; const w = document.createElement('div'); w.className = 'hpwrap armwrap'; bar = document.createElement('div'); bar.id = 'armorbar'; w.appendChild(bar); hw.after(w); }
+  bar.parentElement.style.display = Game.mode.armor ? '' : 'none'; bar.style.width = clamp(L.armor, 0, 100) + '%';
+  if (Game.mode.armor && Game.mode.classes) this.el.armor.textContent = `${CLASSES[L.cls].name} · 🛡 ${Math.ceil(L.armor)}${L.helmet ? ' +H' : ''}` + (L.medkits ? ` · ✚${L.medkits}` : '') + (L.ammoBoxes ? ` · ▣${L.ammoBoxes}` : '');
+};
+
+/* ── vehicle armour zones ──────────────────────────────────────────────── */
+let _blastAt = null;
+const _explosion24 = Game.explosion.bind(Game);
+Game.explosion = function (p, dmg, radius, owner, weapon) { _blastAt = p; try { return _explosion24(p, dmg, radius, owner, weapon); } finally { _blastAt = null; } };
+function armourZone(v, from) {
+  if (!v.K.turret || !from) return { k: 1, z: '' };
+  const dx = from.x - v.pos.x, dy = from.y - (v.pos.y + 1.2), dz = from.z - v.pos.z, l = Math.hypot(dx, dy, dz) || 1;
+  if (dy / l > 0.6) return { k: 1.5, z: 'top' };
+  const f = (dx * -Math.sin(v.yaw) + dz * -Math.cos(v.yaw)) / (Math.hypot(dx, dz) || 1);   // +1 in front, -1 behind
+  return f > 0.5 ? { k: 0.6, z: 'front' } : f < -0.5 ? { k: 1.7, z: 'rear' } : { k: 1, z: 'side' };
+}
+const _vdamage24 = Vehicle.prototype.damage;
+Vehicle.prototype.damage = function (d, by) {
+  const from = _blastAt || (by && by.pos ? new V3(by.pos.x, (by.eyeY != null ? by.eyeY : by.pos.y + 1.6), by.pos.z) : null), Z = armourZone(this, from);
+  if (Z.k > 1.2 && by && by.ctrl === 'local' && this.alive) HUD.center(Z.z === 'rear' ? 'Rear armour hit!' : 'Top armour hit!', 0.6);
+  return _vdamage24.call(this, d * Z.k, by);
+};
+
+/* ── 25_graphics.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Graphics overhaul.
+   · Surfaces: 256px procedural textures built from tiling fractal noise,
+     each with a normal map, on physically based materials. Boxes get baked
+     contact shading where they meet the ground.
+   · Light: a sun that casts soft shadows around the camera, sky lighting from
+     a gradient sky dome with a sun disc, and filmic tone mapping.
+   · Post: HDR render, bloom on bright things (sun, muzzle flashes,
+     explosions, lamps), a light colour grade and a vignette.
+   · Detail: grass tufts, rocks and rubble scattered where nothing stands.
+   · Settings → Graphics: Low (the old look) / Medium / High.
+   ═══════════════════════════════════════════════════════════════════════════ */
+if (Settings.gfx == null) Settings.gfx = 'high';
+const GFX_Q = { low: { shadow: 0, post: false, props: 0, msaa: 0 }, medium: { shadow: 1024, post: true, props: 0.5, msaa: 0 }, high: { shadow: 2048, post: true, props: 1, msaa: 4 } };
+const gq = () => GFX_Q[Settings.gfx] || GFX_Q.high;
+
+/* ── tiling noise ──────────────────────────────────────────────────────── */
+function tileNoise(S, r, periods, amps) {
+  const out = new Float32Array(S * S); let norm = 0;
+  periods.forEach((P, o) => {
+    const g = new Float32Array(P * P); for (let i = 0; i < g.length; i++) g[i] = r();
+    const a = amps[o]; norm += a;
+    for (let y = 0; y < S; y++) {
+      const fy = y / S * P, y0 = Math.floor(fy), ty = fy - y0, sy = ty * ty * (3 - 2 * ty), y1 = (y0 + 1) % P;
+      for (let x = 0; x < S; x++) {
+        const fx = x / S * P, x0 = Math.floor(fx), tx = fx - x0, sx = tx * tx * (3 - 2 * tx), x1 = (x0 + 1) % P;
+        const v = lerp(lerp(g[y0 * P + x0], g[y0 * P + x1], sx), lerp(g[y1 * P + x0], g[y1 * P + x1], sx), sy);
+        out[y * S + x] += v * a;
+      }
+    }
+  });
+  for (let i = 0; i < out.length; i++) out[i] /= norm;
+  return out;
+}
+/* draw something that may cross the tile edge on every side it touches */
+function wrapped(S, x, y, rad, fn) { for (const dx of [0, -S, S]) for (const dy of [0, -S, S]) { if ((dx && (dx < 0 ? x < S - rad : x > rad)) || (dy && (dy < 0 ? y < S - rad : y > rad))) continue; fn(x + dx, y + dy); } }
+
+/* A surface: colour canvas painted by `paint`, modulated by fractal noise, and a
+   normal map from a height field (the painted luminance, optionally inverted,
+   plus the noise). */
+function makeSurface2(name, o) {
+  const S = 256, r = mulberry(hashStr(name + '#2'));
+  const cv = document.createElement('canvas'); cv.width = cv.height = S; const c = cv.getContext('2d');
+  c.fillStyle = o.base; c.fillRect(0, 0, S, S);
+  const hc = document.createElement('canvas'); hc.width = hc.height = S; const h = hc.getContext('2d');
+  h.fillStyle = '#808080'; h.fillRect(0, 0, S, S);
+  if (o.paint) o.paint(c, S, r, h);
+  const n = tileNoise(S, r, [4, 8, 16, 32, 64, 128], [1, 0.8, 0.55, 0.4, 0.3, 0.2]);
+  const img = c.getImageData(0, 0, S, S), d = img.data, hd = h.getImageData(0, 0, S, S).data, H = new Float32Array(S * S);
+  const amp = o.noise != null ? o.noise : 0.3, tint = o.tint;
+  for (let i = 0; i < S * S; i++) {
+    const k = 1 + (n[i] - 0.5) * 2 * amp; let R = d[i * 4] * k, G = d[i * 4 + 1] * k, B = d[i * 4 + 2] * k;
+    if (tint) { const m = Math.max(0, n[i] - 0.55) * tint[3]; R = lerp(R, tint[0], m); G = lerp(G, tint[1], m); B = lerp(B, tint[2], m); }
+    d[i * 4] = clamp(R, 0, 255); d[i * 4 + 1] = clamp(G, 0, 255); d[i * 4 + 2] = clamp(B, 0, 255);
+    H[i] = hd[i * 4] / 255 * (o.hk != null ? o.hk : 1) + n[i] * (o.nk != null ? o.nk : 0.5);
+  }
+  c.putImageData(img, 0, 0);
+  const nc = document.createElement('canvas'); nc.width = nc.height = S; const nctx = nc.getContext('2d'), ni = nctx.createImageData(S, S), nd = ni.data, st = o.bump != null ? o.bump : 4;
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const L = H[y * S + (x - 1 + S) % S], R = H[y * S + (x + 1) % S], U = H[((y - 1 + S) % S) * S + x], D = H[((y + 1) % S) * S + x];
+    let nx = (L - R) * st, ny = (D - U) * st, nz = 1; const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    const i = (y * S + x) * 4; nd[i] = (nx * 0.5 + 0.5) * 255; nd[i + 1] = (ny * 0.5 + 0.5) * 255; nd[i + 2] = (nz * 0.5 + 0.5) * 255; nd[i + 3] = 255;
+  }
+  nctx.putImageData(ni, 0, 0);
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  const tn = new THREE.CanvasTexture(nc); tn.wrapS = tn.wrapT = THREE.RepeatWrapping; tn.anisotropy = 8;
+  Tex[name] = t; Tex[name + '_n'] = tn; SURF[name] = { rough: o.rough != null ? o.rough : 0.9, metal: o.metal || 0, ns: o.ns || 1 };
+  return t;
+}
+const SURF = {};
+const rgba = (a, rgb = '0,0,0') => `rgba(${rgb},${a})`;
+function dots(c, S, r, n, cols, s0, s1, h, hv) {
+  for (let i = 0; i < n; i++) { const x = r() * S, y = r() * S, s = s0 + r() * (s1 - s0); c.fillStyle = cols[Math.floor(r() * cols.length)]; c.globalAlpha = 0.25 + r() * 0.5;
+    wrapped(S, x, y, s, (X, Y) => { c.beginPath(); c.ellipse(X, Y, s, s * (0.6 + r() * 0.4), r() * 3, 0, TAU); c.fill(); if (h) { h.fillStyle = hv; h.beginPath(); h.ellipse(X, Y, s, s * 0.8, 0, 0, TAU); h.fill(); } }); }
+  c.globalAlpha = 1;
+}
+function cracks(c, S, r, n, col, h) {
+  c.strokeStyle = col; if (h) h.strokeStyle = '#303030';
+  for (let i = 0; i < n; i++) { let x = r() * S, y = r() * S, a = r() * TAU; const len = 10 + r() * 40, pts = [[x, y]];
+    for (let k = 0; k < len / 4; k++) { a += (r() - 0.5) * 1.2; x += Math.cos(a) * 4; y += Math.sin(a) * 4; pts.push([x, y]); }
+    for (const ctx of h ? [c, h] : [c]) { ctx.lineWidth = 0.6 + r() * 0.8; wrapped(S, pts[0][0], pts[0][1], len, (X, Y) => { const ox = X - pts[0][0], oy = Y - pts[0][1]; ctx.beginPath(); pts.forEach(([px, py], j) => j ? ctx.lineTo(px + ox, py + oy) : ctx.moveTo(px + ox, py + oy)); ctx.stroke(); }); } }
+}
+
+const _initSurfaces0 = initSurfaces;
+initSurfaces = function () {
+  if (Tex.sand) return;
+  _initSurfaces0();   // older materials and props keep working with the low-res set until replaced below
+  makeSurface2('sand', { base: '#c8ab78', noise: 0.18, bump: 3, paint(c, S, r, h) {
+    for (let y = 0; y < S; y += 2) { const w = Math.sin(y / S * TAU * 6 + Math.sin(y / S * TAU) * 2); c.fillStyle = w > 0 ? rgba(0.05 * w, '255,240,210') : rgba(-0.06 * w); c.fillRect(0, y, S, 2); h.fillStyle = `rgb(${128 + w * 30 | 0},0,0)`; h.fillRect(0, y, S, 2); }
+    dots(c, S, r, 2600, ['#b39462', '#dcc49a', '#a2865a', '#e8d6b0'], 0.4, 1.1); dots(c, S, r, 40, ['#8a7a64', '#a09080'], 1, 2.2, h, '#c0c0c0'); } });
+  makeSurface2('plaster', { base: '#d4c09a', noise: 0.22, bump: 3, tint: [150, 125, 95, 0.9], paint(c, S, r, h) {
+    dots(c, S, r, 900, ['#c4ae84', '#e4d4b2', '#bfa77c'], 0.8, 3); for (let i = 0; i < 14; i++) { c.fillStyle = rgba(0.06 + r() * 0.06, '120,100,70'); const x = r() * S, y = r() * S, s = 8 + r() * 30; wrapped(S, x, y, s, (X, Y) => { c.beginPath(); c.ellipse(X, Y, s, s * 0.6, r() * 3, 0, TAU); c.fill(); }); }
+    cracks(c, S, r, 6, rgba(0.35, '70,55,40'), h); c.fillStyle = rgba(0.18, '90,70,40'); c.fillRect(0, S - 2, S, 2); h.fillStyle = '#505050'; h.fillRect(0, S - 2, S, 2); } });
+  makeSurface2('brick', { base: '#b3aa98', noise: 0.18, bump: 6, hk: 1, paint(c, S, r, h) {
+    const rows = 12, bh = S / rows, bw = S / 4;
+    h.fillStyle = '#404040'; h.fillRect(0, 0, S, S);
+    for (let row = 0; row < rows; row++) for (let k = -1; k < 4; k++) {
+      const x = k * bw + (row % 2) * bw / 2, y = row * bh, v = r(); const R = 150 + v * 40 | 0, G = 88 + v * 30 | 0, B = 58 + v * 20 | 0;
+      c.fillStyle = `rgb(${R},${G},${B})`; c.fillRect(x + 1.5, y + 1.5, bw - 3, bh - 3); h.fillStyle = '#b0b0b0'; h.fillRect(x + 1.5, y + 1.5, bw - 3, bh - 3);
+      c.fillStyle = rgba(0.18, '255,230,200'); c.fillRect(x + 1.5, y + 1.5, bw - 3, 1.5); c.fillStyle = rgba(0.22); c.fillRect(x + 1.5, y + bh - 3, bw - 3, 1.5);
+      if (x + bw > S) { c.fillStyle = `rgb(${R},${G},${B})`; c.fillRect(x - S + 1.5, y + 1.5, bw - 3, bh - 3); h.fillStyle = '#b0b0b0'; h.fillRect(x - S + 1.5, y + 1.5, bw - 3, bh - 3); }
+    }
+    dots(c, S, r, 700, ['#7a4a30', '#c08a64', '#5a3a2a'], 0.4, 1.4); } });
+  makeSurface2('concrete', { base: '#8f8c85', noise: 0.28, bump: 3, tint: [70, 68, 62, 0.8], paint(c, S, r, h) {
+    dots(c, S, r, 1600, ['#7c7972', '#a4a19a', '#6a6760'], 0.4, 1.4); dots(c, S, r, 60, ['#5a5752'], 0.8, 1.8, h, '#303030');
+    cracks(c, S, r, 4, rgba(0.4, '40,40,40'), h); c.strokeStyle = rgba(0.35, '40,40,40'); c.lineWidth = 2; c.strokeRect(1, 1, S - 2, S - 2); h.strokeStyle = '#303030'; h.lineWidth = 3; h.strokeRect(1, 1, S - 2, S - 2);
+    for (let i = 0; i < 5; i++) { const x = r() * S, g = c.createLinearGradient(0, 0, 0, S); g.addColorStop(0, rgba(0)); g.addColorStop(1, rgba(0.1, '50,45,40')); c.fillStyle = g; c.fillRect(x, 0, 4 + r() * 10, S); } } });
+  makeSurface2('crate', { base: '#8a6236', noise: 0.15, bump: 5, paint(c, S, r, h) {
+    const n = 6, ph = S / n; for (let i = 0; i < n; i++) { const v = r(); c.fillStyle = `rgb(${128 + v * 25 | 0},${90 + v * 18 | 0},${50 + v * 12 | 0})`; c.fillRect(0, i * ph, S, ph);
+      for (let k = 0; k < 18; k++) { c.strokeStyle = rgba(0.12 + r() * 0.12, '60,35,15'); c.lineWidth = 0.6 + r(); const y = i * ph + r() * ph; c.beginPath(); c.moveTo(0, y); for (let x = 0; x <= S; x += 16) c.lineTo(x, y + Math.sin(x / 30 + k) * 1.5); c.stroke(); }
+      c.fillStyle = rgba(0.55, '40,25,10'); c.fillRect(0, i * ph, S, 2); h.fillStyle = '#303030'; h.fillRect(0, i * ph, S, 2); }
+    c.strokeStyle = '#5c3c1e'; c.lineWidth = 22; c.strokeRect(11, 11, S - 22, S - 22); h.strokeStyle = '#d0d0d0'; h.lineWidth = 22; h.strokeRect(11, 11, S - 22, S - 22);
+    c.lineWidth = 18; c.beginPath(); c.moveTo(22, 22); c.lineTo(S - 22, S - 22); c.stroke(); h.lineWidth = 18; h.beginPath(); h.moveTo(22, 22); h.lineTo(S - 22, S - 22); h.stroke();
+    c.strokeStyle = rgba(0.4, '30,18,8'); c.lineWidth = 1.5; c.strokeRect(22, 22, S - 44, S - 44); c.strokeRect(1, 1, S - 2, S - 2);
+    for (const [x, y] of [[11, 11], [S - 11, 11], [11, S - 11], [S - 11, S - 11], [S / 2, 11], [S / 2, S - 11], [11, S / 2], [S - 11, S / 2]]) { c.fillStyle = '#2a2a2a'; c.beginPath(); c.arc(x, y, 2.5, 0, TAU); c.fill(); c.fillStyle = '#8a8a8a'; c.beginPath(); c.arc(x - 0.6, y - 0.6, 1, 0, TAU); c.fill(); } } });
+  makeSurface2('metal', { base: '#5d6468', noise: 0.22, bump: 4, rough: 0.55, metal: 0.55, tint: [120, 70, 40, 1.6], paint(c, S, r, h) {
+    const n = 16, w = S / n; for (let i = 0; i < n; i++) { const g = c.createLinearGradient(i * w, 0, i * w + w, 0); g.addColorStop(0, '#4a5054'); g.addColorStop(0.5, '#7a8286'); g.addColorStop(1, '#4a5054'); c.fillStyle = g; c.fillRect(i * w, 0, w, S);
+      const hg = h.createLinearGradient(i * w, 0, i * w + w, 0); hg.addColorStop(0, '#404040'); hg.addColorStop(0.5, '#c0c0c0'); hg.addColorStop(1, '#404040'); h.fillStyle = hg; h.fillRect(i * w, 0, w, S); }
+    for (let i = 0; i < 10; i++) { const x = r() * S, y = r() * S; const g = c.createLinearGradient(0, y, 0, y + 60); g.addColorStop(0, rgba(0.4, '130,70,35')); g.addColorStop(1, rgba(0, '130,70,35')); c.fillStyle = g; c.fillRect(x, y, 2 + r() * 5, 60); }
+    dots(c, S, r, 120, ['#8a5030', '#6a3a20', '#9a6040'], 1, 4); } });
+  makeSurface2('grass', { base: '#56763a', noise: 0.35, bump: 2.5, tint: [110, 100, 60, 0.8], paint(c, S, r) {
+    const cols = ['#4a6a2e', '#6a8c44', '#3c5a26', '#7c9c52', '#5e7e3a', '#86a45a'];
+    for (let i = 0; i < 5200; i++) { const x = r() * S, y = r() * S, l = 2 + r() * 4, a = -Math.PI / 2 + (r() - 0.5) * 1.2; c.strokeStyle = cols[Math.floor(r() * cols.length)]; c.globalAlpha = 0.4 + r() * 0.5; c.lineWidth = 0.6 + r() * 0.8;
+      wrapped(S, x, y, l, (X, Y) => { c.beginPath(); c.moveTo(X, Y); c.lineTo(X + Math.cos(a) * l, Y + Math.sin(a) * l); c.stroke(); }); }
+    c.globalAlpha = 1; dots(c, S, r, 30, ['#7a6a48', '#6a5a3a'], 1.5, 4); } });
+  makeSurface2('dirt', { base: '#76603f', noise: 0.3, bump: 4, paint(c, S, r, h) {
+    dots(c, S, r, 1600, ['#6a5438', '#8a7456', '#5a4630', '#9a8464'], 0.4, 1.4);
+    for (let i = 0; i < 140; i++) { const x = r() * S, y = r() * S, s = 1 + r() * 3.5, v = 110 + r() * 60 | 0;
+      wrapped(S, x, y, s + 2, (X, Y) => { c.fillStyle = rgba(0.35); c.beginPath(); c.ellipse(X + 1, Y + 1.2, s, s * 0.75, 0, 0, TAU); c.fill(); c.fillStyle = `rgb(${v},${v - 12},${v - 28})`; c.beginPath(); c.ellipse(X, Y, s, s * 0.75, 0, 0, TAU); c.fill();
+        h.fillStyle = '#e0e0e0'; h.beginPath(); h.ellipse(X, Y, s, s * 0.75, 0, 0, TAU); h.fill(); }); } } });
+  makeSurface2('rock', { base: '#7b7872', noise: 0.5, bump: 6, nk: 1.2, tint: [95, 100, 70, 0.7], paint(c, S, r, h) {
+    dots(c, S, r, 900, ['#6a6760', '#96938b', '#5a5750', '#a8a49a'], 1, 4); cracks(c, S, r, 14, rgba(0.5, '30,30,30'), h);
+    for (let i = 0; i < 30; i++) { const y = r() * S; c.fillStyle = rgba(0.05 + r() * 0.05, r() < 0.5 ? '255,255,255' : '0,0,0'); c.fillRect(0, y, S, 2 + r() * 6); } } });
+  makeSurface2('wood', { base: '#7a5a3a', noise: 0.15, bump: 4, paint(c, S, r, h) {
+    const n = 8, ph = S / n; for (let i = 0; i < n; i++) { const v = r(); c.fillStyle = `rgb(${110 + v * 30 | 0},${80 + v * 22 | 0},${50 + v * 15 | 0})`; c.fillRect(0, i * ph, S, ph);
+      for (let k = 0; k < 14; k++) { c.strokeStyle = rgba(0.1 + r() * 0.15, '50,30,12'); c.lineWidth = 0.5 + r(); const y = i * ph + r() * ph, f = 20 + r() * 40, a = 0.5 + r() * 1.5; c.beginPath(); c.moveTo(0, y); for (let x = 0; x <= S; x += 8) c.lineTo(x, y + Math.sin(x / f * TAU / 4 + k) * a); c.stroke(); }
+      if (r() < 0.5) { const kx = r() * S, ky = i * ph + ph / 2; c.fillStyle = rgba(0.45, '50,30,12'); c.beginPath(); c.ellipse(kx, ky, 4, 2.5, 0, 0, TAU); c.fill(); }
+      c.fillStyle = rgba(0.6, '30,18,8'); c.fillRect(0, i * ph, S, 1.5); h.fillStyle = '#202020'; h.fillRect(0, i * ph, S, 1.5); } } });
+  makeSurface2('sandbag', { base: '#8a7a52', noise: 0.2, bump: 7, paint(c, S, r, h) {
+    const rows = 6, bh = S / rows, bw = S / 3;
+    for (let row = 0; row < rows; row++) for (let k = -1; k < 3; k++) { const x = k * bw + (row % 2) * bw / 2, y = row * bh, v = r();
+      for (const X of [x, x + S]) { if (X > S || X + bw < 0) continue;
+        const g = c.createLinearGradient(0, y, 0, y + bh); g.addColorStop(0, `rgb(${170 + v * 20 | 0},${155 + v * 18 | 0},${112 + v * 14 | 0})`); g.addColorStop(1, `rgb(${120 + v * 20 | 0},${108 + v * 16 | 0},${76 + v * 10 | 0})`);
+        c.fillStyle = g; c.beginPath(); c.roundRect(X + 1, y + 1, bw - 2, bh - 2, bh * 0.4); c.fill();
+        const hg = h.createLinearGradient(0, y, 0, y + bh); hg.addColorStop(0, '#909090'); hg.addColorStop(0.4, '#e0e0e0'); hg.addColorStop(1, '#707070'); h.fillStyle = hg; h.beginPath(); h.roundRect(X + 1, y + 1, bw - 2, bh - 2, bh * 0.4); h.fill(); } }
+    for (let y = 0; y < S; y += 3) { c.fillStyle = rgba(0.05); c.fillRect(0, y, S, 1); } } });
+  makeSurface2('roof', { base: '#6b3a2a', noise: 0.2, bump: 6, paint(c, S, r, h) {
+    const rows = 10, th = S / rows, tw = S / 8;
+    for (let row = 0; row < rows; row++) for (let k = -1; k < 8; k++) { const x = k * tw + (row % 2) * tw / 2, y = row * th, v = r();
+      for (const X of [x, x + S]) { if (X > S || X + tw < 0) continue;
+        const g = c.createLinearGradient(0, y, 0, y + th); g.addColorStop(0, `rgb(${120 + v * 30 | 0},${62 + v * 16 | 0},${44 + v * 10 | 0})`); g.addColorStop(1, `rgb(${80 + v * 20 | 0},${40 + v * 10 | 0},${30 + v * 6 | 0})`);
+        c.fillStyle = g; c.fillRect(X + 0.5, y, tw - 1, th - 1); const hg = h.createLinearGradient(0, y, 0, y + th); hg.addColorStop(0, '#606060'); hg.addColorStop(1, '#d0d0d0'); h.fillStyle = hg; h.fillRect(X + 0.5, y, tw - 1, th - 1); } } } });
+  for (const k in _matCache) delete _matCache[k];
+};
+
+/* ── materials ─────────────────────────────────────────────────────────── */
+const _matVC = {};
+mat = function (tex, color = '#ffffff', vc = false) {
+  const k = tex + color + (vc ? '|vc' : ''), C = vc ? _matVC : _matCache; if (C[k]) return C[k];
+  const s = SURF[tex] || { rough: 0.9, metal: 0, ns: 1 };
+  const m = new THREE.MeshStandardMaterial({ map: Tex[tex] || null, normalMap: Tex[tex + '_n'] || null, color, roughness: s.rough, metalness: s.metal, vertexColors: vc });
+  if (m.normalMap) m.normalScale.set(s.ns, s.ns);
+  return C[k] = m;
+};
+const _lamStd = {};
+lam = function (color) { return _lamStd[color] || (_lamStd[color] = new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.05 })); };
+/* contact shading baked into box vertices: darker toward the ground and underneath */
+const _worldAdd25 = World.add.bind(World);
+World.add = function (x0, y0, z0, x1, y1, z1, tex, color, opts) {
+  const b = _worldAdd25(x0, y0, z0, x1, y1, z1, tex, color, opts);
+  if (b.mesh && Tex[tex]) {
+    const g = b.mesh.geometry, P = g.attributes.position, N = g.attributes.normal, col = new Float32Array(P.count * 3), h = b.y1 - b.y0, base = b.y0 < 0.05;
+    for (let i = 0; i < P.count; i++) {
+      const yw = P.getY(i) + h / 2, ny = N.getY(i); let v = 1;
+      if (ny < -0.5) v = 0.55; else if (ny < 0.5 && base) v = 0.58 + 0.42 * Math.min(1, yw / Math.min(1.1, h * 0.6));
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); b.mesh.material = mat(tex, color || '#ffffff', true);
+  }
+  return b;
+};
+
+/* ── sky dome ──────────────────────────────────────────────────────────── */
+const SUN_DIR = new V3(40, 80, 25).normalize();
+function makeSky() {
+  const top = new THREE.Color(World.skyColor).multiplyScalar(0.62), hor = new THREE.Color(World.fog ? World.fog[0] : World.skyColor).lerp(new THREE.Color(0xffffff), 0.15);
+  top.offsetHSL(0, 0.12, 0);
+  const m = new THREE.ShaderMaterial({
+    uniforms: { top: { value: top }, hor: { value: hor }, gnd: { value: hor.clone().multiplyScalar(0.7) }, sun: { value: SUN_DIR.clone() }, sunCol: { value: new THREE.Color(World.sun || 0xfff4e0) } },
+    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position,1.0); gl_Position = p.xyww; }',
+    fragmentShader: `uniform vec3 top, hor, gnd, sun, sunCol; varying vec3 vD;
+      void main(){ vec3 d = normalize(vD); float y = d.y;
+        vec3 c = y > 0.0 ? mix(hor, top, pow(clamp(y, 0.0, 1.0), 0.55)) : mix(hor, gnd, clamp(-y * 6.0, 0.0, 1.0));
+        float s = max(dot(d, sun), 0.0); c += sunCol * (pow(s, 1200.0) * 40.0 + pow(s, 60.0) * 0.35 + pow(s, 6.0) * 0.08);
+        gl_FragColor = vec4(c, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    side: THREE.BackSide, depthWrite: false, depthTest: true,
+  });
+  const s = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), m); s.frustumCulled = false; s.renderOrder = -10; s.userData.noShadow = true; s.name = 'sky';
+  return s;
+}
+
+/* ── detail props: grass, rocks, rubble ────────────────────────────────── */
+let _grassTex = null;
+function grassTex() {
+  if (_grassTex) return _grassTex;
+  const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d'), r = mulberry(7);
+  for (let i = 0; i < 22; i++) { const bx = 6 + r() * 52, lean = (r() - 0.5) * 18, h = 30 + r() * 32, v = r(); x.strokeStyle = `rgb(${70 + v * 60 | 0},${110 + v * 50 | 0},${40 + v * 30 | 0})`; x.lineWidth = 1.5 + r() * 1.5;
+    x.beginPath(); x.moveTo(bx, 64); x.quadraticCurveTo(bx + lean * 0.3, 64 - h * 0.6, bx + lean, 64 - h); x.stroke(); }
+  _grassTex = new THREE.CanvasTexture(c); _grassTex.colorSpace = THREE.SRGBColorSpace; return _grassTex;
+}
+function blockedAt(x, z, m) {
+  for (const b of World.boxes) if (b.y0 < 2 && x > b.x0 - m && x < b.x1 + m && z > b.z0 - m && z < b.z1 + m) return true;
+  return typeof inWater === 'function' && !!inWater(x, z);
+}
+function detailProps(scene) {
+  const k = gq().props; if (!k) return;
+  const B = World.bounds, r = mulberry(hashStr(String(World.skyColor)) + 11), gt = World._groundTex || 'grass', lush = gt === 'grass';
+  const place = (n, m, fn) => { let made = 0; for (let t = 0; t < n * 4 && made < n; t++) { const x = lerp(B.x0 + 1, B.x1 - 1, r()), z = lerp(B.z0 + 1, B.z1 - 1, r()); if (blockedAt(x, z, m)) continue; fn(x, z, made++); } return made; };
+  const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), P = new V3(), Sc = new V3(), C = new THREE.Color();
+  // grass tufts: three crossed cards
+  const area = (B.x1 - B.x0) * (B.z1 - B.z0), nG = Math.round(Math.min(14000, area * (lush ? 0.3 : 0.04)) * k);
+  if (nG) {
+    const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [];
+    for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3, cx = Math.cos(a) * 0.3, cz = Math.sin(a) * 0.3, o = pos.length / 3;
+      pos.push(-cx, 0, -cz, cx, 0, cz, cx, 0.5, cz, -cx, 0.5, -cz); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(o, o + 1, o + 2, o, o + 2, o + 3); }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+    // normals point up so the cards light like the ground under them
+    const nn = g.attributes.normal; for (let i = 0; i < nn.count; i++) nn.setXYZ(i, 0, 1, 0);
+    const m = new THREE.MeshStandardMaterial({ map: grassTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.95, color: lush ? 0xffffff : 0xd8c088 });
+    const im = new THREE.InstancedMesh(g, m, nG); im.userData.noShadow = true; im.receiveShadow = true;
+    // clumps: grass grows in patches
+    const cl = []; for (let i = 0; i < 90; i++) cl.push([lerp(B.x0, B.x1, r()), lerp(B.z0, B.z1, r()), 4 + r() * 14]);
+    const made = place(nG, 0.35, (x, z, i) => {
+      const c0 = cl[Math.floor(r() * cl.length)], a = r() * TAU, d = Math.sqrt(r()) * c0[2]; if (lush && r() < 0.7) { x = c0[0] + Math.cos(a) * d; z = c0[1] + Math.sin(a) * d; if (blockedAt(x, z, 0.35) || x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) { x = lerp(B.x0 + 1, B.x1 - 1, r()); z = lerp(B.z0 + 1, B.z1 - 1, r()); if (blockedAt(x, z, 0.35)) return; } }
+      const s = 0.6 + r() * 0.9; Q.setFromEuler(E.set(0, r() * TAU, 0)); M4.compose(P.set(x, 0, z), Q, Sc.set(s, s * (0.7 + r() * 0.6), s)); im.setMatrixAt(i, M4);
+      im.setColorAt(i, C.setHSL(lush ? 0.22 + r() * 0.06 : 0.11 + r() * 0.03, lush ? 0.35 + r() * 0.2 : 0.3, 0.55 + r() * 0.25));
+    });
+    im.count = made; scene.add(im);
+  }
+  // rocks
+  const nR = Math.round((lush ? 160 : 110) * k);
+  if (nR) {
+    const g = new THREE.IcosahedronGeometry(0.5, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const f = 0.78 + (Math.abs(Math.sin(p.getX(i) * 91.7 + p.getY(i) * 47.3 + p.getZ(i) * 13.1) * 43758.5) % 1) * 0.35;   // same offset for shared corners, so no cracks
+      p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.7, p.getZ(i) * f); } g.computeVertexNormals();
+    const im = new THREE.InstancedMesh(g, mat('rock', lush ? '#b8b4aa' : '#d8c8a8'), nR);
+    im.count = place(nR, 0.6, (x, z, i) => { const s = 0.15 + Math.pow(r(), 3) * 1.1; Q.setFromEuler(E.set(r() * 0.4, r() * TAU, r() * 0.4)); M4.compose(P.set(x, s * 0.1, z), Q, Sc.set(s * (0.8 + r() * 0.5), s, s * (0.8 + r() * 0.5))); im.setMatrixAt(i, M4); });
+    scene.add(im);
+  }
+  // rubble at the foot of walls
+  const walls = World.boxes.filter(b => b.y0 < 0.05 && b.y1 > 1.8 && b.tex && b.tex !== 'crate'), nB = Math.round((lush ? 120 : 420) * k);
+  if (nB && walls.length) {
+    const g = new THREE.BoxGeometry(1, 1, 1), im = new THREE.InstancedMesh(g, mat('concrete', '#c8c0b0'), nB); let made = 0;
+    for (let t = 0; t < nB * 4 && made < nB; t++) {
+      const b = walls[Math.floor(r() * walls.length)], side = Math.floor(r() * 4), off = 0.15 + Math.pow(r(), 2) * 1.2;
+      const x = side < 2 ? lerp(b.x0, b.x1, r()) : side === 2 ? b.x0 - off : b.x1 + off, z = side >= 2 ? lerp(b.z0, b.z1, r()) : side === 0 ? b.z0 - off : b.z1 + off;
+      if (blockedAt(x, z, 0.05)) continue;
+      const s = 0.06 + Math.pow(r(), 2) * 0.3; Q.setFromEuler(E.set(r() * 3, r() * 3, r() * 3)); M4.compose(P.set(x, s * 0.3, z), Q, Sc.set(s * (0.6 + r()), s * (0.4 + r() * 0.6), s * (0.6 + r())));
+      im.setMatrixAt(made, M4); im.setColorAt(made, C.set(b.tex === 'brick' ? 0xb07a58 : b.tex === 'plaster' ? 0xd8c8a4 : 0xa8a49c)); made++;
+    }
+    im.count = made; scene.add(im);
+  }
+}
+const _groundPlane25 = groundPlane;
+groundPlane = function (tex, size, color, cx, cz) { if (!World._groundTex) World._groundTex = tex; const m = _groundPlane25(tex, size, color, cx, cz); m.receiveShadow = true; return m; };
+
+/* ── lighting, shadows and post ────────────────────────────────────────── */
+const Gfx = {
+  sun: null, hemi: null, sky: null, rt: null, bl: [], quad: null, oc: null, shT: 0, env: null,
+  setup(scene) {
+    const q = gq(); World._groundTex = World._groundTex || null;
+    scene.traverse(o => { if (o.isDirectionalLight && !this.sunOf(scene)) scene.userData.sun = o; if (o.isHemisphereLight) scene.userData.hemi = o; });
+    const sun = scene.userData.sun, hemi = scene.userData.hemi;
+    if (sun) { sun.intensity = 2.9; sun.castShadow = !!q.shadow; sun.shadow.mapSize.set(q.shadow || 512, q.shadow || 512); const S = q.shadow > 1024 ? 48 : 36, cam = sun.shadow.camera;
+      cam.left = -S; cam.right = S; cam.top = S; cam.bottom = -S; cam.near = 1; cam.far = 260; cam.updateProjectionMatrix(); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04; if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } scene.add(sun.target); }
+    if (hemi) hemi.intensity = 0.55;
+    const sky = makeSky(); scene.add(sky); scene.userData.sky = sky;
+    // image-based light from the sky, so metal and wet surfaces pick up the sky colour
+    try { const pm = new THREE.PMREMGenerator(Game.renderer), sc = new THREE.Scene(), s2 = makeSky(); s2.scale.setScalar(0.05); sc.add(s2); const e = pm.fromScene(sc, 0.03).texture; pm.dispose(); scene.environment = e; } catch (e) { /* no env light */ }
+    detailProps(scene); this.shT = 0;
+  },
+  sunOf(scene) { return scene.userData.sun; },
+  /* keep shadow flags current: solid things cast, everything receives */
+  flags(scene) {
+    scene.traverse(o => { if (!o.isMesh || o.userData.noShadow) return; const m = Array.isArray(o.material) ? o.material[0] : o.material; if (!m) return;
+      const solid = !m.transparent && !m.isMeshBasicMaterial && !m.isShaderMaterial && !m.isPointsMaterial; o.castShadow = solid && o.name !== 'sky'; o.receiveShadow = solid || !!m.alphaTest; });
+  },
+  follow(scene, cam) {
+    const sun = scene.userData.sun; if (!sun) return;
+    const S = sun.shadow.camera.right, texel = S * 2 / (sun.shadow.mapSize.x || 1024);
+    // centre the shadow box ahead of the camera and snap it to shadow texels so edges don't crawl
+    const f = cam.getWorldDirection(new V3()); const cx = cam.position.x + f.x * S * 0.5, cz = cam.position.z + f.z * S * 0.5;
+    const ux = Math.round(cx / texel) * texel, uz = Math.round(cz / texel) * texel;
+    sun.target.position.set(ux, 0, uz); sun.position.set(ux + SUN_DIR.x * 120, SUN_DIR.y * 120, uz + SUN_DIR.z * 120); sun.target.updateMatrixWorld();
+  },
+  targets() {
+    const r = Game.renderer, sz = r.getDrawingBufferSize(new THREE.Vector2()), q = gq(), w = sz.x, h = sz.y;
+    if (this.rt && this.rt.width === w && this.rt.height === h && this.rt.samples === q.msaa) return;
+    if (this.rt) { this.rt.dispose(); this.bl.forEach(t => t.dispose()); }
+    this.rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: q.msaa, depthBuffer: true });
+    const bw = Math.max(1, w >> 2), bh = Math.max(1, h >> 2); this.bl = [0, 1].map(() => new THREE.WebGLRenderTarget(bw, bh, { type: THREE.HalfFloatType, depthBuffer: false }));
+    if (!this.quad) {
+      this.oc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const vs = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+      this.mBright = new THREE.ShaderMaterial({ uniforms: { t: { value: null } }, vertexShader: vs, depthTest: false, depthWrite: false,
+        fragmentShader: 'uniform sampler2D t; varying vec2 vUv; void main(){ vec3 c = texture2D(t, vUv).rgb; float l = dot(c, vec3(0.2126,0.7152,0.0722)); gl_FragColor = vec4(c * smoothstep(0.9, 2.2, l), 1.0); }' });
+      this.mBlur = new THREE.ShaderMaterial({ uniforms: { t: { value: null }, dir: { value: new THREE.Vector2() } }, vertexShader: vs, depthTest: false, depthWrite: false,
+        fragmentShader: 'uniform sampler2D t; uniform vec2 dir; varying vec2 vUv; void main(){ vec3 c = texture2D(t, vUv).rgb * 0.227; c += (texture2D(t, vUv + dir * 1.385).rgb + texture2D(t, vUv - dir * 1.385).rgb) * 0.316; c += (texture2D(t, vUv + dir * 3.231).rgb + texture2D(t, vUv - dir * 3.231).rgb) * 0.070; gl_FragColor = vec4(c, 1.0); }' });
+      this.mComp = new THREE.ShaderMaterial({ uniforms: { t: { value: null }, b: { value: null }, uw: { value: 0 } }, vertexShader: vs, depthTest: false, depthWrite: false,
+        fragmentShader: `uniform sampler2D t, b; uniform float uw; varying vec2 vUv;
+          void main(){ vec3 c = texture2D(t, vUv).rgb + texture2D(b, vUv).rgb * 0.55;
+            float l = dot(c, vec3(0.2126,0.7152,0.0722)); c = mix(vec3(l), c, 1.08);          // a touch more colour
+            vec2 d = vUv - 0.5; c *= 1.0 - dot(d, d) * (0.55 + uw);                           // vignette
+            gl_FragColor = vec4(max(c, 0.0), 1.0);
+            #include <tonemapping_fragment>
+            #include <colorspace_fragment>
+          }` });
+      this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.mBright); this.quad.frustumCulled = false; this.qs = new THREE.Scene(); this.qs.add(this.quad);
+    }
+  },
+  pass(m, target) { const r = Game.renderer; this.quad.material = m; r.setRenderTarget(target); r.render(this.qs, this.oc); },
+};
+const _initRenderer25 = Game.initRenderer.bind(Game);
+Game.initRenderer = function () {
+  _initRenderer25(); const r = this.renderer;
+  r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+};
+const _start25 = Game.start.bind(Game);
+Game.start = function (cfg) { World._groundTex = null; const r = _start25(cfg); Gfx.setup(this.scene); return r; };
+const _menuStart25 = MenuBG.start.bind(MenuBG);
+MenuBG.start = function () { World._groundTex = null; _menuStart25(); Gfx.setup(Game.scene); };
+Game.render = function () {
+  const r = this.renderer, sc = this.scene, cam = this.camera, q = gq();
+  if (sc.userData.sky) { sc.userData.sky.position.copy(cam.position); sc.userData.sky.visible = !(typeof UW !== 'undefined' && UW.on); }
+  const sun = sc.userData.sun;
+  if (sun) { sun.castShadow = !!q.shadow; if (q.shadow) { const U = sc.userData; U.shT = (U.shT || 0) - 1; if (U.shT <= 0) { U.shT = 30; Gfx.flags(sc); } Gfx.follow(sc, cam); } }
+  const vm = this.view && this.view.visible && this.view.visible();
+  if (!q.post) { r.setRenderTarget(null); r.clear(); r.render(sc, cam); }
+  else {
+    Gfx.targets(); r.setRenderTarget(Gfx.rt); r.clear(); r.render(sc, cam);
+    const [A, B] = Gfx.bl; Gfx.mBright.uniforms.t.value = Gfx.rt.texture; Gfx.pass(Gfx.mBright, A);
+    for (let i = 0; i < 2; i++) { Gfx.mBlur.uniforms.t.value = A.texture; Gfx.mBlur.uniforms.dir.value.set((1 + i) / A.width, 0); Gfx.pass(Gfx.mBlur, B); Gfx.mBlur.uniforms.t.value = B.texture; Gfx.mBlur.uniforms.dir.value.set(0, (1 + i) / A.height); Gfx.pass(Gfx.mBlur, A); }
+    Gfx.mComp.uniforms.t.value = Gfx.rt.texture; Gfx.mComp.uniforms.b.value = A.texture; Gfx.mComp.uniforms.uw.value = typeof UW !== 'undefined' && UW.on ? 0.8 : 0;
+    r.setRenderTarget(null); r.clear(); Gfx.pass(Gfx.mComp, null);
+  }
+  if (vm) { r.clearDepth(); r.render(this.view.scene, this.view.camera); }
+};
+/* a slow machine on High drops to Medium for the session (once) */
+let _gfxChecked = false;
+const _hudUpdate25 = HUD.update.bind(HUD);
+HUD.update = function (dt) {
+  _hudUpdate25(dt);
+  if (_gfxChecked || !Game.running || Settings.gfx !== 'high' || Game.now < 8) return;
+  _gfxChecked = true;
+  if (this.fps && this.fps < 30) { Settings.gfx = 'medium'; this.center('Graphics set to Medium for smoother play (Settings → Graphics)', 3); }
+};
+
+/* ── 26_gore_motion.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dismemberment and physics-driven motion.
+   · Explosions tear limbs off ragdolls; shotguns at close range, snipers and
+     heavy headshots can take a head or limb. The joint breaks, the part flies
+     with a blood trail, and the stump bleeds. (Settings → Dismemberment.)
+   · Hits make living soldiers flinch: a spring throws the torso and head away
+     from the shot and lets them settle back.
+   · Bodies lean into acceleration and turns, and sway back on springs.
+   · Helmets fly off as physics objects when they're shot off or on a
+     headshot kill.
+   · Ground vehicles pitch and roll on their suspension when accelerating,
+     braking, turning and landing.
+   · GUI scale (Settings → UI scale, default 66%).
+   ═══════════════════════════════════════════════════════════════════════════ */
+if (Settings.gore == null) Settings.gore = true;
+if (Settings.uiScale == null) Settings.uiScale = 0.66;
+
+/* ── GUI scale ─────────────────────────────────────────────────────────── */
+function applyUiScale() { document.documentElement.style.setProperty('--ui', String(clamp(+Settings.uiScale || 0.66, 0.4, 1.2))); }
+const _applyCursor26 = applyCursor;
+applyCursor = function () { _applyCursor26(); applyUiScale(); };
+applyUiScale();
+
+/* ── a small spring ────────────────────────────────────────────────────── */
+function spring(o, k, damp, dt) { o.v += (-o.x * k - o.v * damp) * dt; o.x += o.v * dt; if (Math.abs(o.x) < 1e-4 && Math.abs(o.v) < 1e-3) { o.x = 0; o.v = 0; } }
+function motion(s) { return s.mo || (s.mo = { p: { x: 0, v: 0 }, r: { x: 0, v: 0 }, hp: { x: 0, v: 0 }, hr: { x: 0, v: 0 }, lp: { x: 0, v: 0 }, lr: { x: 0, v: 0 }, vx: 0, vz: 0, yaw: null }); }
+
+/* ── flinch: find who the blood came from and shove them ───────────────── */
+const _blood26 = FX.blood;
+FX.blood = function (p, dir, k = 1) {
+  _blood26.call(this, p, dir, k);
+  let best = null, bd = 1.3;
+  for (const s of Game.soldiers) { if (!s.alive || !s.model) continue; const d = Math.hypot(s.pos.x - p.x, s.pos.z - p.z); if (d < bd && p.y > s.pos.y - 0.2 && p.y < s.pos.y + 2.2) { bd = d; best = s; } }
+  if (!best) return;
+  const M = motion(best), fx = -Math.sin(best.yaw), fz = -Math.cos(best.yaw), rx = Math.cos(best.yaw), rz = -Math.sin(best.yaw);
+  const L = Math.hypot(dir.x, dir.z) || 1, dx = dir.x / L, dz = dir.z / L, fwd = dx * fx + dz * fz, side = dx * rx + dz * rz, head = p.y - best.pos.y > best.height - 0.35;
+  const imp = 5 * Math.min(2, k);
+  // pushed along the shot: hit from the front tips back, from the side rolls
+  M.p.v -= fwd * imp; M.r.v -= side * imp;
+  if (head) { M.hp.v -= fwd * imp * 2.2; M.hr.v -= side * imp * 2.2; }
+};
+/* explosions nearby stagger the living too */
+const _fxExp26 = FX.explosion;
+FX.explosion = function (p) {
+  _fxExp26.call(this, p);
+  for (const s of Game.soldiers) { if (!s.alive || !s.model) continue; const d = Math.hypot(s.pos.x - p.x, s.pos.z - p.z); if (d > 14) continue; const M = motion(s), k = 9 * (1 - d / 14);
+    const dx = (s.pos.x - p.x) / (d || 1), dz = (s.pos.z - p.z) / (d || 1); M.p.v += (dx * -Math.sin(s.yaw) + dz * -Math.cos(s.yaw)) * k; M.r.v += (dx * Math.cos(s.yaw) - dz * Math.sin(s.yaw)) * k; M.hp.v += rand(-k, k); }
+};
+
+/* ── springs applied on top of the animation ───────────────────────────── */
+const _sync26 = Soldier.prototype.syncModel;
+Soldier.prototype.syncModel = function (dt, localTeam, viewer) {
+  const hadHelmet = this._hadHelmet; this._hadHelmet = !!this.helmet;
+  const r = _sync26.call(this, dt, localTeam, viewer);
+  // a helmet that just got shot off
+  if (hadHelmet && !this.helmet && this.alive && this.model && Game.mode && Game.mode.armor) Gore.popHelmet(this, null);
+  if (!this.alive || !this.model || !this.model.visible || this.rag || this.vehicle || dt <= 0) return r;
+  const M = motion(this), u = this.model.userData, d = Math.min(dt, 0.05);
+  // acceleration in the body's frame: lean into it
+  const ax = (this.vel.x - M.vx) / d, az = (this.vel.z - M.vz) / d; M.vx = this.vel.x; M.vz = this.vel.z;
+  const fwdA = ax * -Math.sin(this.yaw) + az * -Math.cos(this.yaw), sideA = ax * Math.cos(this.yaw) - az * Math.sin(this.yaw);
+  const yr = M.yaw == null ? 0 : angDiff(M.yaw, this.yaw) / d; M.yaw = this.yaw;
+  M.lp.v += -clamp(fwdA, -40, 40) * 0.24 * d; M.lr.v += (-clamp(sideA, -40, 40) * 0.2 + clamp(yr, -8, 8) * 0.9 * Math.min(1, Math.hypot(this.vel.x, this.vel.z) / 5)) * d;
+  for (const [o, k, c] of [[M.p, 120, 11], [M.r, 120, 11], [M.hp, 160, 12], [M.hr, 160, 12], [M.lp, 60, 12], [M.lr, 60, 12]]) spring(o, k, c, d);
+  const pt = clamp(M.p.x + M.lp.x, -0.6, 0.6), rl = clamp(M.r.x + M.lr.x, -0.5, 0.5);
+  u.upper.rotation.x += pt; u.upper.rotation.z = rl; u.head.rotation.x = clamp(M.hp.x, -0.7, 0.7); u.head.rotation.z = clamp(M.hr.x, -0.5, 0.5);
+  u.arms.rotation.z = -rl * 0.5;
+  return r;
+};
+
+/* ── dismemberment ─────────────────────────────────────────────────────── */
+const GIB_WEAPONS = { awp: 0.7, scout: 0.35, deagle: 0.25, nova: 1, xm1014: 1, sawedoff: 1, mag7: 1, tankshell: 1, apcgun: 0.6, helimg: 0.5, jetgun: 0.8 };
+const Gore = {
+  bits: [],
+  stumpMat: null,
+  mat() { return this.stumpMat || (this.stumpMat = new THREE.MeshStandardMaterial({ color: 0x6a0808, roughness: 0.35, metalness: 0 })); },
+  /* which parts come off */
+  pick(ev, v, a) {
+    const w = ev.w, boom = EXPLOSIVE_KILLS.includes(w) || !!(WEAPONS[w] && WEAPONS[w].explosive), dist = a ? Math.hypot(a.pos.x - v.pos.x, a.pos.z - v.pos.z) : 99;
+    const out = new Set(), limbs = ['legL', 'legR', 'arms', 'head'];
+    if (boom) { const n = chance(0.6) ? randi(1, 3) : 0; for (let i = 0; i < n; i++) out.add(pick(limbs)); }
+    else if (GIB_WEAPONS[w]) {
+      const close = (WEAPONS[w] && WEAPONS[w].type === 'shotgun') ? dist < 7 : true;
+      if (close && ev.hs && chance(GIB_WEAPONS[w])) out.add('head');
+      else if (close && WEAPONS[w] && WEAPONS[w].type === 'shotgun' && dist < 4 && chance(0.4)) out.add(pick(['arms', 'legL', 'legR']));
+    }
+    return [...out];
+  },
+  cut(v, parts, push) {
+    const r = v.rag; if (!r || !parts.length) return;
+    const order = ['legL', 'legR', 'head', 'arms'], U = r.parts.upper;
+    for (const k of parts) {
+      const i = order.indexOf(k), c = r.joints[i]; if (!c || c._cut) continue; c._cut = true; Ragdoll.world.removeConstraint(c);
+      const P = r.parts[k], b = P.body;
+      b.velocity.x += push.x * 0.8 + rand(-3, 3); b.velocity.y += 3 + rand(0, 4); b.velocity.z += push.z * 0.8 + rand(-3, 3);
+      b.angularVelocity.set(rand(-12, 12), rand(-12, 12), rand(-12, 12)); b.wakeUp();
+      // stumps: red caps at the broken joint, on the body and on the part
+      const pa = c.pivotA, pb = c.pivotB, cap = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.04, 8), this.mat()), cap2 = cap.clone();
+      cap.position.set(pb.x + U.off[0], pb.y + U.off[1], pb.z + U.off[2]); cap2.position.set(pa.x + P.off[0], pa.y + P.off[1], pa.z + P.off[2]);
+      if (k === 'arms') { cap.rotation.z = cap2.rotation.z = Math.PI / 2; cap.scale.y = cap2.scale.y = 3; }
+      U.g.add(cap); P.g.add(cap2); r.caps = r.caps || []; r.caps.push(cap, cap2);
+      const at = new V3(b.position.x, b.position.y, b.position.z);
+      if (Settings.blood) { FX.blood(at, new V3(push.x || rand(-1, 1), 0.6, push.z || rand(-1, 1)), 2.2); FX.blood(at, new V3(rand(-1, 1), -0.4, rand(-1, 1)), 1.4); }
+      this.bits.push({ b, t: 0, stump: U.body, r });
+    }
+    r.cut = true;
+  },
+  popHelmet(s, push) {
+    const u = s.model && s.model.userData; if (!u || !u.helmet || !Ragdoll.ensureWorld) return;
+    const w = Ragdoll.ensureWorld(); u.head.updateMatrixWorld(true);
+    const mesh = u.helmet.clone(true); mesh.visible = true; const wp = u.helmet.getWorldPosition(new V3()), wq = u.helmet.getWorldQuaternion(new THREE.Quaternion());
+    mesh.position.copy(wp); mesh.quaternion.copy(wq); Game.scene.add(mesh); u.helmet.visible = false;
+    const body = new CANNON.Body({ mass: 1.5, shape: new CANNON.Box(new CANNON.Vec3(0.13, 0.06, 0.14)), linearDamping: 0.1, angularDamping: 0.2, collisionFilterGroup: 2, collisionFilterMask: 1 });
+    body.position.set(wp.x, wp.y, wp.z); body.quaternion.set(wq.x, wq.y, wq.z, wq.w);
+    const px = push ? push.x : rand(-1, 1), pz = push ? push.z : rand(-1, 1);
+    body.velocity.set(px * 1.5 + rand(-1, 1), 3.5 + rand(0, 2), pz * 1.5 + rand(-1, 1)); body.angularVelocity.set(rand(-10, 10), rand(-10, 10), rand(-10, 10));
+    w.addBody(body); this.bits.push({ b: body, t: 0, mesh, helmet: true }); Ragdoll.keepAwake = 3;
+  },
+  step(dt) {
+    for (const x of this.bits) {
+      x.t += dt;
+      if (x.mesh) { x.mesh.position.set(x.b.position.x, x.b.position.y, x.b.position.z); x.mesh.quaternion.set(x.b.quaternion.x, x.b.quaternion.y, x.b.quaternion.z, x.b.quaternion.w); }
+      // flying parts leave a trail, stumps drip
+      if (Settings.blood && x.r && x.t < 2.5 && Math.random() < dt * 30) {
+        const b = x.b, sp = Math.hypot(b.velocity.x, b.velocity.y, b.velocity.z);
+        if (sp > 1) FX.emit('norm', b.position.x, b.position.y, b.position.z, 2, 0.6, [0.4, 0.02, 0.02], 0.5, -9, 0.3);
+        if (x.t < 1.5 && Math.random() < 0.4) { const s = x.stump; FX.emit('norm', s.position.x, s.position.y + 0.2, s.position.z, 2, 1.2, [0.45, 0.02, 0.02], 0.6, -9, 0.45, new V3(rand(-1, 1), 2, rand(-1, 1))); }
+      }
+    }
+    for (const x of this.bits.filter(x => x.t > (x.helmet ? 20 : 3))) { if (x.mesh) { Game.scene && Game.scene.remove(x.mesh); if (Ragdoll.world) Ragdoll.world.removeBody(x.b); } }
+    this.bits = this.bits.filter(x => x.t <= (x.helmet ? 20 : 3));
+  },
+  clear() { for (const x of this.bits) if (x.mesh && x.mesh.parent) x.mesh.parent.remove(x.mesh); this.bits = []; },
+};
+const _onKill26 = Game.onKillEvent.bind(Game);
+Game.onKillEvent = function (ev) {
+  const v = this.byId(ev.v), a = this.byId(ev.a), helm = v && (v.helmet || v._hadHelmet) && v.model && v.model.userData.helmet && v.model.userData.helmet.visible;
+  _onKill26(ev);
+  if (!v || !v.rag) return;
+  const dir = a && a !== v ? new V3(v.pos.x - a.pos.x, 0, v.pos.z - a.pos.z).normalize() : new V3(rand(-1, 1), 0, rand(-1, 1)).normalize();
+  const boom = EXPLOSIVE_KILLS.includes(ev.w) || !!(WEAPONS[ev.w] && WEAPONS[ev.w].explosive), push = dir.multiplyScalar(boom ? 9 : 4);
+  if (helm && (ev.hs || boom)) try { Gore.popHelmet(v, push); } catch (e) { /* no helmet */ }
+  if (Settings.gore !== false) try { Gore.cut(v, Gore.pick(ev, v, a), push); } catch (e) { /* ragdoll gone */ }
+};
+/* stumps go when the body is let go of */
+const _release26 = Ragdoll.release.bind(Ragdoll);
+Ragdoll.release = function (s) { const r = s.rag; if (r && r.caps) for (const c of r.caps) if (c.parent) c.parent.remove(c); if (r) Gore.bits = Gore.bits.filter(x => x.r !== r); return _release26(s); };
+/* helmets keep the physics world stepping even with no bodies down */
+const _rstep26 = Ragdoll.step.bind(Ragdoll);
+Ragdoll.step = function (dt) {
+  if (this.world && this.scene === Game.scene && Gore.bits.some(x => x.helmet) && !this.list.some(r => !r.frozen)) { this.acc = Math.min(this.acc + dt, 3 / 60); while (this.acc >= 1 / 60) { this.acc -= 1 / 60; this.world.step(1 / 60); } }
+  else _rstep26(dt);
+  Gore.step(dt);
+};
+const _clearAll26 = Ragdoll.clearAll.bind(Ragdoll);
+Ragdoll.clearAll = function () { Gore.clear(); return _clearAll26(); };
+
+/* ── vehicle suspension ────────────────────────────────────────────────── */
+const _vupdate26 = Vehicle.prototype.update;
+Vehicle.prototype.update = function (dt) {
+  const T = this.K.type, ground = !(T === 'heli' || T === 'jet'), y0 = this.pos.y, s0 = this.speed, yaw0 = this.yaw;
+  const r = _vupdate26.call(this, dt);
+  if (!ground || !this.model || dt <= 0) return r;
+  const S = this.sus || (this.sus = { p: { x: 0, v: 0 }, r: { x: 0, v: 0 }, h: { x: 0, v: 0 }, vy: 0 }), d = Math.min(dt, 0.05);
+  const acc = (this.speed - s0) / d, turn = angDiff(yaw0, this.yaw) / d, vy = (this.pos.y - y0) / d, heavy = this.K.turret ? 0.35 : T === 'boat' ? 0.6 : 1;
+  S.p.v += clamp(acc, -30, 30) * 0.012 * heavy; S.r.v += clamp(turn * this.speed, -30, 30) * 0.004 * heavy;
+  if (S.vy < -3 && vy > -0.5) S.h.v -= Math.min(4, -S.vy) * 0.25;   // landing thump
+  S.vy = vy;
+  if (T === 'boat') { S.p.v += Math.sin(Game.now * 1.3 + this.pos.x) * 0.02; S.r.v += Math.sin(Game.now * 0.9 + this.pos.z) * 0.03; }
+  spring(S.p, 90, 9, d); spring(S.r, 90, 9, d); spring(S.h, 140, 10, d);
+  const m = this.model; if (m.rotation.order !== 'YXZ') m.rotation.order = 'YXZ';
+  m.rotation.x = clamp(S.p.x, -0.12, 0.12); m.rotation.z = clamp(S.r.x, -0.1, 0.1); m.position.y += clamp(S.h.x, -0.2, 0.1);
+  return r;
+};
 
 /* ── 99_main.js ── */
 /* ═══════════════════════════════════════════════════════════════════════════
