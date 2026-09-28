@@ -27,5 +27,7 @@ html = html.replace('/*__THREE__*/', () => safe(lib('three.min.js').replace(/^co
   .replace('/*__GAME__*/', () => safe(src));
 const name = `Breachpoint v${version.split('.').slice(0, 2).join('.')}.html`;
 fs.writeFileSync(path.join(root, name), html);
+// the same file is what Cloudflare Workers serves (see wrangler.jsonc at the repo root)
+const site = path.join(root, '..', 'site'); fs.mkdirSync(site, { recursive: true }); fs.writeFileSync(path.join(site, 'index.html'), html);
 console.log('wrote', name, (html.length / 1024).toFixed(0) + ' KB');
 })();
