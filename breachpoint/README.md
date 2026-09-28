@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.2.html     the game (built, self-contained, works offline)
+Breachpoint v2.3.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.2.html
+build.js                  npm install && node build.js  →  Breachpoint v2.3.html
 ```
 
 ## Modes
@@ -77,6 +77,17 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.3
+
+- **Hills** on every map (Ridgeline hills, Dustyard dunes, Flatgrass outer
+  ring). They block sight and bullets; vehicles tilt on slopes.
+- **Bot injuries:** limping from leg hits, worse aim from arm hits, bleeding
+  and bandaging, and a **downed** state with revives (hold E on a teammate).
+- **Emotes:** hold N (or B outside Defuse) for the wheel: wave, salute,
+  cheer, dance, point, clap, flex, facepalm. Bots emote too.
+- **Shoot while driving** cars, jeeps, bikes, quads and boats.
+- **Less blocky:** rounded soldier models and rounded edges on everything.
 
 ## New in v2.2
 

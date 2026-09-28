@@ -4,6 +4,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.3', date: 'Sep 2026', title: 'Hills, injuries, emotes and drive-bys', items: [
+    ['New', 'Hills on every map: rolling hills across Ridgeline, dunes in Dustyard\'s open yards, and hills around the outside of Flatgrass (the middle stays flat for building). They block sight and bullets, and vehicles tilt with the slope. Buildings, roads, flags and spawns stay on flat ground.'],
+    ['New', 'Bot injuries: leg hits make them limp (slower, no sprint), arm hits spoil their aim, and heavy hits make them bleed (a blood trail) until they find a quiet moment to bandage.'],
+    ['New', 'Downed: a killing hit (not a headshot or explosion) can drop a bot instead. It crawls toward its squad and bleeds out in 20 s unless a teammate revives it. Bots revive each other, and you can hold E on a downed teammate. Enemies can finish them off.'],
+    ['New', 'Emotes: hold N (or B outside Defuse) for the emote wheel. Wave, salute, cheer, dance, point, clap, flex, facepalm. The camera swings round to show you. Bots emote after kills and celebrate wins.'],
+    ['New', 'Shoot while driving: in cars, jeeps, bikes, quads and boats the mouse moves the camera and LMB fires your hand weapon (R reloads). Faster means less accurate.'],
+    ['Change', 'Less blocky: soldiers are rebuilt from rounded shapes, and every boxy part of vehicles, guns and props has rounded edges.'],
+  ] },
   { v: '2.2', date: 'Sep 2026', title: 'Pilots, armour, gore and a new look', items: [
     ['New', 'Bots fly attack helicopters: they take off, patrol over the objective, and circle enemies firing the minigun in bursts and rockets at vehicles. Every soldier shoots back at helicopters.'],
     ['New', 'Body armour in every mode, worn on the model: Support heavy (100), Assault medium (75), Engineer light (50), Recon barely any (25, no helmet). Sandbox players and soldier NPCs get 50 and a helmet. Armour bar under your health.'],

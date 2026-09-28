@@ -235,7 +235,7 @@ function detailProps(scene) {
     const cl = []; for (let i = 0; i < 90; i++) cl.push([lerp(B.x0, B.x1, r()), lerp(B.z0, B.z1, r()), 4 + r() * 14]);
     const made = place(nG, 0.35, (x, z, i) => {
       const c0 = cl[Math.floor(r() * cl.length)], a = r() * TAU, d = Math.sqrt(r()) * c0[2]; if (lush && r() < 0.7) { x = c0[0] + Math.cos(a) * d; z = c0[1] + Math.sin(a) * d; if (blockedAt(x, z, 0.35) || x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) { x = lerp(B.x0 + 1, B.x1 - 1, r()); z = lerp(B.z0 + 1, B.z1 - 1, r()); if (blockedAt(x, z, 0.35)) return; } }
-      const s = 0.6 + r() * 0.9; Q.setFromEuler(E.set(0, r() * TAU, 0)); M4.compose(P.set(x, 0, z), Q, Sc.set(s, s * (0.7 + r() * 0.6), s)); im.setMatrixAt(i, M4);
+      const s = 0.6 + r() * 0.9; Q.setFromEuler(E.set(0, r() * TAU, 0)); M4.compose(P.set(x, groundH(x, z) - 0.02, z), Q, Sc.set(s, s * (0.7 + r() * 0.6), s)); im.setMatrixAt(i, M4);
       im.setColorAt(i, C.setHSL(lush ? 0.22 + r() * 0.06 : 0.11 + r() * 0.03, lush ? 0.35 + r() * 0.2 : 0.3, 0.55 + r() * 0.25));
     });
     im.count = made; scene.add(im);
@@ -246,7 +246,7 @@ function detailProps(scene) {
     const g = new THREE.IcosahedronGeometry(0.5, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const f = 0.78 + (Math.abs(Math.sin(p.getX(i) * 91.7 + p.getY(i) * 47.3 + p.getZ(i) * 13.1) * 43758.5) % 1) * 0.35;   // same offset for shared corners, so no cracks
       p.setXYZ(i, p.getX(i) * f, p.getY(i) * f * 0.7, p.getZ(i) * f); } g.computeVertexNormals();
     const im = new THREE.InstancedMesh(g, mat('rock', lush ? '#b8b4aa' : '#d8c8a8'), nR);
-    im.count = place(nR, 0.6, (x, z, i) => { const s = 0.15 + Math.pow(r(), 3) * 1.1; Q.setFromEuler(E.set(r() * 0.4, r() * TAU, r() * 0.4)); M4.compose(P.set(x, s * 0.1, z), Q, Sc.set(s * (0.8 + r() * 0.5), s, s * (0.8 + r() * 0.5))); im.setMatrixAt(i, M4); });
+    im.count = place(nR, 0.6, (x, z, i) => { const s = 0.15 + Math.pow(r(), 3) * 1.1; Q.setFromEuler(E.set(r() * 0.4, r() * TAU, r() * 0.4)); M4.compose(P.set(x, groundH(x, z) + s * 0.1, z), Q, Sc.set(s * (0.8 + r() * 0.5), s, s * (0.8 + r() * 0.5))); im.setMatrixAt(i, M4); });
     scene.add(im);
   }
   // rubble at the foot of walls
@@ -257,7 +257,7 @@ function detailProps(scene) {
       const b = walls[Math.floor(r() * walls.length)], side = Math.floor(r() * 4), off = 0.15 + Math.pow(r(), 2) * 1.2;
       const x = side < 2 ? lerp(b.x0, b.x1, r()) : side === 2 ? b.x0 - off : b.x1 + off, z = side >= 2 ? lerp(b.z0, b.z1, r()) : side === 0 ? b.z0 - off : b.z1 + off;
       if (blockedAt(x, z, 0.05)) continue;
-      const s = 0.06 + Math.pow(r(), 2) * 0.3; Q.setFromEuler(E.set(r() * 3, r() * 3, r() * 3)); M4.compose(P.set(x, s * 0.3, z), Q, Sc.set(s * (0.6 + r()), s * (0.4 + r() * 0.6), s * (0.6 + r())));
+      const s = 0.06 + Math.pow(r(), 2) * 0.3; Q.setFromEuler(E.set(r() * 3, r() * 3, r() * 3)); M4.compose(P.set(x, groundH(x, z) + s * 0.3, z), Q, Sc.set(s * (0.6 + r()), s * (0.4 + r() * 0.6), s * (0.6 + r())));
       im.setMatrixAt(made, M4); im.setColorAt(made, C.set(b.tex === 'brick' ? 0xb07a58 : b.tex === 'plaster' ? 0xd8c8a4 : 0xa8a49c)); made++;
     }
     im.count = made; scene.add(im);
