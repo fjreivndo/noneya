@@ -232,6 +232,7 @@ body.cur-themed{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2
 #saveWarn{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;max-width:min(760px,92vw);background:#3a2410;border:1px solid #ff9a4a;color:#ffe2c8;padding:10px 14px;border-radius:8px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5)}#saveWarn button{margin-left:10px;background:#ff9a4a;border:0;color:#1a1008;font-weight:700;padding:4px 12px;border-radius:4px;cursor:pointer}
 .savebox{margin-top:18px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(0,0,0,.2)}.savebox h3{margin:0 0 6px}.savebox .row{display:flex;gap:8px;margin-top:8px}
 .gs-all{display:flex;gap:10px;align-items:center;margin-top:10px}.openall{max-width:min(1100px,94vw)}.oa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:60vh;overflow:auto;margin:12px 0}
+#bootErr{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:200;width:min(760px,94vw);background:#2a1414;border:1px solid #ff6a5a;color:#ffe0dc;padding:12px 14px;border-radius:8px;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.6)}#bootErr pre{max-height:180px;overflow:auto;background:rgba(0,0,0,.35);padding:8px;font-size:11px;white-space:pre-wrap;margin:8px 0;user-select:text}#bootErr button{margin-right:8px;background:#ff6a5a;border:0;color:#1a0806;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -6273,6 +6274,7 @@ const CHANGELOG = [
     ['New', 'Jeeps and cars have interiors: seats for driver and passenger, a dashboard with gauges, a steering wheel that turns, and see-through windows. Press C while driving to switch between the chase camera and the driver\'s seat view.'],
     ['New', 'Armory: "Apply to all guns" in the Gunsmith copies the current gun\'s attachments to every gun they fit. Cases get "Open all" buttons, plus "Open every case" at the top.'],
     ['Fix', 'Keys for the Venom, Royal, Stormfront, Wasteland and Midnight cases showed "undefined" as their price. They now cost ₵900–1,000.'],
+    ['Fix', 'The game could fail to start (dead menu, ₵0, Settings not opening) with a save from an older version holding a skin it no longer knows. Old saves are now repaired on load, unknown items are set aside, and if anything else goes wrong at start-up the menus still work and an error box shows what happened.'],
     ['Fix', 'Progress is also saved when you close or refresh the page, including credits and XP for a match you leave early. When storage is full, old sandbox saves are cleared instead of your progress silently not saving. Settings → Save data exports and imports your progress, and a warning shows if the browser blocks saving (private windows, embedded previews).'],
   ] },
   { v: '2.7', date: 'Sep 2026', title: 'Warzone: bots drive, mounted guns, killstreaks, weather', items: [
@@ -12031,6 +12033,27 @@ Store.set = function (k, v) {
   }
 };
 Persist.ok = Persist.test();
+/* old saves: anything the game no longer knows about is set aside instead of crashing the menus */
+const _invLoad39 = Inv.load.bind(Inv);
+Inv.load = function () {
+  _invLoad39();
+  const d = this.data, num = (v, def = 0) => (typeof v === 'number' && isFinite(v) ? v : def);
+  d.credits = num(d.credits, 0); d.xp = num(d.xp, 0); d.level = Math.max(1, num(d.level, 1));
+  if (!Array.isArray(d.items)) d.items = [];
+  const lost = [], ok = [];
+  for (const it of d.items) (it && SKINS[it.skinId] && (SKINS[it.skinId].weapon === 'knife' || WEAPONS[SKINS[it.skinId].weapon]) ? ok : lost).push(it);
+  for (const it of ok) { if (!it.uid) it.uid = uid(10); it.float = clamp(num(it.float, 0.2), 0.0001, 0.9999); it.seed = num(it.seed, 0) | 0; it.kills = num(it.kills, 0) | 0; }
+  d.items = ok; if (lost.length) d.lost = (Array.isArray(d.lost) ? d.lost : []).concat(lost);
+  if (!d.equipped || typeof d.equipped !== 'object') d.equipped = {};
+  for (const w in d.equipped) { const it = d.items.find(i => i.uid === d.equipped[w]); if (!it || (SKINS[it.skinId].weapon !== w)) delete d.equipped[w]; }
+  for (const k of ['cases', 'keys']) { if (!d[k] || typeof d[k] !== 'object') d[k] = {}; for (const id in d[k]) d[k][id] = Math.max(0, num(d[k][id], 0) | 0); for (const c of CASES) if (d[k][c.id] == null) d[k][c.id] = 0; }
+  if (d.keys.master == null) d.keys.master = 0;
+  if (!d.stats || typeof d.stats !== 'object') d.stats = {}; for (const k of ['kills', 'deaths', 'wins', 'matches', 'opened']) d.stats[k] = num(d.stats[k], 0);
+  if (!d.attach || typeof d.attach !== 'object') d.attach = {};
+  for (const w in d.attach) { if (!WEAPONS[w] || !d.attach[w] || typeof d.attach[w] !== 'object') { delete d.attach[w]; continue; } for (const k in d.attach[w]) if (!ATTACH[d.attach[w][k]]) delete d.attach[w][k]; }
+  if (!Array.isArray(d.unlocked)) d.unlocked = ['reddot']; d.unlocked = d.unlocked.filter(a => ATTACH[a]);
+  this.save();
+};
 /* StatTrak counts save right away */
 const _addKill39 = Inv.addKill.bind(Inv);
 Inv.addKill = function (w) { _addKill39(w); clearTimeout(this._st); this._st = setTimeout(() => this.save(), 1500); };
@@ -12075,13 +12098,31 @@ if (!Persist.ok) addEventListener('load', () => {
 /* ═══════════════════════════════════════════════════════════════════════════
    Boot and main loop.
    ═══════════════════════════════════════════════════════════════════════════ */
+/* Each start-up step runs on its own: if one fails (an old save the game
+   can't read, no WebGL), the menus still work and the error is shown so it
+   can be reported. */
+const BootErrors = [];
+function bootStep(name, fn) { try { fn(); } catch (e) { console.error('[boot] ' + name, e); BootErrors.push({ name, e }); } }
+function showBootErrors() {
+  if (!BootErrors.length) return;
+  const gl = BootErrors.some(x => x.name === '3D graphics');
+  const text = `Breachpoint ${VERSION} · ${navigator.userAgent}\n` + BootErrors.map(x => `${x.name}: ${x.e && (x.e.stack || x.e.message) || x.e}`).join('\n');
+  const b = document.createElement('div'); b.id = 'bootErr';
+  b.innerHTML = `<b>Something went wrong while starting.</b> ${gl ? '3D graphics (WebGL) couldn\'t start, so matches won\'t run. If you opened the game inside an app\'s file preview, open the .html file in Chrome, Edge or Firefox instead; otherwise turn on hardware acceleration in your browser settings. ' : 'The menus still work. '}Copy the details and send them over so it can be fixed.<pre></pre><button data-a="copy">Copy details</button><button data-a="close">Close</button>`;
+  b.querySelector('pre').textContent = text;
+  b.querySelector('[data-a="copy"]').onclick = () => { try { navigator.clipboard.writeText(text); } catch (e) { } const r = document.createRange(); r.selectNodeContents(b.querySelector('pre')); getSelection().removeAllRanges(); getSelection().addRange(r); };
+  b.querySelector('[data-a="close"]').onclick = () => b.remove();
+  document.body.appendChild(b);
+}
 function boot() {
-  Inv.load();
-  Game.initRenderer();
-  HUD.init();
-  UI.init();
-  MenuBG.start();
-  UI.maybeShowNews();
+  bootStep('saved progress', () => Inv.load());
+  if (!Inv.data) bootStep('fresh inventory', () => { try { const raw = localStorage.getItem('bp_inv'); if (raw) localStorage.setItem('bp_inv_backup_' + Date.now(), raw); localStorage.removeItem('bp_inv'); } catch (e) { } Inv.load(); });
+  bootStep('3D graphics', () => Game.initRenderer());
+  bootStep('HUD', () => HUD.init());
+  bootStep('menus', () => UI.init());
+  bootStep('menu background', () => MenuBG.start());
+  bootStep('update log', () => UI.maybeShowNews());
+  showBootErrors();
   let last = performance.now();
   const frame = now => {
     requestAnimationFrame(frame);

@@ -258,6 +258,27 @@ Store.set = function (k, v) {
   }
 };
 Persist.ok = Persist.test();
+/* old saves: anything the game no longer knows about is set aside instead of crashing the menus */
+const _invLoad39 = Inv.load.bind(Inv);
+Inv.load = function () {
+  _invLoad39();
+  const d = this.data, num = (v, def = 0) => (typeof v === 'number' && isFinite(v) ? v : def);
+  d.credits = num(d.credits, 0); d.xp = num(d.xp, 0); d.level = Math.max(1, num(d.level, 1));
+  if (!Array.isArray(d.items)) d.items = [];
+  const lost = [], ok = [];
+  for (const it of d.items) (it && SKINS[it.skinId] && (SKINS[it.skinId].weapon === 'knife' || WEAPONS[SKINS[it.skinId].weapon]) ? ok : lost).push(it);
+  for (const it of ok) { if (!it.uid) it.uid = uid(10); it.float = clamp(num(it.float, 0.2), 0.0001, 0.9999); it.seed = num(it.seed, 0) | 0; it.kills = num(it.kills, 0) | 0; }
+  d.items = ok; if (lost.length) d.lost = (Array.isArray(d.lost) ? d.lost : []).concat(lost);
+  if (!d.equipped || typeof d.equipped !== 'object') d.equipped = {};
+  for (const w in d.equipped) { const it = d.items.find(i => i.uid === d.equipped[w]); if (!it || (SKINS[it.skinId].weapon !== w)) delete d.equipped[w]; }
+  for (const k of ['cases', 'keys']) { if (!d[k] || typeof d[k] !== 'object') d[k] = {}; for (const id in d[k]) d[k][id] = Math.max(0, num(d[k][id], 0) | 0); for (const c of CASES) if (d[k][c.id] == null) d[k][c.id] = 0; }
+  if (d.keys.master == null) d.keys.master = 0;
+  if (!d.stats || typeof d.stats !== 'object') d.stats = {}; for (const k of ['kills', 'deaths', 'wins', 'matches', 'opened']) d.stats[k] = num(d.stats[k], 0);
+  if (!d.attach || typeof d.attach !== 'object') d.attach = {};
+  for (const w in d.attach) { if (!WEAPONS[w] || !d.attach[w] || typeof d.attach[w] !== 'object') { delete d.attach[w]; continue; } for (const k in d.attach[w]) if (!ATTACH[d.attach[w][k]]) delete d.attach[w][k]; }
+  if (!Array.isArray(d.unlocked)) d.unlocked = ['reddot']; d.unlocked = d.unlocked.filter(a => ATTACH[a]);
+  this.save();
+};
 /* StatTrak counts save right away */
 const _addKill39 = Inv.addKill.bind(Inv);
 Inv.addKill = function (w) { _addKill39(w); clearTimeout(this._st); this._st = setTimeout(() => this.save(), 1500); };

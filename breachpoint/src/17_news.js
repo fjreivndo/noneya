@@ -10,6 +10,7 @@ const CHANGELOG = [
     ['New', 'Jeeps and cars have interiors: seats for driver and passenger, a dashboard with gauges, a steering wheel that turns, and see-through windows. Press C while driving to switch between the chase camera and the driver\'s seat view.'],
     ['New', 'Armory: "Apply to all guns" in the Gunsmith copies the current gun\'s attachments to every gun they fit. Cases get "Open all" buttons, plus "Open every case" at the top.'],
     ['Fix', 'Keys for the Venom, Royal, Stormfront, Wasteland and Midnight cases showed "undefined" as their price. They now cost ₵900–1,000.'],
+    ['Fix', 'The game could fail to start (dead menu, ₵0, Settings not opening) with a save from an older version holding a skin it no longer knows. Old saves are now repaired on load, unknown items are set aside, and if anything else goes wrong at start-up the menus still work and an error box shows what happened.'],
     ['Fix', 'Progress is also saved when you close or refresh the page, including credits and XP for a match you leave early. When storage is full, old sandbox saves are cleared instead of your progress silently not saving. Settings → Save data exports and imports your progress, and a warning shows if the browser blocks saving (private windows, embedded previews).'],
   ] },
   { v: '2.7', date: 'Sep 2026', title: 'Warzone: bots drive, mounted guns, killstreaks, weather', items: [

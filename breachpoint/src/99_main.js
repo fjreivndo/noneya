@@ -1,13 +1,31 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Boot and main loop.
    ═══════════════════════════════════════════════════════════════════════════ */
+/* Each start-up step runs on its own: if one fails (an old save the game
+   can't read, no WebGL), the menus still work and the error is shown so it
+   can be reported. */
+const BootErrors = [];
+function bootStep(name, fn) { try { fn(); } catch (e) { console.error('[boot] ' + name, e); BootErrors.push({ name, e }); } }
+function showBootErrors() {
+  if (!BootErrors.length) return;
+  const gl = BootErrors.some(x => x.name === '3D graphics');
+  const text = `Breachpoint ${VERSION} · ${navigator.userAgent}\n` + BootErrors.map(x => `${x.name}: ${x.e && (x.e.stack || x.e.message) || x.e}`).join('\n');
+  const b = document.createElement('div'); b.id = 'bootErr';
+  b.innerHTML = `<b>Something went wrong while starting.</b> ${gl ? '3D graphics (WebGL) couldn\'t start, so matches won\'t run. If you opened the game inside an app\'s file preview, open the .html file in Chrome, Edge or Firefox instead; otherwise turn on hardware acceleration in your browser settings. ' : 'The menus still work. '}Copy the details and send them over so it can be fixed.<pre></pre><button data-a="copy">Copy details</button><button data-a="close">Close</button>`;
+  b.querySelector('pre').textContent = text;
+  b.querySelector('[data-a="copy"]').onclick = () => { try { navigator.clipboard.writeText(text); } catch (e) { } const r = document.createRange(); r.selectNodeContents(b.querySelector('pre')); getSelection().removeAllRanges(); getSelection().addRange(r); };
+  b.querySelector('[data-a="close"]').onclick = () => b.remove();
+  document.body.appendChild(b);
+}
 function boot() {
-  Inv.load();
-  Game.initRenderer();
-  HUD.init();
-  UI.init();
-  MenuBG.start();
-  UI.maybeShowNews();
+  bootStep('saved progress', () => Inv.load());
+  if (!Inv.data) bootStep('fresh inventory', () => { try { const raw = localStorage.getItem('bp_inv'); if (raw) localStorage.setItem('bp_inv_backup_' + Date.now(), raw); localStorage.removeItem('bp_inv'); } catch (e) { } Inv.load(); });
+  bootStep('3D graphics', () => Game.initRenderer());
+  bootStep('HUD', () => HUD.init());
+  bootStep('menus', () => UI.init());
+  bootStep('menu background', () => MenuBG.start());
+  bootStep('update log', () => UI.maybeShowNews());
+  showBootErrors();
   let last = performance.now();
   const frame = now => {
     requestAnimationFrame(frame);
