@@ -4,6 +4,20 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.5', date: 'Sep 2026', title: 'Military bases, jets and music', items: [
+    ['New', 'Every Conquest map has a fenced military base per side: a gate with watchtowers, barracks, a command building, a vehicle hangar, a garage, three helipads, a control tower and a runway.'],
+    ['New', 'More aircraft: two attack helicopters, a transport helicopter and a jet per side. Bots fly the jets: they take off down the runway, dive on targets with the cannon, drop bombs and come round again.'],
+    ['New', 'Bots drive quads, bikes and jeeps to far-away flags, then jump out to fight.'],
+    ['New', 'Music: a calm theme on the menus and in Sandbox, a driving beat in battle, and an eerie heartbeat in Zombies. Settings → Music volume.'],
+    ['New', 'Speech bubbles: chat and radio callouts pop up over the speaker\'s head, players and bots alike (only your own team\'s radio).'],
+    ['New', 'Eye candy: drifting clouds, circling birds (gulls at the docks), ejected brass, muzzle flashes that light things up, explosion flashes with shockwaves and scorch marks, footstep dust, and dust motes in the desert.'],
+    ['New', 'Admin menu (F8, or "Admin" in the pause menu), password protected: god mode, infinite ammo, rapid fire, one-hit kills, super speed, moon gravity, freeze bots, noclip, slow motion, give weapons, spawn vehicles, kill all enemies, teleport, win the match, skip a zombie wave, credits and cases.'],
+    ['Change', 'Downed and revive now only happen in multiplayer, to real players with a human teammate who can pick them up. Bots no longer get downed or revive.'],
+    ['Fix', 'Emotes played backwards: arms went up behind the head and the camera showed your back. Both fixed.'],
+    ['Fix', 'The results screen stayed on top of the main menu after leaving a match.'],
+    ['Fix', 'Knife hits on armoured targets could break their health (it showed as NaN and they could not die).'],
+    ['Fix', 'Weapon choices on the Deploy screen were invisible (white on white).'],
+  ] },
   { v: '2.4', date: 'Sep 2026', title: 'New maps and Zombies', items: [
     ['New', 'Zombies mode: co-op wave survival with a squad of Aegis bots (and friends in multiplayer). Walkers from wave 1, fast runners from wave 3, huge brutes from wave 5. Clearing a wave brings the fallen back, refills ammo and tops up armour. Your best wave on each map is saved. Plays on every combat map.'],
     ['New', 'Dockyard (Defuse, TDM): a harbour quay with gantry cranes, a container yard (B), a warehouse yard (A), long and short lanes and a mid.'],

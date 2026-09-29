@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.4.html     the game (built, self-contained, works offline)
+Breachpoint v2.5.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.4.html
+build.js                  npm install && node build.js  →  Breachpoint v2.5.html
 ```
 
 ## Modes
@@ -77,6 +77,17 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.5
+
+- **Military bases** on every Conquest map (hangar, garage, helipads, runway,
+  control tower, barracks, fences and towers).
+- **More aircraft:** 2 attack helis, a transport heli and a jet per side;
+  bots fly jets and drive quads/bikes/jeeps.
+- **Music**, **speech bubbles** for chat and radio, and more eye candy.
+- **Admin menu** (F8), password protected.
+- Revive is multiplayer-only for real players; emote, results-screen,
+  knife-armour and deploy-screen fixes.
 
 ## New in v2.4
 

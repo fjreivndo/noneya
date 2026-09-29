@@ -40,8 +40,9 @@ const Terrain = {
     for (const v of World.vehicleSpawns || []) disc(v.x, v.z, 7);
     if (World.sites) for (const k in World.sites) { const s = World.sites[k]; rect(s.x0, s.z0, s.x1, s.z1, 2); }
     // flat decals on the ground (roads, site markings) stay visible
+    World._decals = [];
     if (World.group) World.group.traverse(o => { if (!o.isMesh || o === World._groundMesh || !o.geometry || !o.geometry.parameters) return; const P = o.geometry.parameters;
-      if (P.width && P.height && o.position.y < 0.1 && Math.abs(o.rotation.x + Math.PI / 2) < 0.01) rect(o.position.x - P.width / 2, o.position.z - P.height / 2, o.position.x + P.width / 2, o.position.z + P.height / 2, 3.5); });
+      if (P.width && P.height && o.position.y < 0.1 && Math.abs(o.rotation.x + Math.PI / 2) < 0.01) { rect(o.position.x - P.width / 2, o.position.z - P.height / 2, o.position.x + P.width / 2, o.position.z + P.height / 2, 3.5); World._decals.push([o.position.x - P.width / 2, o.position.z - P.height / 2, o.position.x + P.width / 2, o.position.z + P.height / 2]); } });
     // distance from anything blocked (two-pass chamfer), in metres
     const D = new Float32Array(N); for (let i = 0; i < N; i++) D[i] = blocked[i] ? 0 : 1e9;
     for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const k = j * nx + i; let d = D[k]; if (i > 0) d = Math.min(d, D[k - 1] + 1); if (j > 0) { d = Math.min(d, D[k - nx] + 1); if (i > 0) d = Math.min(d, D[k - nx - 1] + 1.414); if (i < nx - 1) d = Math.min(d, D[k - nx + 1] + 1.414); } D[k] = d; }
@@ -96,7 +97,7 @@ function groundH(x, z) { return Terrain.on ? Terrain.at(x, z) : 0; }
 const _groundPlane27 = groundPlane;
 groundPlane = function (tex, size, color, cx, cz) { const m = _groundPlane27(tex, size, color, cx, cz); if (!World._groundMesh) World._groundMesh = m; return m; };
 const _loadMap27 = loadMap;
-loadMap = function (id, scene) { World._groundMesh = null; Terrain.on = false; _loadMap27(id, scene); try { Terrain.build(id); } catch (e) { Terrain.on = false; console.warn('terrain', e); } };
+loadMap = function (id, scene) { World._groundMesh = null; World._decals = null; Terrain.on = false; _loadMap27(id, scene); try { Terrain.build(id); } catch (e) { Terrain.on = false; console.warn('terrain', e); } };
 
 /* walking and driving */
 const _floorAt27 = World.floorAt;

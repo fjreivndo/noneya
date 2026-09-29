@@ -12,6 +12,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 const INJ_W = new Set(['fall', 'drown', 'bleed', 'jeep', 'car', 'bike', 'quad', 'apc', 'tank']);
 function inj(s) { return s.inj || (s.inj = { leg: 0, arm: 0, bleed: 0 }); }
+/* downed and revived: only real people, only in multiplayer, only with a human teammate to pick them up */
+function downable(s) { return Net.role !== 'off' && (s.ctrl === 'local' || s.ctrl === 'remote') && Game.soldiers.some(o => o !== s && o.team === s.team && (o.ctrl === 'local' || o.ctrl === 'remote' || (o.ctrl === 'puppet' && !o.isBot))); }
 function injurable(s) { return s.ctrl === 'bot' || (s.ctrl === 'puppet' && s.isBot) || s.npc === 'aegis' || s.npc === 'vanta'; }
 const Injury = {
   sendT: new Map(),
@@ -78,8 +80,8 @@ Game.damage = function (v, dmg, att, weapon, zone = 'chest', from) {
 };
 const _kill28 = Game.kill.bind(Game);
 Game.kill = function (v, att, weapon, hs) {
-  if (v && v.alive && !v.downed && !v._finish && !hs && injurable(v) && !v.vehicle && v.hp > -45 && !INJ_W.has(weapon) && weapon !== 'knife'
-    && !(EXPLOSIVE_KILLS.includes(weapon) || (WEAPONS[weapon] && WEAPONS[weapon].explosive)) && chance(0.5) && !Game.matchOver) { Injury.down(v, att, weapon); return; }
+  if (v && v.alive && !v.downed && !v._finish && !hs && downable(v) && !v.vehicle && v.hp > -45 && !INJ_W.has(weapon) && weapon !== 'knife'
+    && !(EXPLOSIVE_KILLS.includes(weapon) || (WEAPONS[weapon] && WEAPONS[weapon].explosive)) && !Game.matchOver) { Injury.down(v, att, weapon); return; }
   if (v) v.downed = false;
   return _kill28(v, att, weapon, hs);
 };
@@ -118,21 +120,6 @@ Brain.prototype.update = function (dt) {
     // crawl toward the nearest friend
     let best = null, bd = 40; for (const e of Game.soldiers) { if (e === s || !e.alive || e.downed || e.team !== s.team) continue; const d = dist2(e.pos.x, e.pos.z, s.pos.x, s.pos.z); if (d < bd) { bd = d; best = e; } }
     if (best && bd > 2) { this.moveTo(best.pos, dt, false, true, false); m.sprint = false; m.crouch = true; }
-    return;
-  }
-  // a friend is down: go and pick them up
-  const R = this.reviving;
-  if (R && (!R.alive || !R.downed || R.reviver !== s || (this.target && this.target.alive))) { if (R.reviver === s) R.reviver = null; this.reviving = null; this.reviveT = 0; }
-  if (!this.reviving && !(this.target && this.target.alive) && !s.vehicle && !this.crew && !s.planting && (this.reviveScan = (this.reviveScan || 0) - dt) <= 0) {
-    this.reviveScan = 0.5;
-    for (const e of Game.soldiers) if (e.downed && e.alive && e.team === s.team && !e.reviver && dist2(e.pos.x, e.pos.z, s.pos.x, s.pos.z) < 28) { e.reviver = s; this.reviving = e; this.reviveT = 0; break; }
-  }
-  if (this.reviving) {
-    const e = this.reviving, d = dist2(e.pos.x, e.pos.z, s.pos.x, s.pos.z);
-    this.senseT -= dt; if (this.senseT <= 0) { this.senseT = 0.15; this.sense(); }
-    if (d > 1.5) { this.moveTo(e.pos, dt, false, false, true); this.reviveT = 0; }
-    else { m.f = m.s = 0; m.crouch = true; m.sprint = false; this.reviveT += dt; this.turnTo(Math.atan2(-(e.pos.x - s.pos.x), -(e.pos.z - s.pos.z)), -0.6, dt, 6);
-      if (this.reviveT > 3) { Injury.revive(e, s); this.reviving = null; if (Game.cmd[s.team] && Game.mode.id !== 'sandbox') Game.cmd[s.team].say(s, `Got you, ${e.name}. Back in it!`, 2); } }
     return;
   }
   // bandage when it's quiet
@@ -207,3 +194,20 @@ Soldier.prototype.syncModel = function (dt, localTeam, viewer) {
   if (this.bandT > 0.2) { u.arms.rotation.x = -0.9; u.upper.rotation.x = 0.4; u.head.rotation.x = 0.5; }
   return r;
 };
+
+/* when you're the one who's down: crawl, no shooting, and a countdown */
+const _fire28 = fireWeapon;
+fireWeapon = function (s, now, rc) { if (s.downed) return false; return _fire28(s, now, rc); };
+const _throw28 = Game.throwNade.bind(Game);
+Game.throwNade = function (s, type, strong, remote) { if (s.downed && !remote) return; return _throw28(s, type, strong, remote); };
+const _pcontrols28b = Player.controls.bind(Player);
+Player.controls = function (s, dt) {
+  const r = _pcontrols28b(s, dt);
+  if (s.downed) { const m = s.moveIn; m.crouch = true; m.sprint = m.jump = false; s.ads = false;
+    const left = Math.max(0, 20 - (Game.now - (s.downT || Game.now))); HUD.center(`YOU'RE DOWN · bleeding out in ${Math.ceil(left)}s · a teammate can hold E to revive you`, 0.25); }
+  return r;
+};
+const _applyEvent28b = Net.applyEvent.bind(Net);
+Net.applyEvent = function (e) { if (e && e.t === 'inj') { const s = Game.byId(e.id); if (s && e.d && !s.downed) s.downT = Game.now; } return _applyEvent28b(e); };
+const _down28 = Injury.down.bind(Injury);
+Injury.down = function (s, att, weapon) { s.downT = Game.now; return _down28(s, att, weapon); };

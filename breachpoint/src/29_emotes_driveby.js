@@ -33,15 +33,15 @@ const Emote = {
     if (aL) aL.rotation.set(down, 0, -0.08); if (aR) aR.rotation.set(down, 0, 0.08);
     if (!aL || !aR) return;
     switch (k) {
-      case 'wave': aR.rotation.set(2.7, 0, -0.25 + S(t * 9) * 0.45); u.head.rotation.z = S(t * 3) * 0.08; break;
-      case 'salute': aR.rotation.set(1.95, 0, 1.05); u.upper.rotation.x = -0.05; u.head.rotation.x = -0.05; break;
-      case 'cheer': { const p = S(t * 8) * 0.3; aL.rotation.set(2.75 + p, 0, 0.35); aR.rotation.set(2.75 - p, 0, -0.35); u.body.position.y += Math.abs(S(t * 5)) * 0.22; u.head.rotation.x = -0.3; break; }
-      case 'dance': { const b = t * 6; aL.rotation.set(1.3 + S(b) * 1.2, 0, 0.4); aR.rotation.set(1.3 - S(b) * 1.2, 0, -0.4); u.upper.rotation.z = S(t * 3) * 0.3; u.body.rotation.y = S(t * 1.5) * 0.9;
+      case 'wave': aR.rotation.set(1.45, 0, 0.45 + S(t * 9) * 0.4); u.head.rotation.z = S(t * 3) * 0.08; break;
+      case 'salute': aR.rotation.set(1.2, -0.2, 1.15); u.upper.rotation.x = -0.05; u.head.rotation.x = -0.05; break;
+      case 'cheer': { const p = S(t * 8) * 0.3; aL.rotation.set(1.42 + p, 0, -0.35); aR.rotation.set(1.42 - p, 0, 0.35); u.body.position.y += Math.abs(S(t * 5)) * 0.22; u.head.rotation.x = -0.3; break; }
+      case 'dance': { const b = t * 6; aL.rotation.set(0.5 + S(b) * 0.85, 0, -0.4); aR.rotation.set(0.5 - S(b) * 0.85, 0, 0.4); u.upper.rotation.z = S(t * 3) * 0.3; u.body.rotation.y = S(t * 1.5) * 0.9;
         u.body.position.y += Math.abs(S(b)) * 0.1; u.legL.rotation.x = S(b) * 0.5; u.legR.rotation.x = -S(b) * 0.5; u.head.rotation.z = S(b) * 0.15; break; }
       case 'point': aR.rotation.set(0.15, 0, 0); u.head.rotation.x = -0.05; aL.rotation.set(-0.4, 0, -0.9); break;
       case 'clap': { const c = Math.abs(S(t * 9)); aL.rotation.set(0.2, -0.15 - c * 0.45, 0); aR.rotation.set(0.2, 0.15 + c * 0.45, 0); if (u._clap !== undefined && c < 0.15 && u._clap >= 0.15 && Math.random() < 0.9) this.clapSfx(u); u._clap = c; break; }
       case 'flex': { const f = 0.5 + S(t * 4) * 0.2; aL.rotation.set(0, 1.57, -f); aR.rotation.set(0, -1.57, f); u.upper.rotation.x = -0.12; u.head.rotation.x = -0.2; break; }
-      case 'facepalm': aR.rotation.set(1.8, 0, 0.55); u.upper.rotation.x = 0.2; u.head.rotation.x = 0.45; u.head.rotation.y = S(t * 5) * 0.2; break;
+      case 'facepalm': aR.rotation.set(1.1, -0.35, 0.6); u.upper.rotation.x = 0.2; u.head.rotation.x = 0.45; u.head.rotation.y = S(t * 5) * 0.2; break;
     }
   },
   clapSfx(u) { const p = u.head.getWorldPosition(new V3()); Sfx.play('bounce', p, { vol: 0.5 }); },
@@ -103,7 +103,7 @@ Player.camera = function (s, dt) {
   _pcam29(s, dt);
   if (!s.alive || !s.emote || s.vehicle) { Emocam.a = 0; Emocam.p = -0.25; return; }
   if (!UI.blocking()) { Emocam.a -= Input.mouse.dx * 0.004; Emocam.p = clamp(Emocam.p - Input.mouse.dy * 0.003, -0.9, 0.5); }
-  const cam = Game.camera, a = s.yaw + Math.PI + 0.5 + Emocam.a, R = 3.4, cy = s.pos.y + 1.2;
+  const cam = Game.camera, a = s.yaw + 0.5 + Emocam.a, R = 3.4, cy = s.pos.y + 1.2;
   const c = new V3(s.pos.x - Math.sin(a) * R * Math.cos(Emocam.p), cy - Math.sin(Emocam.p) * R, s.pos.z - Math.cos(a) * R * Math.cos(Emocam.p));
   // don't put the camera inside a wall
   const d = c.clone().sub(new V3(s.pos.x, cy, s.pos.z)), L = d.length(); d.multiplyScalar(1 / L); const t = World.raycast(s.pos.x, cy, s.pos.z, d.x, d.y, d.z, L); if (t >= 0) c.set(s.pos.x + d.x * (t - 0.25), cy + d.y * (t - 0.25), s.pos.z + d.z * (t - 0.25));

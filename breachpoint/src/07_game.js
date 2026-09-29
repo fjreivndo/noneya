@@ -384,7 +384,7 @@ const Game = {
     }
     let hp = dmg;
     const armored = this.mode.armor && v.armor > 0 && zone !== 'legs' && (zone !== 'head' || v.helmet);
-    if (armored) { const pen = WEAPONS[weapon] ? WEAPONS[weapon].pen : 0.55; hp = dmg * pen; v.armor = Math.max(0, v.armor - (dmg - hp) * 0.5); if (!v.armor) v.helmet = false; }
+    if (armored) { const pen = WEAPONS[weapon] && WEAPONS[weapon].pen != null ? WEAPONS[weapon].pen : 0.55; hp = dmg * pen; v.armor = Math.max(0, v.armor - (dmg - hp) * 0.5); if (!v.armor) v.helmet = false; }
     hp = Math.max(1, Math.round(hp));
     v.hp -= hp; v.lastDamage = this.now;
     if (att) { v.dmgBy[att.id] = (v.dmgBy[att.id] || 0) + hp; att.dmgDealt = (att.dmgDealt || 0) + hp; }

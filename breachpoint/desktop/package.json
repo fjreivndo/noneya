@@ -1,7 +1,7 @@
 {
   "name": "breachpoint-desktop",
   "productName": "Breachpoint",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Breachpoint as a desktop app, with a LAN relay for offline multiplayer.",
   "main": "main.js",
   "private": true,

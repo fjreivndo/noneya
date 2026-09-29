@@ -213,6 +213,7 @@ function grassTex() {
 }
 function blockedAt(x, z, m) {
   for (const b of World.boxes) if (b.y0 < 2 && x > b.x0 - m && x < b.x1 + m && z > b.z0 - m && z < b.z1 + m) return true;
+  if (World._decals) for (const d of World._decals) if (x > d[0] - m && x < d[2] + m && z > d[1] - m && z < d[3] + m) return true;
   return typeof inWater === 'function' && !!inWater(x, z);
 }
 function detailProps(scene) {

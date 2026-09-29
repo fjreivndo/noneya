@@ -75,6 +75,7 @@ const UI = {
   },
   leaveGame() {
     Game.stop(); Net.leave(); this.pause(false); this.toggleBuy(false); $('hud').classList.add('hidden'); HUD.showDeploy(false);
+    this.resultsOpen = false; $('results').classList.add('hidden'); $('results').innerHTML = '';
     MenuBG.start(); this.show('main');
   },
 
@@ -293,7 +294,7 @@ const UI = {
     const S = Settings;
     const rng = (k, label, min, max, step) => `<label>${label} <input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${S[k]}"><output>${S[k]}</output></label>`;
     $('setForm').innerHTML = `<label>Name <input type="text" data-k="name" value="${escapeHtml(S.name)}" maxlength="16"></label>
-      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}${rng('uiScale', 'UI scale', 0.4, 1.2, 0.02)}
+      ${rng('sens', 'Mouse sensitivity', 0.1, 4, 0.05)}${rng('fov', 'Field of view', 65, 110, 1)}${rng('vol', 'Volume', 0, 1, 0.05)}${rng('music', 'Music volume', 0, 1, 0.05)}${rng('viewDist', 'View distance', 0.5, 2.5, 0.1)}${rng('botSight', 'Bot sight distance', 0.5, 1.5, 0.05)}${rng('dmgCooldown', 'Damage cooldown (s, host)', 0, 0.5, 0.01)}${rng('uiScale', 'UI scale', 0.4, 1.2, 0.02)}
       <label>Default bot skill <select data-k="diff">${Object.entries(DIFF).map(([k, v]) => `<option value="${k}" ${S.diff === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label>Crosshair <select data-k="xhStyle">${[['cross', 'Cross'], ['tshape', 'T-shape'], ['dot', 'Dot'], ['circle', 'Circle'], ['crossring', 'Cross + circle'], ['chevron', 'Chevron']].map(([k, n]) => `<option value="${k}" ${S.xhStyle === k ? 'selected' : ''}>${n}</option>`).join('')}</select><span class="xh-prev"><span id="xhPrev" class="xh-in"></span></span></label>
       <label>Crosshair color <input type="color" data-k="xhColor" value="${S.xhColor}"></label>${rng('xhSize', 'Crosshair length', 2, 16, 1)}${rng('xhGap', 'Crosshair gap', 0, 12, 1)}
