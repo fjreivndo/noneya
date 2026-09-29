@@ -18,7 +18,7 @@ const CHANGELOG = [
     ['New', 'Music: a calm theme on the menus and in Sandbox, a driving beat in battle, and an eerie heartbeat in Zombies. Settings → Music volume.'],
     ['New', 'Speech bubbles: chat and radio callouts pop up over the speaker\'s head, players and bots alike (only your own team\'s radio).'],
     ['New', 'Eye candy: drifting clouds, circling birds (gulls at the docks), ejected brass, muzzle flashes that light things up, explosion flashes with shockwaves and scorch marks, footstep dust, and dust motes in the desert.'],
-    ['New', 'Admin menu (F8, or "Admin" in the pause menu), password protected: god mode, infinite ammo, rapid fire, one-hit kills, super speed, moon gravity, freeze bots, noclip, slow motion, give weapons, spawn vehicles, kill all enemies, teleport, win the match, skip a zombie wave, credits and cases.'],
+    ['New', 'Admin menu (F8, or "Admin" in the pause menu), password protected: god mode, infinite ammo, rapid fire, one-hit kills, super speed, moon gravity, freeze bots, noclip, slow motion, give weapons, spawn vehicles, kill all enemies, teleport, win the match, and skip a zombie wave.'],
     ['Change', 'Downed and revive now only happen in multiplayer, to real players with a human teammate who can pick them up. Bots no longer get downed or revive.'],
     ['Fix', 'Emotes played backwards: arms went up behind the head and the camera showed your back. Both fixed.'],
     ['Fix', 'The results screen stayed on top of the main menu after leaving a match.'],

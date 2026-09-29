@@ -32,7 +32,6 @@ const Admin = {
       <div class="adm-row"><span>Give</span><select id="admGun">${guns}</select>${btn('give', 'Give weapon', true)}${btn('heal', 'Full health + armour', true)}${btn('nades', 'Grenades', true)}</div>
       <div class="adm-row"><span>Spawn</span><select id="admVeh">${vehs}</select>${btn('veh', 'Spawn vehicle here', true)}</div>
       <div class="adm-row">${btn('killAll', 'Kill all enemies', true)}${btn('tp', 'Teleport to crosshair', true)}${btn('win', 'Win the match', true)}${Game.mode.id === 'zombies' ? btn('wave', 'Skip wave', true) : ''}${Game.mode.buy ? btn('money', '+$16000', true) : ''}</div>
-      <div class="adm-row">${btn('credits', '+10,000 credits')}${btn('cases', '+5 cases and keys')}</div>
       <div class="row" style="justify-content:center;margin-top:14px"><button class="btn big" data-a="close">Close</button></div></div>`;
     el.classList.remove('hidden'); UI.adminOpen = true; if (document.pointerLockElement) document.exitPointerLock();
     el.querySelectorAll('[data-o]').forEach(i => i.onchange = () => { const k = i.dataset.o; if (k === 'noclip') { if (L) { L.noclip = i.checked; L.vel.set(0, 0, 0); } } else O[k] = i.checked; this.apply(); });
@@ -48,8 +47,6 @@ const Admin = {
   },
   act(a) {
     const L = Game.local, G = Game; if (a === 'close') return this.close();
-    if (a === 'credits') { Inv.data.credits += 10000; Inv.save(); HUD.center('+₵10,000', 1); return; }
-    if (a === 'cases') { for (const c of CASES.slice(0, 5)) { Inv.data.cases[c.id] = (Inv.data.cases[c.id] || 0) + 1; Inv.data.keys[c.id] = (Inv.data.keys[c.id] || 0) + 1; } Inv.save(); HUD.center('+5 cases and keys', 1); return; }
     if (!this.host() || !L) return;
     switch (a) {
       case 'give': { const id = document.getElementById('admGun').value; L.give(id); L.fillAmmo(id); L.switchTo(id); HUD.center(`Gave ${WEAPONS[id].name}`, 1); break; }
