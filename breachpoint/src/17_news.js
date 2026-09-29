@@ -5,6 +5,7 @@
 
 const CHANGELOG = [
   { v: '2.9', date: 'Sep 2026', title: 'City, squads, killcam, career', items: [
+    ['Fix', 'City lag: once the first soldier died, every frame on the City slowed to a crawl (ragdoll physics loaded all ~4,800 walls on the map). Ragdolls and sandbox props now only load the walls around them, so the City runs as smoothly as the other maps.'],
     ['New', 'City map (Conquest, TDM, Zombies, Sandbox): a downtown grid of streets with apartments, offices and a six-storey hotel you can walk into. Every building has doors and windows on each floor, stairs all the way up and a roof to fight from. Flags: Market, Hotel, Square, Station and Park. Bots fight on the ground floor; the upper floors are yours.'],
     ['New', 'Squads: you lead three bots from your team. They follow you, and T puts down a marker they move to and hold (T at the sky calls them back). Your squad and its health show on the left, a squadmate hops in when you drive, and you can deploy on any squadmate.'],
     ['New', 'Killcam: when someone kills you, the last four seconds replay from behind them, with their weapon, distance and health. Space skips it.'],

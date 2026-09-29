@@ -16,11 +16,20 @@ const Phys = {
     w.broadphase = new CANNON.SAPBroadphase(w); w.allowSleep = true; w.solver.iterations = 8;
     w.defaultContactMaterial.friction = 0.45; w.defaultContactMaterial.restitution = 0.15;
     const ground = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane() }); ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0); w.addBody(ground);
-    for (const b of World.boxes) {
-      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3((b.x1 - b.x0) / 2, (b.y1 - b.y0) / 2, (b.z1 - b.z0) / 2)) });
-      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body);
-    }
+    this.statics = new Map();   // map walls join the physics world only where a moving prop is near them (see near)
     this.active = true;
+  },
+  near(x, z, r) {
+    if (!World.grid) return;
+    if (this.statics.size > 1500) {   // walls nothing has touched in a while go; the next step re-adds any still needed
+      for (const [b, body] of this.statics) if (Game.now - body.seen > 5) { this.world.removeBody(body); this.statics.delete(b); }
+    }
+    for (const b of World.near(x - r, z - r, x + r, z + r, [])) {
+      const had = this.statics.get(b); if (had) { had.seen = Game.now; continue; }
+      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(Math.max(0.01, (b.x1 - b.x0) / 2), Math.max(0.01, (b.y1 - b.y0) / 2), Math.max(0.01, (b.z1 - b.z0) / 2))) });
+      if (typeof physMat === 'function') body.material = physMat('stat');
+      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); this.world.addBody(body); body.seen = Game.now; this.statics.set(b, body);
+    }
   },
   clear() {
     for (const p of this.props) { if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh); }
@@ -122,6 +131,7 @@ const Phys = {
          every internal step, so ropes, thrusters and balloons must be
          re-applied each tick or they'd only act on the first one */
       this.acc = Math.min((this.acc || 0) + dt, 4 / 60);
+      for (const p of this.props) { const b = p.body; if (b && b.mass > 0 && b.sleepState !== CANNON.Body.SLEEPING) this.near(b.position.x, b.position.z, 4 + (b.boundingRadius || 1) + b.velocity.length() * 0.1); }
       while (this.acc >= 1 / 60) {
         this.acc -= 1 / 60;
         for (const p of this.props) if (p.body) { const b = p.body; p.x = b.position.x; p.y = b.position.y; p.z = b.position.z; p.q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w); }

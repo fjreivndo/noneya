@@ -5202,11 +5202,20 @@ const Phys = {
     w.broadphase = new CANNON.SAPBroadphase(w); w.allowSleep = true; w.solver.iterations = 8;
     w.defaultContactMaterial.friction = 0.45; w.defaultContactMaterial.restitution = 0.15;
     const ground = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Plane() }); ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0); w.addBody(ground);
-    for (const b of World.boxes) {
-      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3((b.x1 - b.x0) / 2, (b.y1 - b.y0) / 2, (b.z1 - b.z0) / 2)) });
-      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body);
-    }
+    this.statics = new Map();   // map walls join the physics world only where a moving prop is near them (see near)
     this.active = true;
+  },
+  near(x, z, r) {
+    if (!World.grid) return;
+    if (this.statics.size > 1500) {   // walls nothing has touched in a while go; the next step re-adds any still needed
+      for (const [b, body] of this.statics) if (Game.now - body.seen > 5) { this.world.removeBody(body); this.statics.delete(b); }
+    }
+    for (const b of World.near(x - r, z - r, x + r, z + r, [])) {
+      const had = this.statics.get(b); if (had) { had.seen = Game.now; continue; }
+      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(Math.max(0.01, (b.x1 - b.x0) / 2), Math.max(0.01, (b.y1 - b.y0) / 2), Math.max(0.01, (b.z1 - b.z0) / 2))) });
+      if (typeof physMat === 'function') body.material = physMat('stat');
+      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); this.world.addBody(body); body.seen = Game.now; this.statics.set(b, body);
+    }
   },
   clear() {
     for (const p of this.props) { if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh); }
@@ -5308,6 +5317,7 @@ const Phys = {
          every internal step, so ropes, thrusters and balloons must be
          re-applied each tick or they'd only act on the first one */
       this.acc = Math.min((this.acc || 0) + dt, 4 / 60);
+      for (const p of this.props) { const b = p.body; if (b && b.mass > 0 && b.sleepState !== CANNON.Body.SLEEPING) this.near(b.position.x, b.position.z, 4 + (b.boundingRadius || 1) + b.velocity.length() * 0.1); }
       while (this.acc >= 1 / 60) {
         this.acc -= 1 / 60;
         for (const p of this.props) if (p.body) { const b = p.body; p.x = b.position.x; p.y = b.position.y; p.z = b.position.z; p.q.set(b.quaternion.x, b.quaternion.y, b.quaternion.z, b.quaternion.w); }
@@ -6279,6 +6289,7 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
 
 const CHANGELOG = [
   { v: '2.9', date: 'Sep 2026', title: 'City, squads, killcam, career', items: [
+    ['Fix', 'City lag: once the first soldier died, every frame on the City slowed to a crawl (ragdoll physics loaded all ~4,800 walls on the map). Ragdolls and sandbox props now only load the walls around them, so the City runs as smoothly as the other maps.'],
     ['New', 'City map (Conquest, TDM, Zombies, Sandbox): a downtown grid of streets with apartments, offices and a six-storey hotel you can walk into. Every building has doors and windows on each floor, stairs all the way up and a roof to fight from. Flags: Market, Hotel, Square, Station and Park. Bots fight on the ground floor; the upper floors are yours.'],
     ['New', 'Squads: you lead three bots from your team. They follow you, and T puts down a marker they move to and hold (T at the sky calls them back). Your squad and its health show on the left, a squadmate hops in when you drive, and you can deploy on any squadmate.'],
     ['New', 'Killcam: when someone kills you, the last four seconds replay from behind them, with their weapon, distance and health. Space skips it.'],
@@ -7659,8 +7670,20 @@ const Ragdoll = {
     w.defaultContactMaterial.friction = 0.7; w.defaultContactMaterial.restitution = 0.05;
     const stat = shape => new CANNON.Body({ type: CANNON.Body.STATIC, shape, collisionFilterGroup: 1, collisionFilterMask: 2 });
     const ground = stat(new CANNON.Plane()); ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0); w.addBody(ground);
-    for (const b of World.boxes) { const body = stat(new CANNON.Box(new CANNON.Vec3((b.x1 - b.x0) / 2, (b.y1 - b.y0) / 2, (b.z1 - b.z0) / 2))); body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body); }
+    this.statics = new Map();   // walls are added around each body as it falls (see near), not all 4,000+ of a big map up front
     return w;
+  },
+  near(x, z, r = 7) {
+    const w = this.world; if (!w || !World.grid) return;
+    if (this.statics.size > 1200) {   // a long match: drop the walls and re-add only those around bodies still moving
+      for (const body of this.statics.values()) w.removeBody(body); this.statics.clear();
+      for (const o of this.list) if (!o.frozen && o.parts.upper) { const P = o.parts.upper.body.position; this.near(P.x, P.z, r); }
+    }
+    for (const b of World.near(x - r, z - r, x + r, z + r, [])) {
+      if (this.statics.has(b)) continue;
+      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(Math.max(0.01, (b.x1 - b.x0) / 2), Math.max(0.01, (b.y1 - b.y0) / 2), Math.max(0.01, (b.z1 - b.z0) / 2))), collisionFilterGroup: 1, collisionFilterMask: 2 });
+      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body); this.statics.set(b, body);
+    }
   },
   clearAll() { for (const r of this.list.slice()) this.release(r.s); this.list = []; this.world = null; this.propBodies.clear(); },
   /* a sandbox prop the bodies can land on: a kinematic box that follows its bounds */
@@ -7682,7 +7705,7 @@ const Ragdoll = {
   },
   create(s, push) {
     const M = s.model; if (!M || !M.visible || s.vehicle || this.list.some(r => r.s === s)) return;
-    const w = this.ensureWorld(), u = M.userData; M.updateMatrixWorld(true);
+    const w = this.ensureWorld(), u = M.userData; M.updateMatrixWorld(true); this.near(s.pos.x, s.pos.z);
     if (this.list.length >= this.MAX) this.freeze(this.list.find(r => !r.frozen) || this.list[0]);
     const defs = [
       { k: 'legL', g: u.legL, half: [0.085, 0.44, 0.1], off: [0, -0.44, 0], mass: 9 },
@@ -8850,7 +8873,7 @@ const Gore = {
   },
   popHelmet(s, push) {
     const u = s.model && s.model.userData; if (!u || !u.helmet || !Ragdoll.ensureWorld) return;
-    const w = Ragdoll.ensureWorld(); u.head.updateMatrixWorld(true);
+    const w = Ragdoll.ensureWorld(); Ragdoll.near(s.pos.x, s.pos.z); u.head.updateMatrixWorld(true);
     const mesh = u.helmet.clone(true); mesh.visible = true; const wp = u.helmet.getWorldPosition(new V3()), wq = u.helmet.getWorldQuaternion(new THREE.Quaternion());
     mesh.position.copy(wp); mesh.quaternion.copy(wq); Game.scene.add(mesh); u.helmet.visible = false;
     const body = new CANNON.Body({ mass: 1.5, shape: new CANNON.Box(new CANNON.Vec3(0.13, 0.06, 0.14)), linearDamping: 0.1, angularDamping: 0.2, collisionFilterGroup: 2, collisionFilterMask: 1 });

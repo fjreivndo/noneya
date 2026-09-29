@@ -107,7 +107,7 @@ const Gore = {
   },
   popHelmet(s, push) {
     const u = s.model && s.model.userData; if (!u || !u.helmet || !Ragdoll.ensureWorld) return;
-    const w = Ragdoll.ensureWorld(); u.head.updateMatrixWorld(true);
+    const w = Ragdoll.ensureWorld(); Ragdoll.near(s.pos.x, s.pos.z); u.head.updateMatrixWorld(true);
     const mesh = u.helmet.clone(true); mesh.visible = true; const wp = u.helmet.getWorldPosition(new V3()), wq = u.helmet.getWorldQuaternion(new THREE.Quaternion());
     mesh.position.copy(wp); mesh.quaternion.copy(wq); Game.scene.add(mesh); u.helmet.visible = false;
     const body = new CANNON.Body({ mass: 1.5, shape: new CANNON.Box(new CANNON.Vec3(0.13, 0.06, 0.14)), linearDamping: 0.1, angularDamping: 0.2, collisionFilterGroup: 2, collisionFilterMask: 1 });

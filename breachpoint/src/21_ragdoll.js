@@ -17,8 +17,20 @@ const Ragdoll = {
     w.defaultContactMaterial.friction = 0.7; w.defaultContactMaterial.restitution = 0.05;
     const stat = shape => new CANNON.Body({ type: CANNON.Body.STATIC, shape, collisionFilterGroup: 1, collisionFilterMask: 2 });
     const ground = stat(new CANNON.Plane()); ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0); w.addBody(ground);
-    for (const b of World.boxes) { const body = stat(new CANNON.Box(new CANNON.Vec3((b.x1 - b.x0) / 2, (b.y1 - b.y0) / 2, (b.z1 - b.z0) / 2))); body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body); }
+    this.statics = new Map();   // walls are added around each body as it falls (see near), not all 4,000+ of a big map up front
     return w;
+  },
+  near(x, z, r = 7) {
+    const w = this.world; if (!w || !World.grid) return;
+    if (this.statics.size > 1200) {   // a long match: drop the walls and re-add only those around bodies still moving
+      for (const body of this.statics.values()) w.removeBody(body); this.statics.clear();
+      for (const o of this.list) if (!o.frozen && o.parts.upper) { const P = o.parts.upper.body.position; this.near(P.x, P.z, r); }
+    }
+    for (const b of World.near(x - r, z - r, x + r, z + r, [])) {
+      if (this.statics.has(b)) continue;
+      const body = new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(Math.max(0.01, (b.x1 - b.x0) / 2), Math.max(0.01, (b.y1 - b.y0) / 2), Math.max(0.01, (b.z1 - b.z0) / 2))), collisionFilterGroup: 1, collisionFilterMask: 2 });
+      body.position.set((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2); w.addBody(body); this.statics.set(b, body);
+    }
   },
   clearAll() { for (const r of this.list.slice()) this.release(r.s); this.list = []; this.world = null; this.propBodies.clear(); },
   /* a sandbox prop the bodies can land on: a kinematic box that follows its bounds */
@@ -40,7 +52,7 @@ const Ragdoll = {
   },
   create(s, push) {
     const M = s.model; if (!M || !M.visible || s.vehicle || this.list.some(r => r.s === s)) return;
-    const w = this.ensureWorld(), u = M.userData; M.updateMatrixWorld(true);
+    const w = this.ensureWorld(), u = M.userData; M.updateMatrixWorld(true); this.near(s.pos.x, s.pos.z);
     if (this.list.length >= this.MAX) this.freeze(this.list.find(r => !r.frozen) || this.list[0]);
     const defs = [
       { k: 'legL', g: u.legL, half: [0.085, 0.44, 0.1], off: [0, -0.44, 0], mass: 9 },
