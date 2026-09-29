@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.8.html     the game (built, self-contained, works offline)
+Breachpoint v2.9.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.8.html
+build.js                  npm install && node build.js  →  Breachpoint v2.9.html
 ```
 
 ## Modes
@@ -77,6 +77,30 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.9
+
+- **City** (Conquest, TDM, Zombies, Sandbox): downtown streets, sidewalks,
+  parked cars and roadblocks, and apartments, offices and a six-storey hotel
+  you can walk into. Doors and windows on every floor, switchback stairs to
+  the roof, railings round the stairwells. Flags: Market, Hotel, Square,
+  Station, Park. Bots path on the ground floor only.
+- **Squads**: you lead three bots. They follow you, a squadmate rides along
+  when you drive, `T` puts down a marker they move to and hold (`T` at the sky
+  calls them back), and you can deploy on any living squadmate. The squad
+  panel on the left shows their health.
+- **Killcam**: the last four seconds before you died, replayed from behind
+  your killer, with their weapon, distance and health. `Space` skips.
+- **Career** (Armory → Career): weapon levels (10 per gun, rewards at each
+  level), three daily challenges, and a 30-tier reward track driven by XP.
+- **Zombies**: points, weapon lockers (`E` to buy or refill), barricades the
+  horde breaks and you repair (hold `E`), and an Abomination boss every fifth
+  wave with a ground slam.
+- **Vehicles**: tanks have a roof gunner seat with a machine gun (players and
+  bots); Dockyard has two patrol boats.
+- **Controls**: Settings → Controls rebinds every key (conflicts swap).
+- **Performance**: static map geometry is merged into batches per material and
+  48 m cell, and far soldiers/vehicles drop their small parts.
 
 ## New in v2.8
 
@@ -417,7 +441,7 @@ Everything is saved in the browser's localStorage.
 `WASD` move · `Shift` walk (Defuse) / sprint · `Ctrl`/`C` crouch · `Space` jump ·
 `LMB`/`RMB` fire / aim (grenades: throw / lob) · `R` reload · `1-5` weapons, grenades,
 RPG · `X` last weapon · `E` plant, defuse, jeep · `B` buy · `Q` spot · `G` gadget ·
-`F` inspect · `Z` call in a killstreak · `C` (driving) chase / seat camera · `Tab` scores ·
+`F` inspect · `Z` call in a killstreak · `T` squad marker · `C` (driving) chase / seat camera · `Tab` scores ·
 `Y`/`Enter` chat · `Esc` pause
 
 ## Building

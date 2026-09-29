@@ -78,7 +78,7 @@ const JetAI = {
       if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle && Game.now - (v.crewT || 0) < 40) continue;
       if (v.crew && v.crew.brain && v.crew.brain.crew === v) v.crew.brain.crew = null; v.crew = null;
       let best = null, bd = 60;
-      for (const s of Game.soldiers) { if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.team !== v.team || s.cls === 'engineer') continue;
+      for (const s of Game.soldiers) { if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.team !== v.team || s.cls === 'engineer' || (typeof squadBusy === 'function' && squadBusy(s))) continue;
         const d = dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z); if (d < bd) { bd = d; best = s; } }
       if (best) { best.brain.crew = v; v.crew = best; v.crewT = Game.now; if (Game.cmd[best.team]) Game.cmd[best.team].say(best, 'Heading for the jet!', 4); }
     }

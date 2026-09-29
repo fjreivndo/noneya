@@ -24,7 +24,7 @@ const HeliAI = {
       }
       let best = null, bd = sbx ? 45 : 110;
       for (const s of Game.soldiers) {
-        if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.heldBy) continue;
+        if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.heldBy || (typeof squadBusy === 'function' && squadBusy(s))) continue;
         if (sbx ? !(s.team === 'T' || s.team === 'CT') : (s.team !== v.team || s.cls === 'engineer')) continue;
         const d = dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z); if (d < bd) { bd = d; best = s; }
       }

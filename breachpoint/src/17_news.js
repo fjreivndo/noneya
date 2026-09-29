@@ -4,6 +4,16 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.9', date: 'Sep 2026', title: 'City, squads, killcam, career', items: [
+    ['New', 'City map (Conquest, TDM, Zombies, Sandbox): a downtown grid of streets with apartments, offices and a six-storey hotel you can walk into. Every building has doors and windows on each floor, stairs all the way up and a roof to fight from. Flags: Market, Hotel, Square, Station and Park. Bots fight on the ground floor; the upper floors are yours.'],
+    ['New', 'Squads: you lead three bots from your team. They follow you, and T puts down a marker they move to and hold (T at the sky calls them back). Your squad and its health show on the left, a squadmate hops in when you drive, and you can deploy on any squadmate.'],
+    ['New', 'Killcam: when someone kills you, the last four seconds replay from behind them, with their weapon, distance and health. Space skips it.'],
+    ['New', 'Career (Armory → Career): weapon levels with rewards (credits, attachments, keys), three daily challenges, and a 30-tier reward track filled by match XP.'],
+    ['New', 'Zombies: points for kills, weapon lockers to buy guns and ammo (E), barricades the zombies tear down and you repair (hold E), and an Abomination boss every fifth wave.'],
+    ['New', 'Tanks carry a roof gunner with a machine gun (players or bots). Dockyard has two patrol boats.'],
+    ['New', 'Settings → Controls: rebind every key. Picking a key that\'s in use swaps the two.'],
+    ['Change', 'Performance: static map pieces are merged into a few hundred batches (the City went from about 8,900 draw calls to 3,300), and far-away soldiers and vehicles skip their small parts.'],
+  ] },
   { v: '2.8', date: 'Sep 2026', title: 'Garage: interiors, player-only vehicles, open all', items: [
     ['Fix', 'Vehicles (helicopters, jets, tanks and the rest) now spawn in Team Deathmatch and Zombies on maps with bases. The helipads and hangars used to stand empty there.'],
     ['New', 'Player-only vehicles: at each base one jeep, one motorbike and one attack helicopter carry a yellow PLAYERS ONLY tag. Bots leave them alone.'],

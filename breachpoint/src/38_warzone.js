@@ -18,8 +18,10 @@
 /* ── helpers ───────────────────────────────────────────────────────────── */
 function freeBot(s, team) {
   return s.ctrl === 'bot' && s.alive && !s.vehicle && s.brain && s.brain.constructor === Brain && !s.brain.crew && !s.brain.ride2 && !s.brain.mgGo
-    && !s.heldBy && !s.downed && !s.planting && !s.emote && (!team || s.team === team);
+    && !s.heldBy && !s.downed && !s.planting && !s.emote && (!team || s.team === team) && !squadBusy(s);
 }
+/* a bot in a player's squad (while the player is alive) stays with them */
+function squadBusy(s) { if (!s.playerSquad) return false; const L = Game.byId(s.playerSquad); return !!(L && L.alive); }
 function busyFighting(s, r) { const t = s.brain.target; return t && t.alive && dist2(t.pos.x, t.pos.z, s.pos.x, s.pos.z) < r; }
 /* where a bot wants to go: its squad's flag, or the nearest flag its team doesn't hold */
 function rideGoal(s, from) {
@@ -81,7 +83,7 @@ TankAI.update = function (dt) {
     if (!claimStale(v, 30)) continue;
     let best = null, bd = sbx ? 45 : 110;
     for (const s of Game.soldiers) {
-      if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.brain.ride2 || s.brain.mgGo || s.heldBy || s.planting || s.downed || skipped(v, s)) continue;
+      if (s.ctrl !== 'bot' || !s.alive || s.vehicle || !s.brain || s.brain.constructor !== Brain || s.brain.crew || s.brain.ride2 || s.brain.mgGo || s.heldBy || s.planting || s.downed || skipped(v, s) || squadBusy(s)) continue;
       if (sbx ? !(s.team === 'T' || s.team === 'CT') : (s.team !== v.team || s.cls === 'engineer')) continue;
       const d = dist2(s.pos.x, s.pos.z, v.pos.x, v.pos.z); if (d < bd) { bd = d; best = s; }
     }
@@ -663,9 +665,10 @@ const Weather = {
       if (L.intensity !== L.userData.wI) L.userData.wBase = L.intensity;
       L.intensity = L.userData.wBase * k + this.flash * fl; L.userData.wI = L.intensity;
     }
-    if (W.sound) { if (!this.audio) this.startAudio(); else this.audio.g.gain.value = W.sound * (W.wail ? 0.7 + Math.sin(Game.now * 0.7) * 0.3 : 1); }
-    // particles follow the camera
+    if (W.sound) { if (!this.audio) this.startAudio(); else this.audio.g.gain.value = W.sound * (W.wail ? 0.7 + Math.sin(Game.now * 0.7) * 0.3 : 1) * (this.pts && !this.pts.visible ? 0.35 : 1); }
+    // particles follow the camera, and stop under a roof
     const P = this.pts; if (!P || !Game.camera) return;
+    this.roofT = (this.roofT || 0) - dt; if (this.roofT <= 0) { this.roofT = 0.25; const c0 = Game.camera.position; P.visible = World.raycast(c0.x, c0.y + 0.3, c0.z, 0, 1, 0, 40) < 0; }
     const c = Game.camera.position, a = P.geometry.attributes.position, arr = a.array, R = P.userData.R, n = P.userData.n, wind = W.wind || 0, t = Game.now;
     const stride = W.rain ? 6 : 3, fall = W.rain ? 24 : W.snow ? 2.2 : 0.6;
     for (let i = 0; i < n; i++) {
@@ -712,7 +715,9 @@ Game.update = function (dt) {
   KS.update(dt); Weather.update(dt); Medal.update(dt);
 };
 const _leave38 = UI.leaveGame ? UI.leaveGame.bind(UI) : null;
-if (_leave38) UI.leaveGame = function () { Weather.stopAudio(); KS.reset(); return _leave38.apply(this, arguments); };
+if (_leave38) UI.leaveGame = function () { Weather.stopAudio(); KS.reset(); Medal.t = 0; Medal.q = []; if (Medal.el) Medal.el.style.display = 'none'; return _leave38.apply(this, arguments); };
+const _show38 = UI.show.bind(UI);
+UI.show = function (n) { if (Medal.el && !Game.running) Medal.el.style.display = 'none'; return _show38(n); };
 addEventListener('keydown', e => {
   if (e.code !== 'KeyZ' || !Game.running || Input.typing || UI.adminOpen || (Game.mode && Game.mode.id === 'sandbox')) return;
   if (KS.on()) KS.activate();

@@ -288,7 +288,7 @@ class Brain {
   setOrder(o) { this.order = o; this.goal = null; this.path = null; this.utilDone = false; this.planting = false; }
   reset() { this.mem.clear(); this.target = null; this.path = null; this.goal = null; this.order = { type: 'idle' }; this.cover = null; this.planting = false; this.utilDone = false; this.support = false; this.role = 'entry'; }
   /* tank crews can't be shot, so only bots carrying a launcher bother with them */
-  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed) || e.vehicle.K.type === 'heli')); }   // anyone can shoot at a helicopter
+  enemies() { const at = !!this.s.weapons[4]; return Game.soldiers.filter(e => e.alive && Game.hostile(this.s, e) && (at || !(e.vehicle && e.vehicle.K.closed) || e.vehicle.K.type === 'heli' || (e.vehicle.K.pguns && e.vehicle.passenger === e))); }   // anyone can shoot at a helicopter
 
   /* ── senses ── */
   sense() {

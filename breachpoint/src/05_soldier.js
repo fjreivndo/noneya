@@ -143,7 +143,8 @@ class Soldier {
   }
   /* ── body for rays ── */
   hitboxes() {
-    const p = this.vehicle ? this.vehicle.seatPos(_hbSeat, this).setY(this.vehicle.pos.y + 0.9) : this.pos, h = this.vehicle ? 1.0 : this.height;
+    const roof = this.vehicle && this.vehicle.K.pguns && this.vehicle.passenger === this;
+    const p = this.vehicle ? this.vehicle.seatPos(_hbSeat, this).setY(this.vehicle.pos.y + (roof ? 2.1 : 0.9)) : this.pos, h = this.vehicle ? 1.0 : this.height;
     const baseY = this.vehicle ? p.y : p.y;
     const topY = this.vehicle ? p.y + 1.1 : p.y + h;
     return { head: { x0: p.x - 0.14, x1: p.x + 0.14, y0: topY - 0.3, y1: topY, z0: p.z - 0.14, z1: p.z + 0.14 }, body: { x0: p.x - 0.27, x1: p.x + 0.27, y0: this.vehicle ? baseY + 0.3 : baseY, y1: topY - 0.3, z0: p.z - 0.27, z1: p.z + 0.27 }, baseY, h: topY - baseY };
@@ -157,9 +158,9 @@ class Soldier {
   syncModel(dt, localTeam, viewer) {
     const M = this.model; if (!M) return;
     const u = M.userData;
-    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.K.closed);   // tank crews ride inside
+    M.visible = (this.alive || this.deadT < 8) && this !== viewer && !(this.vehicle && this.vehicle.K.closed && !(this.vehicle.K.pguns && this.vehicle.passenger === this));   // tank crews ride inside (the roof gunner doesn't)
     if (!M.visible) return;
-    if (this.vehicle) { this.vehicle.seatPos(M.position, this); M.position.y = this.vehicle.pos.y + 0.35; M.rotation.y = this.vehicle.yaw; }
+    if (this.vehicle) { const roof = this.vehicle.K.pguns && this.vehicle.passenger === this; this.vehicle.seatPos(M.position, this); M.position.y = this.vehicle.pos.y + (roof ? 1.55 : 0.35); M.rotation.y = roof ? this.yaw : this.vehicle.yaw; }
     else { M.position.copy(this.pos); M.rotation.y = this.yaw; }
     const gid = isNade(this.cur) || !WEAPONS[this.cur] ? 'knife' : this.cur;
     setSoldierGun(M, gid, this.skinItem(gid), this.attach && this.attach[gid]);
@@ -185,7 +186,7 @@ const _hbSeat = new V3();
 function raySoldiers(o, d, maxT, exclude, list) {
   let best = maxT, hit = null, zone = null;
   for (const s of list) {
-    if (!s.alive || s === exclude || (s.vehicle && s.vehicle.K.closed)) continue;
+    if (!s.alive || s === exclude || (s.vehicle && s.vehicle.K.closed && !(s.vehicle.K.pguns && s.vehicle.passenger === s))) continue;
     const dx = s.pos.x - o.x, dz = s.pos.z - o.z; if (dx * dx + dz * dz > (best + 2) * (best + 2)) continue;
     const hb = s.hitboxes();
     let t = rayBox(o.x, o.y, o.z, d.x, d.y, d.z, hb.head);
