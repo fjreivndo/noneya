@@ -28,9 +28,11 @@ function militaryBase(team, style) {
   flatPlane(-62, Z(103), 62, Z(108.5), 'concrete', '#5a5a5c', 0.012);
   for (let x = -56; x < 60; x += 8) flatPlane(x, Z(105.6), x + 4, Z(105.9), 'concrete', '#f0f0e8', 0.016);   // centre-line dashes
   // fence with a gate, side fences, sandbags at the gate
-  for (const [a, b] of [[-62, -9], [9, 62]]) { box(a, 82, b, 82.25, 0, 2, 'metal', '#7a8088'); for (let x = a; x <= b; x += 6) box(x - 0.12, 81.9, x + 0.12, 82.35, 0, 2.4, 'metal', '#5a6068'); }
+  // the fence stops in front of the hangar and garage, so vehicles drive straight out of the motor pool
+  for (const [a, b] of [[-62, -9], [9, 16], [60, 62]]) { box(a, 82, b, 82.25, 0, 2, 'metal', '#7a8088'); for (let x = a; x <= b; x += 6) box(x - 0.12, 81.9, x + 0.12, 82.35, 0, 2.4, 'metal', '#5a6068'); }
   for (const x of [-62.25, 62]) World.add(x, 0, Math.min(Z(82), Z(103)), x + 0.25, 2, Math.max(Z(82), Z(103)), 'metal', '#7a8088');
   box(-9.6, 81.6, -8.8, 82.6, 0, 3, wallTex, wallCol); box(8.8, 81.6, 9.6, 82.6, 0, 3, wallTex, wallCol);
+  box(16, 81.6, 16.8, 82.6, 0, 3, wallTex, wallCol); box(59.2, 81.6, 60, 82.6, 0, 3, wallTex, wallCol);   // motor pool gate posts
   sandbags(-15, Math.min(Z(84.5), Z(85.5)), -10, Math.max(Z(84.5), Z(85.5))); sandbags(10, Math.min(Z(84.5), Z(85.5)), 15, Math.max(Z(84.5), Z(85.5)));
   watchtower(-58, Z(85)); watchtower(58, Z(85));
   // barracks and a command building
