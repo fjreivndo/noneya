@@ -74,7 +74,7 @@ const JetAI = {
     if (!Game.authority() || !Game.running || !Game.mode.vehicles) return;
     this.t -= dt; if (this.t > 0) return; this.t = 2.5;
     for (const v of Game.vehicles) {
-      if (v.K.type !== 'jet' || !v.alive || v.driver || v.held) continue;
+      if (v.K.type !== 'jet' || !v.alive || v.driver || v.held || v.spawn.playerOnly) continue;
       if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle && Game.now - (v.crewT || 0) < 40) continue;
       if (v.crew && v.crew.brain && v.crew.brain.crew === v) v.crew.brain.crew = null; v.crew = null;
       let best = null, bd = 60;

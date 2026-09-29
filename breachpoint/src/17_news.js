@@ -4,6 +4,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.8', date: 'Sep 2026', title: 'Garage: interiors, player-only vehicles, open all', items: [
+    ['Fix', 'Vehicles (helicopters, jets, tanks and the rest) now spawn in Team Deathmatch and Zombies on maps with bases. The helipads and hangars used to stand empty there.'],
+    ['New', 'Player-only vehicles: at each base one jeep, one motorbike and one attack helicopter carry a yellow PLAYERS ONLY tag. Bots leave them alone.'],
+    ['New', 'Jeeps and cars have interiors: seats for driver and passenger, a dashboard with gauges, a steering wheel that turns, and see-through windows. Press C while driving to switch between the chase camera and the driver\'s seat view.'],
+    ['New', 'Armory: "Apply to all guns" in the Gunsmith copies the current gun\'s attachments to every gun they fit. Cases get "Open all" buttons, plus "Open every case" at the top.'],
+    ['Fix', 'Keys for the Venom, Royal, Stormfront, Wasteland and Midnight cases showed "undefined" as their price. They now cost ₵900–1,000.'],
+    ['Fix', 'Progress is also saved when you close or refresh the page, including credits and XP for a match you leave early. When storage is full, old sandbox saves are cleared instead of your progress silently not saving. Settings → Save data exports and imports your progress, and a warning shows if the browser blocks saving (private windows, embedded previews).'],
+  ] },
   { v: '2.7', date: 'Sep 2026', title: 'Warzone: bots drive, mounted guns, killstreaks, weather', items: [
     ['New', 'Bots drive a lot more: they grab a vehicle whenever their flag is a long walk away, take a squadmate along in the passenger seat who shoots out of the window, run people over now and then, and fly the transport helicopter to drop troops next to a flag.'],
     ['New', 'Mounted machine guns: two behind the sandbags at every base gate and one dug in beside each Conquest flag. Walk up and press E, the mouse aims, LMB fires. Bots crew them too.'],

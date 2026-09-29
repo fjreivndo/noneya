@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.7.html     the game (built, self-contained, works offline)
+Breachpoint v2.8.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.7.html
+build.js                  npm install && node build.js  →  Breachpoint v2.8.html
 ```
 
 ## Modes
@@ -77,6 +77,25 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.8
+
+- **Vehicles in TDM and Zombies**: the bases on Ridgeline, Frostpeak and
+  Oasis now get their helicopters, jets, tanks and the rest in every mode, not
+  only Conquest.
+- **Player-only vehicles**: one jeep, one motorbike and one attack helicopter
+  per base wear a yellow PLAYERS ONLY tag; bots never take them.
+- **Interiors** for jeeps and cars: driver and passenger seats (and a rear
+  bench), dashboard and gauges, a steering wheel that turns with the wheels,
+  and see-through windows. `C` switches the driver between the chase camera
+  and the seat view.
+- **Armory**: Gunsmith → *Apply to all guns*; Cases → *Open all* per case and
+  *Open every case*. Keys for the five newest cases had no price; fixed.
+- **Saving**: progress also saves when the page closes or refreshes
+  (including a match you leave early), full storage drops old sandbox saves
+  instead of losing progress, and Settings → Save data can export/import a
+  save file. If the browser blocks saving (private window, embedded preview)
+  the game says so.
 
 ## New in v2.7
 
@@ -398,7 +417,8 @@ Everything is saved in the browser's localStorage.
 `WASD` move · `Shift` walk (Defuse) / sprint · `Ctrl`/`C` crouch · `Space` jump ·
 `LMB`/`RMB` fire / aim (grenades: throw / lob) · `R` reload · `1-5` weapons, grenades,
 RPG · `X` last weapon · `E` plant, defuse, jeep · `B` buy · `Q` spot · `G` gadget ·
-`F` inspect · `Z` call in a killstreak · `Tab` scores · `Y`/`Enter` chat · `Esc` pause
+`F` inspect · `Z` call in a killstreak · `C` (driving) chase / seat camera · `Tab` scores ·
+`Y`/`Enter` chat · `Esc` pause
 
 ## Building
 

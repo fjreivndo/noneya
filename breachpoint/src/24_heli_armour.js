@@ -17,7 +17,7 @@ const HeliAI = {
     this.t -= dt; if (this.t > 0) return; this.t = 2;
     const sbx = Game.mode.id === 'sandbox'; if (!Game.mode.vehicles && !sbx) return;
     for (const v of Game.vehicles) {
-      if (v.K.type !== 'heli' || !v.K.guns || !v.alive || v.driver || v.held || v.frozen) continue;
+      if (v.K.type !== 'heli' || !v.K.guns || !v.alive || v.driver || v.held || v.frozen || v.spawn.playerOnly) continue;
       if (v.crew && v.crew.alive && v.crew.brain && v.crew.brain.crew === v && !v.crew.vehicle) {
         if (Game.now - (v.crewT || 0) < 25) continue;
         v.crew.brain.crew = null; v.crew = null;   // taking too long to get there: someone else

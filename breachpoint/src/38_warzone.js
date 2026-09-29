@@ -23,6 +23,12 @@ function freeBot(s, team) {
 function busyFighting(s, r) { const t = s.brain.target; return t && t.alive && dist2(t.pos.x, t.pos.z, s.pos.x, s.pos.z) < r; }
 /* where a bot wants to go: its squad's flag, or the nearest flag its team doesn't hold */
 function rideGoal(s, from) {
+  if (!World.flags.length) {   // TDM: head for the fighting the team knows about, else the enemy's side
+    const cmd = Game.cmd[s.team], it = cmd && [...cmd.intel.values()].filter(i => Game.now - i.t < 25).sort((a, b) => b.t - a.t)[0];
+    if (it) return { x: it.pos.x, z: it.pos.z };
+    const sp = World.spawns[s.team === 'T' ? 'CT' : 'T']; if (sp && sp.length) { const q = sp[Math.floor(sp.length / 2)]; return { x: q.x * 0.5, z: q.z * 0.5 }; }
+    return null;
+  }
   const o = s.brain && s.brain.order;
   if (o && o.flag && o.flag.owner !== s.team) return o.flag;
   const fs = World.flags.filter(q => q.owner !== s.team);
@@ -49,10 +55,10 @@ const RIDE_LINES = ['Grabbing a ride!', 'I\'ll drive, get in!', 'Mounting up!', 
 
 /* ── bots take vehicles far more often ─────────────────────────────────── */
 RideAI.update = function (dt) {
-  if (!Game.authority() || !Game.running || !Game.mode.vehicles || Game.mode.id === 'sandbox' || !World.flags.length) return;
+  if (!Game.authority() || !Game.running || !Game.mode.vehicles || Game.mode.id === 'sandbox' || Game.mode.id === 'zombies') return;
   this.t -= dt; if (this.t > 0) return; this.t = 1;
   for (const v of Game.vehicles) {
-    if (!LIGHT.has(v.kind) || !v.alive || v.driver || v.held || v.frozen) continue;
+    if (!LIGHT.has(v.kind) || !v.alive || v.driver || v.held || v.frozen || v.spawn.playerOnly) continue;
     if (!claimStale(v, 15)) continue;
     let best = null, bd = 95;
     for (const s of Game.soldiers) {
@@ -71,7 +77,7 @@ TankAI.update = function (dt) {
   this.t -= dt; if (this.t > 0) return; this.t = 1.5;
   const sbx = Game.mode.id === 'sandbox'; if (!Game.mode.vehicles && !sbx) return;
   for (const v of Game.vehicles) {
-    if (!v.K.turret || !v.alive || v.driver || v.held || v.frozen) continue;
+    if (!v.K.turret || !v.alive || v.driver || v.held || v.frozen || v.spawn.playerOnly) continue;
     if (!claimStale(v, 30)) continue;
     let best = null, bd = sbx ? 45 : 110;
     for (const s of Game.soldiers) {
@@ -141,10 +147,10 @@ Brain.prototype.rideAlong = function (dt) {
 const TransportAI = {
   t: 0,
   update(dt) {
-    if (!Game.authority() || !Game.running || !Game.mode.vehicles || Game.mode.id === 'sandbox' || !World.flags.length) return;
+    if (!Game.authority() || !Game.running || !Game.mode.vehicles || Game.mode.id === 'sandbox' || Game.mode.id === 'zombies') return;
     this.t -= dt; if (this.t > 0) return; this.t = 2;
     for (const v of Game.vehicles) {
-      if (v.kind !== 'heli' || !v.alive || v.driver || v.held || v.frozen) continue;
+      if (v.kind !== 'heli' || !v.alive || v.driver || v.held || v.frozen || v.spawn.playerOnly) continue;
       if (!claimStale(v, 25)) continue;
       let best = null, bd = 90;
       for (const s of Game.soldiers) {
@@ -308,7 +314,7 @@ const MgAI = {
     if (!Game.authority() || !Game.running || !Game.mode.vehicles || Game.mode.id === 'sandbox') return;
     this.t -= dt; if (this.t > 0) return; this.t = 2;
     for (const v of Game.vehicles) {
-      if (v.K.type !== 'emplacement' || !v.alive || v.driver) continue;
+      if (v.K.type !== 'emplacement' || !v.alive || v.driver || v.spawn.playerOnly) continue;
       const g = v.mgBot;
       if (g && g.alive && g.brain && g.brain.mgGo === v && Game.now - (v.mgT || 0) < 12) continue;
       if (g && g.brain && g.brain.mgGo === v) g.brain.mgGo = null; v.mgBot = null;
