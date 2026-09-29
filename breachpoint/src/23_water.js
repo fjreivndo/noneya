@@ -63,7 +63,7 @@ const WATER_LAYOUT = {
     lake(-108, 19, 25, 27, 3); lake(45, 19, 108, 27, 3); lake(25, 12, 45, 40, 3.5, [31, 22, 39, 30]);
     clearWater();
     deck(-3, 17, 3, 29, true); deck(-62, 17, -58, 29, true); deck(72, 17, 76, 29, true);
-    deck(33.5, 11, 36.5, 23, true); deck(29, 34, 32, 41, false);
+    deck(33.5, 11, 36.5, 23, true); deck(29, 29, 32, 41, false);
     sandbags(32.5, 24, 37.5, 24.6); World.add(38, 0, 28.5, 38.4, 5, 28.9, 'wood', '#6a5a4a'); World.add(37.2, 5, 27.7, 39.2, 5.2, 29.7, 'wood', '#8a6a4a');
     World.flags.push(Object.assign({ owner: null, prog: 0, radius: 5.5 }, { name: 'F', label: 'Island', x: 35, z: 26 }));
     World.zones.push({ name: 'F Island', x0: 25, z0: 12, x1: 45, z1: 40 }, { name: 'River', x0: -110, z0: 17, x1: 110, z1: 29 });

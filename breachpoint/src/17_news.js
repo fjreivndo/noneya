@@ -4,6 +4,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.4', date: 'Sep 2026', title: 'New maps and Zombies', items: [
+    ['New', 'Zombies mode: co-op wave survival with a squad of Aegis bots (and friends in multiplayer). Walkers from wave 1, fast runners from wave 3, huge brutes from wave 5. Clearing a wave brings the fallen back, refills ammo and tops up armour. Your best wave on each map is saved. Plays on every combat map.'],
+    ['New', 'Dockyard (Defuse, TDM): a harbour quay with gantry cranes, a container yard (B), a warehouse yard (A), long and short lanes and a mid.'],
+    ['New', 'Frostpeak (Conquest, TDM): a snowy mountain valley with a bunker outpost and watchtower, a radar station, a timber lodge, a cable-car station and a frozen lake. Pine forest, a half-frozen river, falling snow.'],
+    ['New', 'Oasis Ruins (Conquest, TDM): desert dunes around an oasis lake with the C flag on its island, temple ruins, a market, a caravanserai and the tombs.'],
+    ['New', 'Both new Conquest maps have full motor pools: jeeps, a tank, an APC, an attack helicopter, bikes and a quad per side.'],
+    ['Fix', 'Ridgeline: the island dock now reaches the island, so bots stop swimming the gap.'],
+  ] },
   { v: '2.3', date: 'Sep 2026', title: 'Hills, injuries, emotes and drive-bys', items: [
     ['New', 'Hills on every map: rolling hills across Ridgeline, dunes in Dustyard\'s open yards, and hills around the outside of Flatgrass (the middle stays flat for building). They block sight and bullets, and vehicles tilt with the slope. Buildings, roads, flags and spawns stay on flat ground.'],
     ['New', 'Bot injuries: leg hits make them limp (slower, no sprint), arm hits spoil their aim, and heavy hits make them bleed (a blood trail) until they find a quiet moment to bandage.'],

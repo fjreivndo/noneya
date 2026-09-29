@@ -317,7 +317,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    are shared across files in load order.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = '2.3';
+const VERSION = '2.4';
 const V3 = THREE.Vector3;
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -6104,6 +6104,14 @@ Sandbox.onKey = (function (orig) { return function (code, down) { if (['KeyU', '
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.4', date: 'Sep 2026', title: 'New maps and Zombies', items: [
+    ['New', 'Zombies mode: co-op wave survival with a squad of Aegis bots (and friends in multiplayer). Walkers from wave 1, fast runners from wave 3, huge brutes from wave 5. Clearing a wave brings the fallen back, refills ammo and tops up armour. Your best wave on each map is saved. Plays on every combat map.'],
+    ['New', 'Dockyard (Defuse, TDM): a harbour quay with gantry cranes, a container yard (B), a warehouse yard (A), long and short lanes and a mid.'],
+    ['New', 'Frostpeak (Conquest, TDM): a snowy mountain valley with a bunker outpost and watchtower, a radar station, a timber lodge, a cable-car station and a frozen lake. Pine forest, a half-frozen river, falling snow.'],
+    ['New', 'Oasis Ruins (Conquest, TDM): desert dunes around an oasis lake with the C flag on its island, temple ruins, a market, a caravanserai and the tombs.'],
+    ['New', 'Both new Conquest maps have full motor pools: jeeps, a tank, an APC, an attack helicopter, bikes and a quad per side.'],
+    ['Fix', 'Ridgeline: the island dock now reaches the island, so bots stop swimming the gap.'],
+  ] },
   { v: '2.3', date: 'Sep 2026', title: 'Hills, injuries, emotes and drive-bys', items: [
     ['New', 'Hills on every map: rolling hills across Ridgeline, dunes in Dustyard\'s open yards, and hills around the outside of Flatgrass (the middle stays flat for building). They block sight and bullets, and vehicles tilt with the slope. Buildings, roads, flags and spawns stay on flat ground.'],
     ['New', 'Bot injuries: leg hits make them limp (slower, no sprint), arm hits spoil their aim, and heavy hits make them bleed (a blood trail) until they find a quiet moment to bandage.'],
@@ -7872,7 +7880,7 @@ const WATER_LAYOUT = {
     lake(-108, 19, 25, 27, 3); lake(45, 19, 108, 27, 3); lake(25, 12, 45, 40, 3.5, [31, 22, 39, 30]);
     clearWater();
     deck(-3, 17, 3, 29, true); deck(-62, 17, -58, 29, true); deck(72, 17, 76, 29, true);
-    deck(33.5, 11, 36.5, 23, true); deck(29, 34, 32, 41, false);
+    deck(33.5, 11, 36.5, 23, true); deck(29, 29, 32, 41, false);
     sandbags(32.5, 24, 37.5, 24.6); World.add(38, 0, 28.5, 38.4, 5, 28.9, 'wood', '#6a5a4a'); World.add(37.2, 5, 27.7, 39.2, 5.2, 29.7, 'wood', '#8a6a4a');
     World.flags.push(Object.assign({ owner: null, prog: 0, radius: 5.5 }, { name: 'F', label: 'Island', x: 35, z: 26 }));
     World.zones.push({ name: 'F Island', x0: 25, z0: 12, x1: 45, z1: 40 }, { name: 'River', x0: -110, z0: 17, x1: 110, z1: 29 });
@@ -8372,7 +8380,7 @@ function detailProps(scene) {
   const place = (n, m, fn) => { let made = 0; for (let t = 0; t < n * 4 && made < n; t++) { const x = lerp(B.x0 + 1, B.x1 - 1, r()), z = lerp(B.z0 + 1, B.z1 - 1, r()); if (blockedAt(x, z, m)) continue; fn(x, z, made++); } return made; };
   const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), P = new V3(), Sc = new V3(), C = new THREE.Color();
   // grass tufts: three crossed cards
-  const area = (B.x1 - B.x0) * (B.z1 - B.z0), nG = Math.round(Math.min(14000, area * (lush ? 0.3 : 0.04)) * k);
+  const area = (B.x1 - B.x0) * (B.z1 - B.z0), nG = gt === 'snow' || gt === 'concrete' ? 0 : Math.round(Math.min(14000, area * (lush ? 0.3 : 0.04)) * k);
   if (nG) {
     const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [];
     for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3, cx = Math.cos(a) * 0.3, cz = Math.sin(a) * 0.3, o = pos.length / 3;
@@ -9307,6 +9315,479 @@ const _fire29 = fireWeapon;
 fireWeapon = function (s, now, rc) { _shooterVeh = s.vehicle || null; try { return _fire29(s, now, rc); } finally { _shooterVeh = null; } };
 const _rayVeh29 = Game.rayVehicles.bind(Game);
 Game.rayVehicles = function (o, d, maxT, skip) { return _rayVeh29(o, d, maxT, skip || _shooterVeh || undefined); };
+
+/* ── 30_maps.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Three new maps.
+   · Dockyard (Defuse, TDM, Zombies): a harbour quay with gantry cranes, a
+     container yard (B) and a warehouse yard (A), lanes and a mid in between.
+   · Frostpeak (Conquest, TDM, Zombies): a snowy mountain valley. Bunker
+     outpost, radar station, a timber lodge, a cable-car station and a frozen
+     lake, pine forest, a half-frozen river, and falling snow.
+   · Oasis Ruins (Conquest, TDM, Zombies): desert dunes around an oasis lake
+     with the C flag on its island. Temple ruins, a market, a caravanserai
+     and the tombs, among palms and broken columns.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── new surfaces ──────────────────────────────────────────────────────── */
+const _initSurfaces30 = initSurfaces;
+initSurfaces = function () {
+  _initSurfaces30();
+  if (Tex.snow_n) return;
+  makeSurface2('snow', { base: '#e6ecf2', noise: 0.08, bump: 2.5, rough: 0.75, paint(c, S, r, h) {
+    dots(c, S, r, 900, ['#f4f8fc', '#d4dde8', '#ffffff', '#c8d4e2'], 0.5, 2.2);
+    for (let i = 0; i < 40; i++) { const x = r() * S, y = r() * S, s = 6 + r() * 20; wrapped(S, x, y, s, (X, Y) => { c.fillStyle = rgba(0.06, '120,140,170'); c.beginPath(); c.ellipse(X, Y, s, s * 0.4, r() * 3, 0, TAU); c.fill(); h.fillStyle = '#707070'; h.beginPath(); h.ellipse(X, Y, s, s * 0.4, 0, 0, TAU); h.fill(); }); } } });
+  makeSurface2('ice', { base: '#b8d4e4', noise: 0.12, bump: 1.5, rough: 0.12, metal: 0.05, paint(c, S, r, h) {
+    cracks(c, S, r, 26, rgba(0.55, '240,250,255'), h); cracks(c, S, r, 10, rgba(0.35, '60,100,130'), null);
+    dots(c, S, r, 60, ['#e8f4fa', '#9ec0d4'], 3, 10); } });
+  makeSurface2('sandstone', { base: '#d2b07a', noise: 0.3, bump: 4, tint: [150, 110, 70, 0.8], paint(c, S, r, h) {
+    const rows = 8, bh = S / rows; for (let row = 0; row < rows; row++) { const bw = S / (2 + (row % 2)); for (let k = 0; k * bw < S; k++) { const v = r(); c.fillStyle = `rgb(${200 + v * 30 | 0},${165 + v * 25 | 0},${110 + v * 20 | 0})`; c.fillRect(k * bw + 1.5, row * bh + 1.5, bw - 3, bh - 3); h.fillStyle = '#b8b8b8'; h.fillRect(k * bw + 1.5, row * bh + 1.5, bw - 3, bh - 3); } }
+    h.globalCompositeOperation = 'source-over'; dots(c, S, r, 900, ['#b8945e', '#e2c490', '#a8844e'], 0.4, 1.6); cracks(c, S, r, 8, rgba(0.4, '90,60,30'), h); } });
+  makeSurface2('container', { base: '#e0e2e4', noise: 0.14, bump: 5, rough: 0.6, metal: 0.1, tint: [140, 90, 60, 0.9], paint(c, S, r, h) {   // painted corrugated steel
+    const n = 16, w = S / n; for (let i = 0; i < n; i++) { const g = c.createLinearGradient(i * w, 0, i * w + w, 0); g.addColorStop(0, '#b8babc'); g.addColorStop(0.5, '#f4f4f4'); g.addColorStop(1, '#b8babc'); c.fillStyle = g; c.fillRect(i * w, 0, w, S);
+      const hg = h.createLinearGradient(i * w, 0, i * w + w, 0); hg.addColorStop(0, '#404040'); hg.addColorStop(0.5, '#c0c0c0'); hg.addColorStop(1, '#404040'); h.fillStyle = hg; h.fillRect(i * w, 0, w, S); }
+    for (let i = 0; i < 12; i++) { const x = r() * S, y = r() * S; const g = c.createLinearGradient(0, y, 0, y + 50); g.addColorStop(0, rgba(0.35, '120,70,40')); g.addColorStop(1, rgba(0, '120,70,40')); c.fillStyle = g; c.fillRect(x, y, 2 + r() * 4, 50); } } });
+  for (const k in _matCache) delete _matCache[k];
+};
+
+/* ── shared pieces ─────────────────────────────────────────────────────── */
+function hqBlock(team, x, z, houseTex, houseCol) {
+  const s = team === 'CT' ? 1 : -1; World.hq[team] = { x, z };
+  sandbags(x - 12, z - 8 * s, x - 4, z - 8 * s + s); sandbags(x + 4, z - 8 * s, x + 12, z - 8 * s + s);
+  house(x - 18, z + 2 * s, 8, 6, s > 0 ? 'n' : 's', houseTex, houseCol);
+  for (let i = 0; i < 8; i++) World.spawns[team].push({ x: x - 8 + i * 2.2, z: z + 2 * s, yaw: s > 0 ? Math.PI : 0 });
+}
+/* jeeps, a tank, an APC, an attack helicopter, bikes and a quad per side */
+function motorPool(team, x, z) {
+  const s = team === 'CT' ? 1 : -1, yaw = s > 0 ? Math.PI : 0;
+  const put = (kind, dx, dz) => { const K = VKIND[kind] || VKIND.jeep; for (let i = 0; i < 14; i++) { const px = x + dx + (i ? rand(-3, 3) : 0), pz = z + dz * s + (i ? rand(-3, 3) : 0); if (World.bodyFree(px, 0.05, pz, K.br || K.r || 1.5, K.bh || K.h || 2)) { World.vehicleSpawns.push({ team, x: px, z: pz, yaw, kind: kind === 'jeep' ? undefined : kind }); return; } } };
+  put('jeep', 16, 0); put('jeep', 22, -3); put('tank', 32, -4); put('apc', 23, 6); put('attackheli', 34, 10); put('bike', 12, 6); put('bike', 13, 8); put('quad', 8, 5);
+}
+function perimeter(S, tex, col, capTex) {
+  const r = mulberry(hashStr(tex + S)); for (let i = -S; i < S; i += 12) { const h = 10 + r() * 8;
+    for (const [x, z, w, d] of [[i + 6, -S - 3, 13, 8], [i + 6, S + 3, 13, 8], [-S - 3, i + 6, 8, 13], [S + 3, i + 6, 8, 13]]) {
+      World.add(x - w / 2, 0, z - d / 2, x + w / 2, h, z + d / 2, tex, col, { ts: 3 }); if (capTex) World.add(x - w / 2 - 0.2, h, z - d / 2 - 0.2, x + w / 2 + 0.2, h + 0.6, z + d / 2 + 0.2, capTex, '#ffffff', { ts: 3 }); } }
+}
+function conquestFlags(list) {
+  list.forEach(f => { World.flags.push(Object.assign({ owner: null, prog: 0, radius: 11 }, f)); const R = Math.max(16, (f.radius || 11) + 5); World.zones.push({ name: f.name + ' ' + f.label, x0: f.x - R, z0: f.z - R, x1: f.x + R, z1: f.z + R }); });
+  World.zones.push({ name: 'Aegis HQ', x0: -30, z0: 84, x1: 30, z1: 110 }, { name: 'Vanta HQ', x0: -30, z0: -110, x1: 30, z1: -84 });
+}
+function scatter(n, seed, keepOut, fn) {
+  const r = mulberry(seed);
+  for (let i = 0; i < n; i++) { const x = (r() * 2 - 1) * 100, z = (r() * 2 - 1) * 92; if (keepOut(x, z)) continue; fn(x, z, r); }
+}
+function dirtRoad(x0, z0, x1, z1, tex = 'dirt', col) { const m = new THREE.Mesh(new THREE.PlaneGeometry(Math.abs(x1 - x0), Math.abs(z1 - z0)), mat(tex, col)); m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.012, (z0 + z1) / 2); World.deco(m); }
+
+/* ══ Frostpeak ════════════════════════════════════════════════════════════ */
+function snowTree(x, z, s = 1) {
+  World.add(x - 0.28 * s, 0, z - 0.28 * s, x + 0.28 * s, 3.2 * s, z + 0.28 * s, 'wood', '#6a4a34');
+  for (const [y, r, h] of [[2.6, 2.2, 3.2], [4.4, 1.7, 2.8], [6.0, 1.1, 2.2]]) {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r * s, h * s, 8), mat('grass', '#2c4a38')); m.position.set(x, y * s, z); World.deco(m);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(r * s * 0.82, h * s * 0.35, 8), mat('snow')); c.position.set(x, y * s + h * s * 0.33, z); World.deco(c);
+  }
+}
+function bunker(cx, cz, w, d, doors) {
+  house(cx, cz, w, d, doors, 'concrete', '#b4b8bc');
+  World.add(cx - w / 2 - 0.5, 3.5, cz - d / 2 - 0.5, cx + w / 2 + 0.5, 4.1, cz + d / 2 + 0.5, 'snow', '#ffffff');   // snow on the roof
+}
+function watchtower(x, z) {
+  for (const [dx, dz] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) World.add(x + dx - 0.15, 0, z + dz - 0.15, x + dx + 0.15, 6, z + dz + 0.15, 'wood', '#6a4a34');
+  World.add(x - 1.8, 6, z - 1.8, x + 1.8, 6.25, z + 1.8, 'wood', '#8a6a4a');
+  for (const [a, b, c, d] of [[-1.8, -1.8, 1.8, -1.65], [-1.8, 1.65, 0.8, 1.8], [-1.8, -1.8, -1.65, 1.8], [1.65, -1.8, 1.8, 1.8]]) World.add(x + a, 6.25, z + b, x + c, 7.3, z + d, 'wood', '#6a4a34');
+  World.add(x - 2, 8.6, z - 2, x + 2, 8.9, z + 2, 'wood', '#5a3a2a', { noCollide: false });
+  for (let i = 0; i < 17; i++) { const z0 = z + 1.8 + (16 - i) * 0.4; World.add(x + 0.9, 0, z0, x + 1.8, (i + 1) * 0.36, z0 + 0.4, 'wood', '#7a5a3a'); }   // stairs up to the gap in the rail
+}
+function buildFrostpeak() {
+  const S = 110; World.bounds = { x0: -S, z0: -S, x1: S, z1: S };
+  groundPlane('snow', 260, '#ffffff');
+  perimeter(S, 'rock', '#c8ccd2', 'snow');
+  const flags = [
+    { name: 'A', label: 'Outpost', x: -60, z: 52 }, { name: 'B', label: 'Radar', x: 58, z: 50 }, { name: 'C', label: 'Lodge', x: 0, z: 0 },
+    { name: 'D', label: 'Cable Station', x: -58, z: -50 }, { name: 'E', label: 'Frozen Lake', x: 60, z: -54, radius: 12 },
+  ];
+  // A — bunker outpost
+  bunker(-66, 46, 10, 7, 'es'); bunker(-52, 60, 7, 6, 'ws'); watchtower(-54, 44); sandbags(-62, 56, -57, 57); sandbags(-70, 56, -68, 60); World.add(-66, 0, 54, -64, 1.2, 55, 'crate');
+  // B — radar station: a tower with a dome and a fenced compound
+  World.add(56.5, 0, 46.5, 59.5, 10, 49.5, 'metal', '#a8b0b8');
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(3.2, 20, 12), mat('concrete', '#f0f2f4')); dome.position.set(58, 12.2, 48); World.deco(dome);
+  bunker(66, 56, 8, 7, 'wn'); World.add(46, 0, 40, 46.3, 1.4, 54, 'metal', '#8a9098'); World.add(46, 0, 40, 54, 1.4, 40.3, 'metal', '#8a9098'); sandbags(50, 56, 54, 57);
+  // C — the lodge: two timber buildings around a yard
+  house(-10, -8, 9, 7, 'se', 'wood', '#8a5a3a'); house(10, 9, 9, 7, 'nw', 'wood', '#7a4a2a'); house(11, -10, 6, 6, 'sw', 'wood', '#8a5a3a');
+  for (const [x, z] of [[-10, -3.2], [10, 4.2], [11, -6.7]]) World.add(x - 5, 3.2, z - 0.4, x + 5, 3.6, z + 0.4, 'snow');
+  World.add(-3, 0, 2, -1, 1.1, 4, 'crate'); World.add(2, 0, -3, 4, 1.1, -1, 'crate'); World.add(-1.5, 0, -0.5, 1.5, 0.6, 0.5, 'wood', '#6a4a34');
+  // D — cable-car station and pylon
+  bunker(-50, -44, 10, 8, 'nw'); World.add(-67, 0, -57, -65, 18, -55, 'metal', '#8a3a2a'); World.add(-68, 18, -57.5, -64, 18.6, -54.5, 'metal', '#8a3a2a');
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2, 2.4), mat('metal', '#c83a2a')); cab.position.set(-66, 14, -52); World.deco(cab);
+  const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 80, 4), mat('metal', '#222')); wire.rotation.x = Math.PI / 2 - 0.12; wire.position.set(-66, 22, -95); World.deco(wire);
+  sandbags(-60, -60, -56, -59); World.add(-62, 0, -46, -60, 2.2, -44, 'crate');
+  // E — frozen lake with fishing huts; its ice is solid ground
+  World.add(48, 0, -66, 74, 0.04, -44, 'ice', '#ffffff', { ts: 6 });
+  house(52, -48, 4, 4, 's', 'wood', '#9a6a3a'); house(69, -62, 4, 4, 'n', 'wood', '#6a8aa0'); rock(62, -58, 3, 1.6, 2);
+  // HQs and motor pools
+  for (const k of ['CT', 'T']) { const z = k === 'CT' ? 98 : -98; hqBlock(k, 0, z, 'concrete', k === 'CT' ? '#9ab0c8' : '#c8a890'); motorPool(k, 0, z); }
+  // a half-frozen river in the west with two crossings
+  lake(-108, -10, -34, -3, 1.4); deck(-82, -12, -78, -1, true); deck(-50, -12, -46, -1, true);
+  // forest and rocks
+  const keep = (x, z) => flags.some(f => dist2(f.x, f.z, x, z) < 18) || (Math.abs(z) > 80 && Math.abs(x) < 42) || (z > -12 && z < -1 && x < -30) || Math.abs(x) < 5 || (Math.abs(z) < 4 && Math.abs(x) < 70);
+  scatter(110, 4242, keep, (x, z, r) => { if (r() < 0.7) snowTree(x, z, 0.8 + r() * 0.6); else { const w = 1.5 + r() * 3, h = 0.9 + r() * 2, d = 1.5 + r() * 3; World.add(x - w / 2, 0, z - d / 2, x + w / 2, h, z + d / 2, 'rock', '#d8dce2', { ts: 3 }); World.add(x - w / 2 + 0.1, h, z - d / 2 + 0.1, x + w / 2 - 0.1, h + 0.25, z + d / 2 - 0.1, 'snow'); } });
+  // stone walls between lanes
+  [[-30, 30, -18, 30.6], [18, 28, 32, 28.6], [-34, -28, -20, -27.4], [22, -30, 36, -29.4], [-6, 50, 6, 50.6], [-6, -52, 6, -51.4]].forEach(([a, b, c, d]) => World.add(a, 0, b, c, 1.1, d, 'rock', '#c8ccd2'));
+  dirtRoad(-2.5, -100, 2.5, 100, 'snow', '#c8ccd4'); dirtRoad(-70, -2.5, 70, 2.5, 'snow', '#c8ccd4');
+  conquestFlags(flags);
+  World.water.length && World.zones.push({ name: 'River', x0: -110, z0: -12, x1: -30, z1: 0 });
+  World.skyColor = 0xbcc8d6; World.fog = [0xdde4ec, 70, 330]; World.sun = 0xf4f8ff;
+}
+
+/* ══ Oasis Ruins ══════════════════════════════════════════════════════════ */
+function palm(x, z, s = 1) {
+  World.add(x - 0.22 * s, 0, z - 0.22 * s, x + 0.22 * s, 6.5 * s, z + 0.22 * s, 'wood', '#8a6a4a');
+  for (let i = 0; i < 7; i++) {
+    const a = i / 7 * TAU, f = new THREE.Mesh(new THREE.ConeGeometry(0.5 * s, 3.4 * s, 4), mat('grass', i % 2 ? '#4a7a30' : '#5a8a38'));
+    f.position.set(x + Math.cos(a) * 1.4 * s, 6.2 * s, z + Math.sin(a) * 1.4 * s); f.rotation.set(0, -a, 0); f.rotateZ(Math.PI / 2 + 0.35); f.scale.set(1, 1, 0.25); World.deco(f);
+  }
+}
+function column(x, z, h, broken) {
+  World.add(x - 0.6, 0, z - 0.6, x + 0.6, 0.4, z + 0.6, 'sandstone'); World.add(x - 0.4, 0.4, z - 0.4, x + 0.4, h, z + 0.4, 'sandstone', '#e8d0a0');
+  if (!broken) World.add(x - 0.6, h, z - 0.6, x + 0.6, h + 0.4, z + 0.6, 'sandstone');
+}
+function stall(x, z, col) {
+  for (const [dx, dz] of [[-1.4, -1], [1.4, -1], [-1.4, 1], [1.4, 1]]) World.add(x + dx - 0.08, 0, z + dz - 0.08, x + dx + 0.08, 2.4, z + dz + 0.08, 'wood', '#6a4a2a');
+  World.add(x - 1.7, 2.4, z - 1.3, x + 1.7, 2.5, z + 1.3, 'plaster', col); World.add(x - 1.3, 0, z - 0.6, x + 1.3, 0.9, z + 0.6, 'wood', '#8a6a4a');
+}
+function buildOasis() {
+  const S = 110; World.bounds = { x0: -S, z0: -S, x1: S, z1: S };
+  groundPlane('sand', 260, '#f0e0c0');
+  perimeter(S, 'sandstone', '#c8a070');
+  const flags = [
+    { name: 'A', label: 'Temple', x: -60, z: 52 }, { name: 'B', label: 'Market', x: 58, z: 50 }, { name: 'C', label: 'Oasis', x: 0, z: 0, radius: 7 },
+    { name: 'D', label: 'Caravanserai', x: -58, z: -50 }, { name: 'E', label: 'Tombs', x: 60, z: -54 },
+  ];
+  // A — temple: a raised floor with steps, a colonnade and broken walls
+  World.add(-72, 0, 44, -48, 1, 60, 'sandstone', '#e0c898'); for (let i = 0; i < 3; i++) World.add(-64 + i * 0, 0, 43 - (i + 1) * 0.9 + 0.9, -56, 1 - (i + 1) * 0.33 + 0.33, 44 - i * 0.9, 'sandstone', '#d8c090');
+  for (let i = 0; i < 6; i++) { column(-70 + i * 4.4, 46, 6, i === 2 || i === 5); column(-70 + i * 4.4, 58, 6, i === 1); }
+  World.add(-66, 1, 54, -60, 3.4, 55, 'sandstone'); World.add(-56, 1, 50, -55, 2.2, 56, 'sandstone'); World.add(-71, 7, 45, -49, 7.6, 47, 'sandstone', '#d8c090');
+  // B — market: stalls, a house and crates
+  stall(52, 44, '#c83a2a'); stall(58, 44, '#2a6ac8'); stall(64, 44, '#e0a030'); stall(52, 56, '#3a9a5a'); stall(64, 56, '#9a3ac8');
+  house(70, 50, 6, 8, 'w', 'plaster', '#e8d8b8'); World.add(57, 0, 49, 59, 1.1, 51, 'crate'); World.add(47, 0, 49, 48, 1.8, 53, 'sandstone');
+  // C — the oasis: a lake with the flag on its island, two footbridges, palms
+  lake(-24, -18, 24, 18, 2.4, [-8, -7, 8, 7]);
+  deck(-1.5, 6.5, 1.5, 18.5, true); deck(-1.5, -18.5, 1.5, -6.5, true);
+  for (const [x, z] of [[-5, -4], [5, 4], [6, -4]]) palm(x, z, 0.8);
+  World.add(-3, 0, 3, -1, 0.9, 4.5, 'sandstone'); World.add(2, 0, -2, 3.2, 1.2, 0, 'crate');
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; palm(Math.cos(a) * 36, Math.sin(a) * 30, 0.9 + (i % 3) * 0.15); }
+  // D — caravanserai: a walled courtyard with gates and arcades
+  const cx = -58, cz = -50, W = 11, T = 0.8, H = 4.2;
+  const wallRun = (x0, z0, x1, z1) => World.add(x0, 0, z0, x1, H, z1, 'sandstone', '#e0c490');
+  wallRun(cx - W, cz - W, cx - 2, cz - W + T); wallRun(cx + 2, cz - W, cx + W, cz - W + T); wallRun(cx - W, cz + W - T, cx - 2, cz + W); wallRun(cx + 2, cz + W - T, cx + W, cz + W);
+  wallRun(cx - W, cz - W, cx - W + T, cz - 2); wallRun(cx - W, cz + 2, cx - W + T, cz + W); wallRun(cx + W - T, cz - W, cx + W, cz + W);
+  for (let i = 0; i < 4; i++) column(cx - 6 + i * 4, cz - 4, 3.6, i === 3);
+  World.add(cx - 1.5, 0, cz + 2, cx + 1.5, 0.9, cz + 4, 'sandstone'); World.add(cx + 5, 0, cz + 5, cx + 7, 1.1, cz + 7, 'crate');
+  // E — tombs: a stepped pyramid, obelisks and sarcophagi
+  for (let i = 0; i < 4; i++) World.add(64 - 8 + i * 1.6, i * 1.4, -62 + i * 1.6, 64 + 8 - i * 1.6, (i + 1) * 1.4, -46 - i * 1.6, 'sandstone', i % 2 ? '#d8b880' : '#e2c490');
+  World.add(62.5, 0, -46.5, 65.5, 2.4, -45.8, 'sandstone', '#6a5a4a');
+  for (const [x, z] of [[52, -60], [52, -46], [72, -40]]) { World.add(x - 0.6, 0, z - 0.6, x + 0.6, 7, z + 0.6, 'sandstone', '#c8a878'); }
+  for (const [x, z] of [[50, -52], [54, -40], [74, -52]]) World.add(x - 1.2, 0, z - 0.5, x + 1.2, 0.9, z + 0.5, 'sandstone', '#b89868');
+  // HQs and motor pools
+  for (const k of ['CT', 'T']) { const z = k === 'CT' ? 98 : -98; hqBlock(k, 0, z, 'plaster', k === 'CT' ? '#b8c4d0' : '#d8b890'); motorPool(k, 0, z); }
+  // ruins and palms across the dunes
+  const keep = (x, z) => flags.some(f => dist2(f.x, f.z, x, z) < 18) || (Math.abs(z) > 80 && Math.abs(x) < 42) || (Math.abs(x) < 32 && Math.abs(z) < 26) || Math.abs(x) < 5;
+  scatter(90, 777, keep, (x, z, r) => { const t = r(); if (t < 0.35) palm(x, z, 0.8 + r() * 0.4); else if (t < 0.7) column(x, z, 1.5 + r() * 4.5, r() < 0.7); else World.add(x - 1 - r() * 2, 0, z - 0.5, x + 1 + r() * 2, 0.8 + r() * 1.6, z + 0.6 + r(), 'sandstone', '#d8b880'); });
+  dirtRoad(-2.5, -100, 2.5, -32, 'dirt', '#c8a878'); dirtRoad(-2.5, 32, 2.5, 100, 'dirt', '#c8a878'); dirtRoad(-70, -2.5, -30, 2.5, 'dirt', '#c8a878'); dirtRoad(30, -2.5, 70, 2.5, 'dirt', '#c8a878');
+  conquestFlags(flags); World.zones.push({ name: 'Oasis Lake', x0: -24, z0: -18, x1: 24, z1: 18 });
+  World.skyColor = 0xa0c0e0; World.fog = [0xe8d8b8, 90, 420]; World.sun = 0xfff0d0;
+}
+
+/* ══ Dockyard ═════════════════════════════════════════════════════════════ */
+function buildDockyard() {
+  const N = 48, CS = 2, G = Array.from({ length: N }, () => Array(N).fill('#'));
+  const carve = (x0, z0, x1, z1, ch) => { for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) G[z][x] = ch; };
+  const put = (x, z, ch) => { G[z][x] = ch; };
+  carve(1, 1, 46, 8, '.'); carve(20, 5, 27, 7, 'S');                         // the quay, CT spawn on it
+  carve(34, 10, 46, 21, 'A'); carve(1, 10, 13, 21, 'B');                    // sites
+  carve(20, 9, 27, 37, '.'); carve(28, 17, 33, 19, '.'); carve(14, 13, 19, 15, '.');   // mid, A short, B connector
+  carve(40, 22, 45, 35, '.'); carve(3, 22, 7, 35, '.'); carve(2, 34, 45, 38, '.');     // A long, B alley, lower yard
+  carve(15, 39, 32, 46, 'T'); carve(38, 9, 41, 9, '.'); carve(6, 9, 9, 9, '.');       // T spawn; quay → sites
+  carve(20, 24, 21, 24, '#'); carve(26, 24, 27, 24, '#');                  // mid choke
+  // containers (K), stacked containers (k), crates (C/c), low barriers (h)
+  [[37, 12], [43, 17], [36, 19], [4, 12], [10, 17], [3, 19], [22, 13], [25, 30], [30, 36], [12, 36], [42, 28], [5, 27]].forEach(([x, z]) => put(x, z, 'K'));
+  [[45, 11], [1, 11], [23, 20]].forEach(([x, z]) => put(x, z, 'k'));
+  [[39, 15], [8, 14], [21, 33], [26, 11], [34, 37], [16, 35], [44, 33], [2, 30], [31, 18]].forEach(([x, z]) => put(x, z, 'c'));
+  [[40, 20], [11, 11], [24, 17], [18, 36], [37, 35]].forEach(([x, z]) => put(x, z, 'C'));
+  [[14, 6], [33, 6], [9, 4], [38, 4]].forEach(([x, z]) => put(x, z, 'h'));
+  const wx = x => (x - N / 2) * CS, wz = z => (z - N / 2) * CS;
+  World.bounds = { x0: -N, z0: -N, x1: N, z1: N };
+  groundPlane('concrete', 130, '#b8b4ac');
+  const used = Array.from({ length: N }, () => Array(N).fill(false)), COLS = ['#8a3a2a', '#2a5a8a', '#3a7a4a', '#b87a2a', '#6a6a70', '#7a2a5a'];
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    if (G[z][x] !== '#' || used[z][x]) continue;
+    let x2 = x; while (x2 + 1 < N && G[z][x2 + 1] === '#' && !used[z][x2 + 1]) x2++;
+    let z2 = z; const rowOk = zz => { for (let k = x; k <= x2; k++) if (G[zz][k] !== '#' || used[zz][k]) return false; return true; };
+    while (z2 + 1 < N && rowOk(z2 + 1)) z2++;
+    for (let zz = z; zz <= z2; zz++) for (let k = x; k <= x2; k++) used[zz][k] = true;
+    const border = x === 0 || z === 0 || x2 === N - 1 || z2 === N - 1, hsh = hashStr(x + ',' + z);
+    const warehouse = !border && (x2 - x + 1) * (z2 - z + 1) > 10;
+    const h = border ? 10 : warehouse ? 7 + (hsh % 3) : 5.2;
+    World.add(wx(x), 0, wz(z), wx(x2 + 1), h, wz(z2 + 1), border ? 'concrete' : warehouse ? 'brick' : 'container', border ? '#8a8a88' : warehouse ? '#ffffff' : COLS[hsh % COLS.length]);
+  }
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    const ch = G[z][x], x0 = wx(x), z0 = wz(z), col = COLS[hashStr(z + ':' + x) % COLS.length];
+    if (ch === 'K') World.add(x0 + 0.1, 0, z0 - 0.9, x0 + 1.9, 2.6, z0 + 2.9, 'container', col);
+    if (ch === 'k') { World.add(x0 + 0.1, 0, z0 - 0.9, x0 + 1.9, 2.6, z0 + 2.9, 'container', col); World.add(x0 + 0.1, 2.6, z0 - 0.9, x0 + 1.9, 5.2, z0 + 2.9, 'container', COLS[(hashStr(x + ':' + z) + 2) % COLS.length]); }
+    if (ch === 'C') { World.add(x0 + 0.1, 0, z0 + 0.1, x0 + 1.9, 1.1, z0 + 1.9, 'crate'); World.add(x0 + 0.25, 1.1, z0 + 0.25, x0 + 1.75, 2.2, z0 + 1.75, 'crate', '#d8c8a8'); }
+    if (ch === 'c') World.add(x0 + 0.2, 0, z0 + 0.2, x0 + 1.8, 1.1, z0 + 1.8, 'crate');
+    if (ch === 'h') World.add(x0, 0, z0 + 0.6, x0 + 2, 1.05, z0 + 1.4, 'concrete', '#e8c030');
+    if (ch === 'S') World.spawns.CT.push({ x: x0 + 1, z: z0 + 1, yaw: Math.PI });
+    if (ch === 'T') World.spawns.T.push({ x: x0 + 1, z: z0 + 1, yaw: 0 });
+  }
+  // the harbour basin along the north wall, a mooring post line, and two gantry cranes
+  lake(wx(8), wz(1), wx(40), wz(4), 3.5);
+  for (let x = 8; x <= 40; x += 4) World.add(wx(x) - 0.25, 0, wz(4) + 0.3, wx(x) + 0.25, 0.7, wz(4) + 0.8, 'metal', '#d8c030');
+  for (const cx of [wx(14), wx(33)]) {
+    for (const dx of [-3, 3]) World.add(cx + dx - 0.4, 0, wz(5) - 0.4, cx + dx + 0.4, 15, wz(5) + 0.4, 'metal', '#d8a020');
+    World.add(cx - 3.6, 15, wz(1), cx + 3.6, 16.2, wz(8), 'metal', '#d8a020');
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(2, 1.6, 2), mat('metal', '#e8e8e8')); cab.position.set(cx, 14, wz(3)); World.deco(cab);
+    const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 8, 4), mat('metal', '#222')); hook.position.set(cx, 11, wz(3)); World.deco(hook);
+  }
+  const rect = (x0, z0, x1, z1) => ({ x0: wx(x0), z0: wz(z0), x1: wx(x1 + 1), z1: wz(z1 + 1) });
+  const zone = (name, x0, z0, x1, z1) => World.zones.push(Object.assign({ name }, rect(x0, z0, x1, z1)));
+  zone('Quay', 1, 1, 46, 8); zone('A Warehouse Yard', 34, 10, 46, 21); zone('B Containers', 1, 10, 13, 21); zone('Mid', 20, 9, 27, 37); zone('A Short', 28, 17, 33, 19);
+  zone('B Connector', 14, 13, 19, 15); zone('A Long', 40, 22, 45, 35); zone('B Alley', 3, 22, 7, 35); zone('Lower Yard', 2, 34, 45, 38); zone('T Spawn', 15, 39, 32, 46);
+  World.sites.A = Object.assign(rect(34, 10, 46, 21), { name: 'A' }); World.sites.B = Object.assign(rect(1, 10, 13, 21), { name: 'B' });
+  for (const k in World.sites) { const s = World.sites[k]; s.cx = (s.x0 + s.x1) / 2; s.cz = (s.z0 + s.z1) / 2; zoneDecal(s.x0, s.z0, s.x1, s.z1, '#ff5533', 0.1); labelDecal(k, s.cx, s.cz, 7, '#ff5533'); }
+  const P = (x, z) => ({ x: wx(x) + 1, z: wz(z) + 1 });
+  World.routes = {
+    A: [
+      { name: 'A Long', stage: P(42, 32), entry: P(42, 16), hold: [P(37, 11), P(45, 13), P(35, 20)], smoke: [P(39, 9)], flash: [P(42, 20)] },
+      { name: 'A Short', stage: P(23, 21), mid: P(30, 18), entry: P(37, 16), hold: [P(36, 11), P(44, 14)], smoke: [P(39, 9)], flash: [P(34, 18)] },
+    ],
+    B: [
+      { name: 'B Alley', stage: P(5, 31), entry: P(6, 17), hold: [P(3, 11), P(11, 11), P(9, 20)], smoke: [P(7, 9)], flash: [P(5, 21)] },
+      { name: 'B Connector', stage: P(23, 16), mid: P(16, 14), entry: P(10, 15), hold: [P(3, 12), P(11, 19)], smoke: [P(7, 9)], flash: [P(13, 14)] },
+    ],
+  };
+  World.ctHolds = [
+    { site: 'A', pos: P(38, 11), look: P(42, 24) }, { site: 'A', pos: P(35, 20), look: P(28, 18) },
+    { site: 'mid', pos: P(23, 10), look: P(23, 25) },
+    { site: 'B', pos: P(5, 11), look: P(5, 24) }, { site: 'B', pos: P(12, 16), look: P(17, 14) },
+  ];
+  World.skyColor = 0x98a6b4; World.fog = [0xa8b2bc, 60, 230]; World.sun = 0xf2f2f0;
+}
+
+MAPS.dockyard = { name: 'Dockyard', build: buildDockyard, modes: ['defuse', 'tdm'], desc: 'Harbour quay and container stacks. Two bomb sites, 5v5.' };
+MAPS.frostpeak = { name: 'Frostpeak', build: buildFrostpeak, modes: ['conquest', 'tdm'], desc: 'Snowy mountain valley: bunkers, radar, frozen lake. Five flags.' };
+MAPS.oasis = { name: 'Oasis Ruins', build: buildOasis, modes: ['conquest', 'tdm'], desc: 'Desert dunes, temple ruins and an oasis island. Five flags.' };
+MODES.defuse.maps.push('dockyard'); MODES.conquest.maps.push('frostpeak', 'oasis'); MODES.tdm.maps.push('dockyard', 'frostpeak', 'oasis');
+MODES.sandbox.maps.push('dockyard', 'frostpeak', 'oasis');
+Object.assign(HILL_CFG, { frostpeak: { n: 44, r: [18, 40], h: [3, 8] }, oasis: { n: 40, r: [14, 32], h: [1.5, 5] } });
+
+/* ── falling snow on Frostpeak ─────────────────────────────────────────── */
+const Snow = {
+  pts: null, N: 2600, R: 34,
+  setup(scene) {
+    this.pts = null; if (World.id !== 'frostpeak') return;
+    const g = new THREE.BufferGeometry(), p = new Float32Array(this.N * 3);
+    for (let i = 0; i < this.N; i++) { p[i * 3] = rand(-this.R, this.R); p[i * 3 + 1] = rand(0, 26); p[i * 3 + 2] = rand(-this.R, this.R); }
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    this.pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.09, transparent: true, opacity: 0.85, depthWrite: false }));
+    this.pts.frustumCulled = false; scene.add(this.pts);
+  },
+  update(dt) {
+    const P = this.pts; if (!P || !Game.camera) return;
+    const c = Game.camera.position, a = P.geometry.attributes.position, arr = a.array, R = this.R, t = Game.now;
+    for (let i = 0; i < this.N; i++) {
+      let x = arr[i * 3], y = arr[i * 3 + 1], z = arr[i * 3 + 2];
+      y -= dt * (1.1 + (i % 5) * 0.15); x += Math.sin(t * 0.7 + i) * dt * 0.35; z += dt * 0.4;
+      if (y < c.y - 6) y += 30; if (y > c.y + 24) y -= 30;
+      if (x - c.x > R) x -= 2 * R; else if (c.x - x > R) x += 2 * R; if (z - c.z > R) z -= 2 * R; else if (c.z - z > R) z += 2 * R;
+      arr[i * 3] = x; arr[i * 3 + 1] = y; arr[i * 3 + 2] = z;
+    }
+    a.needsUpdate = true;
+  },
+};
+const _start30 = Game.start.bind(Game);
+Game.start = function (cfg) { const r = _start30(cfg); Snow.setup(this.scene); return r; };
+const _gupdate30 = Game.update.bind(Game);
+Game.update = function (dt) { _gupdate30(dt); if (this.running && Snow.pts) Snow.update(dt); };
+
+/* ── 31_zombies.js ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Zombies: co-op wave survival.
+   You and a squad of Aegis bots (and friends, in multiplayer) hold out
+   against endless waves. Each wave is bigger. Walkers from wave 1, fast
+   runners from wave 3, huge brutes from wave 5. Clear a wave and everyone
+   who died comes back, ammo refills and armour tops up for a short break.
+   The game ends when the whole squad is down. Your best wave per map is kept.
+   ═══════════════════════════════════════════════════════════════════════════ */
+MODES.zombies = { id: 'zombies', name: 'Zombies', headMult: 3, armor: true, teamSize: 4, respawn: false, respawnTime: 1e9, regen: true, sprint: true, classes: true,
+  maps: ['dockyard', 'dustyard', 'ridgeline', 'frostpeak', 'oasis'], desc: 'Co-op waves of zombies.' };
+const ZTYPE = {
+  walker: { hp: w => 80 + w * 12, speed: 0.74, bite: 20, scale: 1, tint: null },
+  runner: { hp: w => 50 + w * 7, speed: 1.1, bite: 13, scale: 0.95, tint: '#6a8a4a' },
+  brute: { hp: w => 450 + w * 70, speed: 0.6, bite: 45, scale: 1.35, tint: '#4a3a3a' },
+};
+/* zombies in this mode always know where the living are */
+class HordeBrain extends ZombieBrain {
+  constructor(s, type) { super(s); this.type = type || 'walker'; this.seekT = 0; }
+  update(dt) {
+    const s = this.s; if (!s.alive || s.heldBy) return;
+    const m = s.moveIn; m.f = m.s = 0; m.jump = m.crouch = m.walk = m.sprint = false;
+    this.biteT -= dt; this.groanT -= dt; this.seekT -= dt;
+    if (this.groanT <= 0) { this.groanT = rand(3, 8); Sfx.play('hurt', s.pos, { vol: 0.45 }); }
+    if (this.seekT <= 0 || !(this.target && this.target.alive)) {
+      this.seekT = 0.6; let best = null, bd = 1e9;
+      for (const e of Game.soldiers) { if (!e.alive || e.team === 'Z' || e.team === 'D') continue; const d = dist2(e.pos.x, e.pos.z, s.pos.x, s.pos.z) + (e.downed ? 6 : 0); if (d < bd) { bd = d; best = e; } }
+      this.target = best;
+    }
+    const e = this.target; if (!e) return;
+    const tp = e.vehicle ? e.vehicle.pos : e.pos, d = dist2(tp.x, tp.z, s.pos.x, s.pos.z), reach = e.vehicle ? e.vehicle.K.r + 1.2 : 1.35;
+    this.turnTo(Math.atan2(-(tp.x - s.pos.x), -(tp.z - s.pos.z)), 0, dt, 7);
+    if (d > reach) { this.moveTo(tp, dt, false, false, this.type === 'runner'); if (this.type === 'runner') m.sprint = true; }
+    else if (this.biteT <= 0) {
+      this.biteT = this.type === 'brute' ? 1.4 : 0.9; Sfx.play('knife', s.pos);
+      const K = ZTYPE[this.type]; if (e.vehicle) e.vehicle.damage(K.bite * 2, s); else Game.damage(e, K.bite, s, 'zombie', 'chest');
+    }
+  }
+}
+
+const Horde = {
+  wave: 0, phase: 'off', t: 0, toSpawn: 0, spawnT: 0, kills: 0, next: 1, syncT: 0, best: 0,
+  on() { return Game.mode && Game.mode.id === 'zombies'; },
+  humans() { return Game.soldiers.filter(s => s.team === 'CT'); },
+  zombies() { return Game.soldiers.filter(s => s.team === 'Z' && s.alive); },
+  start() { this.wave = 0; this.phase = 'break'; this.t = 10; this.toSpawn = 0; this.kills = 0; this.next = 1; this.best = +(Store.get('zbest_' + World.id, 0)) || 0; },
+  /* somewhere out of sight, a fair distance from everyone */
+  spawnSpot() {
+    const H = this.humans().filter(s => s.alive); if (!H.length) return null;
+    for (let k = 0; k < 30; k++) {
+      const h = pick(H), a = rand(0, TAU), r = rand(26, 46), p = World.nav.randomNear(h.pos.x + Math.cos(a) * r, h.pos.z + Math.sin(a) * r, 6);
+      if (!p || H.some(o => dist2(o.pos.x, o.pos.z, p.x, p.z) < 20)) continue;
+      const B = World.bounds; if (p.x < B.x0 + 2 || p.x > B.x1 - 2 || p.z < B.z0 + 2 || p.z > B.z1 - 2) continue;
+      if (k < 20 && H.some(o => World.los(o.pos.x, o.eyeY, o.pos.z, p.x, 1.4, p.z))) continue;
+      return p;
+    }
+    const sp = pick(World.spawns.T.concat(World.spawns.CT)); return World.nav.randomNear(sp.x, sp.z, 8);
+  },
+  spawn(type) {
+    const p = this.spawnSpot(); if (!p) return;
+    const ev = { e: 'npc', id: 'z' + (this.next++), k: 'zombie', name: (type === 'brute' ? 'Brute' : type === 'runner' ? 'Runner' : 'Zombie') + ' ' + this.next, team: 'Z', w: null, pos: [p.x, 0, p.z], yaw: rand(0, TAU), zt: type, zw: this.wave };
+    this.apply(ev); if (Net.role === 'host') Net.event({ t: 'zspawn', ev });
+  },
+  apply(ev) {
+    Sandbox.apply(ev); const s = Game.byId(ev.id); if (!s) return; const K = ZTYPE[ev.zt] || ZTYPE.walker;
+    s.zt = ev.zt; s.hp = s.maxHp = K.hp(ev.zw || 1); s.speedK = K.speed; s.spawnT = Game.now; s.armor = 0; s.helmet = false;
+    if (s.ctrl === 'bot') s.brain = new HordeBrain(s, ev.zt);
+    if (s.model) { s.model.scale.setScalar(K.scale); if (K.tint) s.model.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHexString() === '4a5a3a') { o.material = o.material.clone(); o.material.color.set(K.tint); } }); }
+  },
+  startWave() {
+    this.wave++; const n = this.humans().length;
+    this.toSpawn = Math.round((5 + this.wave * 4) * (0.7 + 0.12 * n)); this.brutes = this.wave >= 5 ? 1 + Math.floor((this.wave - 5) / 2) : 0;
+    this.phase = 'wave'; this.spawnT = 0.5;
+    for (const s of this.humans()) if (!s.alive && !s.deaths) Game.respawn(s);   // anyone still on the deploy screen joins in
+    this.banner(`WAVE ${this.wave}`, this.wave >= 5 ? 'Brutes incoming' : this.wave >= 3 ? 'Runners incoming' : 'Hold together');
+  },
+  endWave() {
+    this.phase = 'break'; this.t = 14;
+    for (const s of this.humans()) {
+      if (!s.alive) Game.respawn(s);
+      for (const w of Object.values(s.weapons || {})) if (w && WEAPONS[w] && WEAPONS[w].mag) s.fillAmmo(w);
+      s.armor = Math.max(s.armor || 0, 50); s.helmet = true; if (s.hp < 100) s.hp = 100; if (s.inj) Injury.clear(s);
+      if (s.nades) s.nades.frag = Math.max(s.nades.frag || 0, 1);
+    }
+    if (this.wave > this.best) { this.best = this.wave; Store.set('zbest_' + World.id, this.best); }
+    this.banner(`WAVE ${this.wave} CLEARED`, 'Ammo refilled · fallen squadmates are back');
+  },
+  banner(a, b) { HUD.center(a + (b ? ' — ' + b : ''), 3); Sfx.play('capture'); if (Net.role === 'host') Net.event({ t: 'zban', a, b }); },
+  update(dt) {
+    if (!this.on() || !Game.authority() || Game.matchOver) return;
+    const H = this.humans(), aliveH = H.filter(s => s.alive).length, Z = this.zombies();
+    if (this.phase === 'break') { this.t -= dt; if (this.t <= 0) this.startWave(); }
+    else if (this.phase === 'wave') {
+      this.spawnT -= dt; const cap = Math.min(40, 14 + this.wave * 2);
+      if (this.toSpawn > 0 && Z.length < cap && this.spawnT <= 0) {
+        this.spawnT = Math.max(0.2, 1.1 - this.wave * 0.07); this.toSpawn--;
+        const type = this.brutes > 0 && chance(0.25) ? (this.brutes--, 'brute') : this.wave >= 3 && chance(Math.min(0.45, 0.15 + this.wave * 0.03)) ? 'runner' : 'walker';
+        this.spawn(type);
+      }
+      if (this.toSpawn <= 0 && this.brutes > 0) { this.brutes--; this.spawn('brute'); }
+      if (this.toSpawn <= 0 && this.brutes <= 0 && Z.length === 0) this.endWave();
+      // stragglers that got lost come back somewhere closer
+      for (const z of Z) {
+        if (!z.lastP || Game.now - z.lastPT > 12) { const stuck = z.lastP && Math.hypot(z.pos.x - z.lastP.x, z.pos.z - z.lastP.z) < 3 && !H.some(h => h.alive && dist2(h.pos.x, h.pos.z, z.pos.x, z.pos.z) < 3);
+          z.lastP = { x: z.pos.x, z: z.pos.z }; z.lastPT = Game.now;
+          const lost = Game.now - (z.spawnT || 0) > 70 && !H.some(h => h.alive && dist2(h.pos.x, h.pos.z, z.pos.x, z.pos.z) < 35);
+          if (stuck || lost) { const p = this.spawnSpot(); if (p) { z.pos.set(p.x, World.floorAt(p.x, p.z), p.z); z.vel.set(0, 0, 0); z.spawnT = Game.now; z.lastP = null; if (z.brain) { z.brain.path = null; z.brain.seekT = 0; } } } }
+      }
+    }
+    if (aliveH === 0 && H.length && this.phase !== 'off') { this.phase = 'off'; if (this.wave > this.best) { this.best = this.wave; Store.set('zbest_' + World.id, this.best); } Game.endMatch('T'); }
+    // clear bodies
+    for (const s of Game.soldiers.slice()) if (s.team === 'Z' && !s.alive && s.deadT > 5) { Game.removeSoldier(s.id); if (Net.role === 'host') Net.event({ t: 'zdel', id: s.id }); }
+    this.syncT -= dt; if (this.syncT <= 0 && Net.role === 'host') { this.syncT = 0.5; Net.event({ t: 'zst', w: this.wave, p: this.phase, tt: this.t, l: this.toSpawn + (this.brutes || 0) + Z.length }); }
+  },
+};
+
+/* roster: everyone on Aegis, bots fill the squad, no Vanta */
+const _prep31 = Game.prepareRoster.bind(Game);
+Game.prepareRoster = function (cfg) {
+  if (cfg.mode !== 'zombies' || cfg.roster) return _prep31(cfg);
+  for (const p of cfg.players) p.team = 'CT';
+  const r = _prep31(cfg); cfg.roster = r.filter(x => !(x.isBot && x.team === 'T')); return cfg.roster;
+};
+const _start31 = Game.start.bind(Game);
+Game.start = function (cfg) {
+  const r = _start31(cfg);
+  if (this.mode.id === 'zombies') { this.tdm = { kills: { T: 0, CT: 0 }, timeLeft: 0 }; Horde.start(); Horde.localL = 0; }
+  else Horde.phase = 'off';
+  return r;
+};
+const _gupdate31 = Game.update.bind(Game);
+Game.update = function (dt) { _gupdate31(dt); if (this.running) Horde.update(dt); };
+/* kills count toward the squad */
+const _onKill31 = Game.onKillEvent.bind(Game);
+Game.onKillEvent = function (ev) { _onKill31(ev); if (Horde.on()) { const v = this.byId(ev.v); if (v && v.team === 'Z') { Horde.kills++; this.tdm.kills.CT++; } } };
+/* clients */
+const _applyEvent31 = Net.applyEvent.bind(Net);
+Net.applyEvent = function (e) {
+  switch (e && e.t) {
+    case 'zspawn': Horde.apply(e.ev); return;
+    case 'zdel': Game.removeSoldier(e.id); return;
+    case 'zst': Horde.wave = e.w; Horde.phase = e.p; Horde.t = e.tt; Horde.left = e.l; return;
+    case 'zban': HUD.center(e.a + (e.b ? ' — ' + e.b : ''), 3); Sfx.play('capture'); return;
+  }
+  return _applyEvent31(e);
+};
+/* HUD: wave, zombies left, squad alive */
+const _hud31 = HUD.update.bind(HUD);
+HUD.update = function (dt) {
+  _hud31(dt); if (!Horde.on() || !Game.local) return; const E = this.el;
+  const left = Game.authority() ? Horde.toSpawn + (Horde.brutes || 0) + Horde.zombies().length : (Horde.left || 0);
+  E.timer.textContent = Horde.wave ? `WAVE ${Horde.wave}` : 'ZOMBIES'; E.timer.classList.remove('bomb', 'freeze');
+  E.scCT.textContent = Horde.humans().filter(s => s.alive).length; E.scT.textContent = left;
+  E.rinfo.textContent = Horde.phase === 'break' ? `Next wave in ${Math.max(0, Math.ceil(Horde.t))}s · best: wave ${Horde.best}` : `${left} zombies left · ${Horde.kills || this.kills || 0} killed`;
+  if (Horde.phase === 'wave' && !Game.local.alive) E.rinfo.textContent += ' · you are back when the wave is cleared';
+};
+/* the end screen says how far you got */
+const _results31 = UI.matchResults.bind(UI);
+UI.matchResults = function (r) {
+  _results31(r); if (Game.mode.id !== 'zombies') return;
+  const el = document.getElementById('results'), h = el && el.querySelector('h1, h2'); if (h) h.textContent = `Overrun on wave ${Horde.wave}`;
+  const sub = el && el.querySelector('.rsub'); if (sub) sub.textContent = `${Horde.kills} zombies killed · best on ${World.def.name}: wave ${Horde.best} · Zombies · ${fmtTime(r.dur)}`;
+  const t = el && el.querySelector('.rteams'); if (t && t.children.length > 1) t.children[0].remove();   // no Vanta table
+};
+/* no class deploy screen between waves: you come back automatically */
+const _showDeploy31 = HUD.showDeploy.bind(HUD);
+HUD.showDeploy = function (on) { if (on && Horde.on() && Horde.wave > 0) return; return _showDeploy31(on); };
+
+/* shambling: hunched, arms out in front, no gun */
+const _sync31 = Soldier.prototype.syncModel;
+Soldier.prototype.syncModel = function (dt, localTeam, viewer) {
+  const r = _sync31.call(this, dt, localTeam, viewer);
+  if (this.team !== 'Z' || !this.alive || !this.model || !this.model.visible || this.rag) return r;
+  const u = this.model.userData, t = Game.now * (this.zt === 'runner' ? 9 : 4) + (this.id.length * 1.7);
+  if (u.gunMount) u.gunMount.visible = false;
+  u.arms.rotation.x = 0; if (u.armL) { u.armL.rotation.set(0.25 + Math.sin(t) * 0.12, -0.15, 0); u.armR.rotation.set(0.25 - Math.sin(t) * 0.12, 0.15, 0); }
+  u.upper.rotation.x = this.zt === 'runner' ? -0.45 : this.zt === 'brute' ? -0.35 : -0.25; u.head.rotation.z = Math.sin(t * 0.5) * 0.25; u.head.rotation.x = 0.2;
+  return r;
+};
 
 /* ── 99_main.js ── */
 /* ═══════════════════════════════════════════════════════════════════════════

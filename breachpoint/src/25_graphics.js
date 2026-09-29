@@ -221,7 +221,7 @@ function detailProps(scene) {
   const place = (n, m, fn) => { let made = 0; for (let t = 0; t < n * 4 && made < n; t++) { const x = lerp(B.x0 + 1, B.x1 - 1, r()), z = lerp(B.z0 + 1, B.z1 - 1, r()); if (blockedAt(x, z, m)) continue; fn(x, z, made++); } return made; };
   const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), P = new V3(), Sc = new V3(), C = new THREE.Color();
   // grass tufts: three crossed cards
-  const area = (B.x1 - B.x0) * (B.z1 - B.z0), nG = Math.round(Math.min(14000, area * (lush ? 0.3 : 0.04)) * k);
+  const area = (B.x1 - B.x0) * (B.z1 - B.z0), nG = gt === 'snow' || gt === 'concrete' ? 0 : Math.round(Math.min(14000, area * (lush ? 0.3 : 0.04)) * k);
   if (nG) {
     const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [];
     for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3, cx = Math.cos(a) * 0.3, cz = Math.sin(a) * 0.3, o = pos.length / 3;

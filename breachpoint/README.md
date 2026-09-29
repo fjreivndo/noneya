@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.3.html     the game (built, self-contained, works offline)
+Breachpoint v2.4.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.3.html
+build.js                  npm install && node build.js  →  Breachpoint v2.4.html
 ```
 
 ## Modes
@@ -77,6 +77,13 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.4
+
+- **Zombies mode:** co-op waves (walkers, runners, brutes) with a bot squad;
+  the fallen return and ammo refills between waves; best wave per map saved.
+- **New maps:** Dockyard (Defuse/TDM), Frostpeak (snowy Conquest/TDM with
+  falling snow), Oasis Ruins (desert Conquest/TDM around an oasis island).
 
 ## New in v2.3
 
