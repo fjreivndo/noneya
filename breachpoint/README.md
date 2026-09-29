@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.6.html     the game (built, self-contained, works offline)
+Breachpoint v2.7.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.6.html
+build.js                  npm install && node build.js  →  Breachpoint v2.7.html
 ```
 
 ## Modes
@@ -77,6 +77,28 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.7
+
+- **Bots drive a lot more.** They grab a vehicle whenever their flag is a long
+  walk away (from much further off), bring a squadmate along in the passenger
+  seat who shoots out of the window, occasionally run people over, and fly the
+  transport helicopter to drop troops beside a flag. Claims that stall are
+  handed to someone else.
+- **Mounted machine guns**: two behind the sandbags at each base gate, and one
+  dug in beside every Conquest flag with a sandbag horseshoe for cover. `E` to
+  man one, the mouse aims, `LMB` fires. Bots crew them as well.
+- **Killstreaks** (Conquest, TDM): 3 kills → UAV scan (all enemies on your
+  team's minimap for 25 s), 5 → artillery strike on your crosshair, 7 → supply
+  drop (full health, armour, ammo and a special weapon). `Z` calls the next
+  one in. Bots use theirs too.
+- **Weather**, picked each match or fixed in Settings → Weather: clear,
+  overcast, rain, fog, or a thunderstorm with lightning. Frostpeak gets
+  blizzards and the desert maps sandstorms. Bots see less far in bad weather.
+- **Medals**: double/triple/multi kills, headshots, longshots, roadkills and
+  sprees.
+- Base fences are open in front of the hangar and garage so vehicles can
+  drive out; the admin menu only has game cheats (no credits or cases).
 
 ## New in v2.6
 
@@ -376,7 +398,7 @@ Everything is saved in the browser's localStorage.
 `WASD` move · `Shift` walk (Defuse) / sprint · `Ctrl`/`C` crouch · `Space` jump ·
 `LMB`/`RMB` fire / aim (grenades: throw / lob) · `R` reload · `1-5` weapons, grenades,
 RPG · `X` last weapon · `E` plant, defuse, jeep · `B` buy · `Q` spot · `G` gadget ·
-`F` inspect · `Tab` scores · `Y`/`Enter` chat · `Esc` pause
+`F` inspect · `Z` call in a killstreak · `Tab` scores · `Y`/`Enter` chat · `Esc` pause
 
 ## Building
 

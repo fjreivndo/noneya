@@ -4,6 +4,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.7', date: 'Sep 2026', title: 'Warzone: bots drive, mounted guns, killstreaks, weather', items: [
+    ['New', 'Bots drive a lot more: they grab a vehicle whenever their flag is a long walk away, take a squadmate along in the passenger seat who shoots out of the window, run people over now and then, and fly the transport helicopter to drop troops next to a flag.'],
+    ['New', 'Mounted machine guns: two behind the sandbags at every base gate and one dug in beside each Conquest flag. Walk up and press E, the mouse aims, LMB fires. Bots crew them too.'],
+    ['New', 'Killstreaks in Conquest and TDM: 3 kills for a UAV scan (every enemy on your team\'s minimap for 25 s), 5 for an artillery strike where you aim, 7 for a supply drop (full health, armour, ammo and a special weapon). Press Z to call it in. Bots use theirs too.'],
+    ['New', 'Weather: clear, overcast, rain, fog or a thunderstorm with lightning, picked each match (Settings → Weather). Frostpeak gets blizzards and the desert maps get sandstorms. Bots can\'t see as far in bad weather.'],
+    ['New', 'Medals for double and triple kills, headshots, longshots, roadkills and killing sprees.'],
+    ['Fix', 'Military bases: the fence is open in front of the hangar and the garage, so vehicles drive straight out instead of getting stuck.'],
+    ['Change', 'The admin menu only has game cheats now (no credits, cases or keys).'],
+  ] },
   { v: '2.6', date: 'Sep 2026', title: 'Photon multiplayer, Trade Hub, new guns and crates', items: [
     ['New', 'Internet multiplayer now runs on Photon Cloud: host a room, share the code, or pick a game from the Open games list. Everything goes over it: lobby, matches, Sandbox, Zombies, chat, emotes. Multiplayer → Photon settings changes the App ID or region.'],
     ['New', 'Trade Hub (main menu): a global online room where everyone playing can chat and trade skins, cases, keys and credits. Both sides build an offer, press Ready, then Confirm.'],

@@ -7,7 +7,7 @@ doesn't connect.
 
 **Your App ID is already set up.** `photon.config.json` in this folder holds
 `2198cb04-4e27-4d85-aae3-f3b5d60b2a9d` with region `eu`, and the prebuilt
-`Breachpoint v2.6.html` has it built in. Anyone who opens that file is
+`Breachpoint v2.7.html` has it built in. Anyone who opens that file is
 online through your Photon app. Read on only to change the App ID or region,
 build the game yourself, or fix connection problems.
 
