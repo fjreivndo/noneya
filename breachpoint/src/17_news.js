@@ -4,6 +4,13 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '2.6', date: 'Sep 2026', title: 'Photon multiplayer, Trade Hub, new guns and crates', items: [
+    ['New', 'Internet multiplayer now runs on Photon Cloud: host a room, share the code, or pick a game from the Open games list. Everything goes over it: lobby, matches, Sandbox, Zombies, chat, emotes. Multiplayer → Photon settings changes the App ID or region.'],
+    ['New', 'Trade Hub (main menu): a global online room where everyone playing can chat and trade skins, cases, keys and credits. Both sides build an offer, press Ready, then Confirm.'],
+    ['New', 'Weapons: Vector (very fast SMG), Double Barrel shotgun, M14 DMR, MG42, MGL-6 six-shot grenade launcher (Engineer), Flamethrower (sets targets on fire) and Railgun (pierces every enemy in a line). In the buy menu (new Special tab) and the class loadouts.'],
+    ['New', 'Five new crates: Venom, Royal, Stormfront, Wasteland and Midnight, 16 skins each with knives, including finishes for the new guns.'],
+    ['Change', 'PeerJS was replaced by Photon. local: codes (same browser) and ws:// (LAN relay) still work offline.'],
+  ] },
   { v: '2.5', date: 'Sep 2026', title: 'Military bases, jets and music', items: [
     ['New', 'Every Conquest map has a fenced military base per side: a gate with watchtowers, barracks, a command building, a vehicle hangar, a garage, three helipads, a control tower and a runway.'],
     ['New', 'More aircraft: two attack helicopters, a transport helicopter and a jet per side. Bots fly the jets: they take off down the runway, dive on targets with the cannon, drop bombs and come round again.'],

@@ -3,8 +3,8 @@
    clients move themselves, shoot, and report hits.
 
    Links (all carry the same messages):
-     PeerJS     WebRTC through the free PeerJS broker. A 5-letter room code,
-                works across the internet, nothing to run.
+     Photon     Photon Cloud rooms (see 35_photon.js and PHOTON_SETUP.md).
+                A 5-letter room code, works across the internet.
      local      BroadcastChannel between tabs of the same browser (testing).
      ws://      any broadcast relay (e.g. relay.js from Hollowreach Desktop)
                 for LAN play without internet.
@@ -19,7 +19,7 @@ const Net = {
     const c = code.trim();
     if (/^local:/i.test(c)) return this.starLink(new BroadcastChannel('bp-' + c.slice(6).toUpperCase()), isHost, handlers);
     if (/^wss?:\/\//i.test(c)) { const ws = new WebSocket(c); const medium = { postMessage: m => ws.readyState === 1 && ws.send(JSON.stringify(m)), close: () => ws.close() }; ws.onmessage = e => { try { medium.onmessage && medium.onmessage({ data: JSON.parse(e.data) }); } catch (er) { } }; ws.onopen = () => medium.onready && medium.onready(); ws.onerror = () => handlers.error('Could not reach relay ' + c); ws.onclose = () => handlers.close && handlers.close(); return this.starLink(medium, isHost, handlers, true); }
-    return this.peerLink(c.toUpperCase(), isHost, handlers);
+    return null;   // internet codes: Photon (35_photon.js)
   },
   /* A star network over a broadcast medium: every message carries from/to. */
   starLink(medium, isHost, h, waitReady) {
@@ -41,33 +41,6 @@ const Net = {
     if (!isHost) { link.helloTimer = setTimeout(() => { if (!Net.connected) h.error('No host answered on that code.'); }, 5000); }
     return link;
   },
-  peerLink(code, isHost, h) {
-    if (typeof Peer === 'undefined') { h.error('PeerJS failed to load. Use local:CODE or ws:// instead.'); return null; }
-    const conns = new Map();
-    const peer = isHost ? new Peer('breachpt-' + code.toLowerCase(), { debug: 0 }) : new Peer({ debug: 0 });
-    const link = { me: null, send: (to, m) => { if (isHost) { const c = conns.get(to); if (c && c.open) c.send(m); } else if (link.conn && link.conn.open) link.conn.send(m); }, close: () => { try { peer.destroy(); } catch (e) { } }, lastSeen: new Map() };
-    peer.on('open', id => {
-      link.me = id; Net.myId = isHost ? 'host' : id;
-      if (isHost) { h.ready && h.ready(); return; }
-      const conn = peer.connect('breachpt-' + code.toLowerCase(), { reliable: true, serialization: 'json' }); link.conn = conn;
-      conn.on('open', () => h.open());
-      conn.on('data', d => h.data(d));
-      conn.on('close', () => h.close());
-      conn.on('error', () => h.error('Connection error.'));
-      setTimeout(() => { if (!conn.open) h.error('No host found for code ' + code + '.'); }, 9000);
-    });
-    peer.on('connection', conn => { conn.on('open', () => { conns.set(conn.peer, conn); h.connect(conn.peer); }); conn.on('data', d => h.data(conn.peer, d)); conn.on('close', () => { conns.delete(conn.peer); h.close(conn.peer); }); });
-    peer.on('error', e => h.error({
-      'unavailable-id': 'That room code is taken, try again.',
-      'peer-unavailable': 'No host found for code ' + code + '.',
-      'server-error': 'Could not reach the PeerJS matchmaking server. Check your connection, or play over LAN with a ws:// relay.',
-      'network': 'Lost the connection to the PeerJS server.',
-      'browser-incompatible': 'This browser has no WebRTC support.',
-    }[e.type] || 'Network: ' + (e.message || e.type)));
-    peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) { } });
-    return link;
-  },
-
   /* ── lobby ── */
   host(code, opts) {
     this.leave(); this.role = 'host'; this.code = code; this.connected = true;

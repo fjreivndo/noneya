@@ -11,7 +11,7 @@ npm install      # downloads Electron, about a minute
 npm start
 ```
 
-The game file (`Breachpoint v2.5.html`) must sit in this folder or the one
+The game file (`Breachpoint v2.6.html`) must sit in this folder or the one
 above it. Drop in a newer build and the app picks the newest one.
 
 ## Playing with friends
@@ -32,7 +32,7 @@ The **LAN** menu copies the address for you.
 ```
 npm start -- --port 9000       relay on another port
 npm start -- --no-relay        game only
-npm start -- --html "Breachpoint v2.5.html"
+npm start -- --html "Breachpoint v2.6.html"
 npm run relay                  relay only, no window (a spare PC can host)
 ```
 

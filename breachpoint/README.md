@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.5.html     the game (built, self-contained, works offline)
+Breachpoint v2.6.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.5.html
+build.js                  npm install && node build.js  →  Breachpoint v2.6.html
 ```
 
 ## Modes
@@ -77,6 +77,16 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v2.6
+
+- **Photon multiplayer** replaces PeerJS: room codes, an Open games browser,
+  and everything networked through Photon Cloud. Setup: [PHOTON_SETUP.md](PHOTON_SETUP.md).
+- **Trade Hub:** a global online room to chat and trade skins, cases, keys
+  and credits with anyone playing.
+- **New weapons:** Vector, Double Barrel, M14 DMR, MG42, MGL-6, Flamethrower,
+  Railgun.
+- **New crates:** Venom, Royal, Stormfront, Wasteland, Midnight.
 
 ## New in v2.5
 
@@ -313,8 +323,9 @@ Bot skill has four levels: Recruit, Regular, Veteran and Elite.
 ## Multiplayer
 
 **Multiplayer → Host a room** gives you a five-letter code. Friends enter it
-under **Join**, and that works across the internet. It uses WebRTC through
-the free PeerJS broker, so there's no server to run. The host simulates the
+under **Join** (or click it under **Open games**), and that works across the
+internet through **Photon Cloud**, so there's no server to run. Setting up a
+Photon App ID is covered in [PHOTON_SETUP.md](PHOTON_SETUP.md). The host simulates the
 bots and all the rules; clients move themselves and report their hits.
 Empty slots fill with bots, and the lobby shows exactly which. With a team
 size of 4 and 3 people on a team, that team gets 1 named bot. Hosts can turn
@@ -371,6 +382,6 @@ RPG · `X` last weapon · `E` plant, defuse, jeep · `B` buy · `Q` spot · `G` 
 
 ```
 cd breachpoint
-npm install        # three.js 0.160 and PeerJS 1.5, inlined into the build
+npm install        # three.js 0.160, cannon-es and the Photon Realtime SDK, inlined into the build
 node build.js
 ```
