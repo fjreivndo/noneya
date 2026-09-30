@@ -1,0 +1,15 @@
+{
+  "name": "breachpoint",
+  "version": "3.0.0",
+  "private": true,
+  "description": "A browser FPS: CS-style Defuse rounds and Battlefield-style Conquest, squad AI, multiplayer, and a crate/skin system.",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "photon-realtime": "4.4.0",
+    "terser": "^5.51.2",
+    "three": "0.160.0"
+  }
+}
