@@ -242,6 +242,13 @@ body.cur-themed{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2
 #zpts{position:absolute;right:22px;bottom:118px;font:800 22px system-ui,sans-serif;color:#9aff8a;text-shadow:0 1px 3px #000;pointer-events:none}
 #bossbar{position:absolute;left:50%;top:70px;transform:translateX(-50%);width:min(520px,70vw);text-align:center;color:#ffb0a8;font-size:13px;letter-spacing:.2em;text-shadow:0 1px 2px #000;pointer-events:none}#bossbar div{height:10px;background:rgba(0,0,0,.55);border:1px solid #a02a20;margin-top:4px}#bossbar i{display:block;height:100%;background:linear-gradient(90deg,#c0281c,#ff5a3a)}
 .keybox{margin-top:18px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(0,0,0,.2)}.keybox h3{margin:0 0 6px;display:flex;align-items:center;gap:12px}.keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px 18px;margin-top:10px}.keyrow{display:flex;justify-content:space-between;align-items:center;gap:10px}.kbtn{min-width:92px;background:rgba(255,255,255,.06);border:1px solid var(--line,#444);color:#eee;padding:5px 10px;border-radius:4px;font-weight:700;cursor:pointer}.kbtn.changed{border-color:var(--acc,#ff7a2f);color:var(--acc,#ff7a2f)}.kbtn.wait{background:var(--acc,#ff7a2f);color:#1a0f06}
+/* v3.0 */
+body.nvg #view canvas{filter:grayscale(1) brightness(3.4) contrast(1.25) sepia(1) hue-rotate(58deg) saturate(3.2)}
+#nvgOverlay{position:fixed;inset:0;pointer-events:none;z-index:4;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 52%,rgba(0,14,0,.92) 78%),repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,rgba(0,0,0,0) 1px 3px);mix-blend-mode:multiply}
+#flagbar .flag.locked{opacity:.32;filter:grayscale(.6)}#flagbar .flag.taken{opacity:.55}
+.spawns .btn.sp.halo{border-color:#6ac0ff;color:#bfe4ff}
+#stormTint{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at center,rgba(60,90,255,.08) 40%,rgba(70,40,200,.42) 100%);animation:stormp 1.2s ease-in-out infinite alternate}@keyframes stormp{to{opacity:.6}}
+#omarks{position:fixed;inset:0;pointer-events:none;z-index:6}.omark{position:absolute;left:0;top:0;margin:-38px 0 0 -60px;width:120px;text-align:center;color:#fff;font:600 12px/1.2 system-ui,sans-serif;text-shadow:0 1px 3px #000}.omark i{display:block;font-style:normal;font-size:20px;color:var(--mc);filter:drop-shadow(0 0 4px var(--mc))}.omark b{display:block;color:var(--mc);letter-spacing:.06em;text-transform:uppercase;font-size:11px}.omark small{opacity:.85}
 </style>
 </head>
 <body>

@@ -22,8 +22,9 @@ const Perf = {
       const names = Object.keys(list[0].geometry.attributes); let nv = 0, ni = 0;
       for (const m of list) { nv += m.geometry.attributes.position.count; ni += m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; }
       const out = {}; for (const n of names) out[n] = new Float32Array(nv * list[0].geometry.attributes[n].itemSize);
-      const idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni); let vo = 0, io = 0;
+      const idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni); let vo = 0, io = 0; const refs = [];
       for (const m of list) {
+        if (m.userData.box) refs.push([m.userData.box, vo, m.geometry.attributes.position.count]);   // where each box lives in the merged mesh (destruction hides it)
         m.updateMatrix(); const G = m.geometry, M = m.matrix; nm.getNormalMatrix(M);
         const P = G.attributes.position, n = P.count;
         for (const name of names) {
@@ -42,6 +43,7 @@ const Perf = {
       geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeBoundingSphere(); geo.computeBoundingBox();
       const mm = new THREE.Mesh(geo, list[0].material); mm.castShadow = list.some(x => x.castShadow); mm.receiveShadow = true; mm.userData.merged = list.length;
       mm.matrixAutoUpdate = false; mm.updateMatrix(); g.add(mm);
+      for (const [b, o, n] of refs) b.mref = { mesh: mm, vo: o, n };
       for (const m of list) { g.remove(m); m.geometry.dispose(); removed++; }
       this.merged++;
     }
