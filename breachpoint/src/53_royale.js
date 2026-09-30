@@ -85,7 +85,7 @@ const Royale = {
   },
   /* host: someone opened a crate */
   loot(s, id) {
-    const c = this.crates.find(o => o.id === id); if (!c || c.open || !s || !s.alive || dist2(c.x, c.z, s.pos.x, s.pos.z) > 3.2) return;
+    const c = this.crates.find(o => o.id === id); if (!c || c.open || !s || !s.alive || dist2(c.x, c.z, s.pos.x, s.pos.z) > (s.ctrl === 'remote' ? 5 : 3.2)) return;
     const items = this.roll(c); this.openCrate(c);
     if (Net.role === 'host') Net.event({ t: 'rco', id });
     if (s.ctrl === 'bot' || s.ctrl === 'local') this.give(s, items);

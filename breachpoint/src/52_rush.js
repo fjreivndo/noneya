@@ -86,6 +86,7 @@ const _think52 = Commander.prototype.thinkConquest;
 Commander.prototype.thinkConquest = function () {
   if (!Rush.on()) return _think52.call(this);
   const all = World.flags, live = Rush.cur(); if (!live.length) return;
+  for (const q of this.squads || []) if (q.target && !live.includes(q.target)) q.target = null;   // the sector moved on
   World.flags = live; try { return _think52.call(this); } finally { World.flags = all; }
 };
 /* bot spawns: attackers from HQ or taken flags close to the front, defenders from the live sector or the next */

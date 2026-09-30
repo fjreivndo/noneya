@@ -393,7 +393,7 @@ class Brain {
     if (lowHp && this.coverT <= 0 && !this.cover) { this.cover = findCover(s, e.pos); this.coverT = 3; if (this.cover && chance(0.5)) Game.cmd[s.team].say(s, 'Taking fire, falling back!'); }
     if (this.cover) {
       this.moveTo(this.cover, dt, false);
-      if (dist2(s.pos.x, s.pos.z, this.cover.x, this.cover.z) < 1.2 || this.coverT < -3) { this.cover = null; if (a && a.mag < (w.mag || 1) * 0.6) s.startReload(); }
+      if (dist2(s.pos.x, s.pos.z, this.cover.x, this.cover.z) < 1.2 || this.coverT < -3) { this.cover = null; if (a && w && a.mag < (w.mag || 1) * 0.6) s.startReload(); }
     } else if (visible && dist > 28 && OBJECTIVE_ORDERS.has(this.order.type) && !(w && w.type === 'sniper')) {
       // far fight while on an objective: keep advancing instead of trading pot-shots forever
       this.peace(dt, now, true);

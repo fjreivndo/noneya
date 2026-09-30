@@ -4,6 +4,23 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const CHANGELOG = [
+  { v: '3.0', date: 'Sep 2026', title: 'Breakthrough, Royale, Co-op, map editor, night', items: [
+    ['New', 'Breakthrough: Vanta attacks the flags sector by sector while Aegis holds the line. Attackers have limited tickets and get reinforcements for every sector they take; take the last one to win.'],
+    ['New', 'Royale: everyone for themselves. The match starts with a HALO drop, you land with a pistol, and crates all over the map hold guns, armour, med kits and grenades (E). A storm wall closes in over five stages. Last one standing wins.'],
+    ['New', 'Co-op missions with your squad against Vanta bots: Silence the Guns (plant charges on three artillery pieces), Hostage Rescue (free the scientist and bring them out alive), Data Raid (download from two terminals). Shared lives, enemy reinforcements, then extraction.'],
+    ['New', 'Map editor (Play → Map editor): walls, floors, blocks, stairs, crates, sandbags, fences, containers, roof slabs, any texture and colour; spawns, flags and vehicles. Save your map and play it in TDM, Zombies, Royale, Co-op and Sandbox, and in Conquest and Breakthrough with three flags. In multiplayer the host\'s map goes to everyone.'],
+    ['New', 'Medic class: carbine, smokes, med bag, and a defibrillator that revives in one second at full health.'],
+    ['New', 'Revives for everyone: in Conquest, Breakthrough, TDM, Co-op and Zombies a killing shot can down you instead, bots included, solo included. Bots run over to revive their friends (medics from further off). Downed markers show through walls. Hold Space to give up.'],
+    ['New', 'Destructible cover: explosions wreck crates, sandbags and low walls, blow gaps in fences, and rockets, tank shells and C4 punch holes through walls (every building in the City). Vehicles smash through the light stuff. Bots path through the new holes.'],
+    ['New', 'Night and dusk (Play → Time of day): moonlight and stars, lit street lamps, flashlights (L), night vision (M), flares (J). At night bots only spot you up close unless you\'re lit: torch on, shooting, in a flare, under a lamp, or driving.'],
+    ['New', 'Parachutes: bail out of a helicopter or jet in the air (you used to land on the ground below), open your chute with Space (it opens by itself close to the ground) and steer with WASD. HALO jump deploy in Conquest and Breakthrough.'],
+    ['New', 'Vehicles: AA truck (twin flak with proximity bursts; bots man it against aircraft), patrol boat (bow machine gun for the second seat), transport truck (four more seats in the back, who can shoot).'],
+    ['New', 'Prestige (from level 50, up to 10), player cards (background, title, badges) on the menu and on kill cards, 11 badges in bronze/silver/gold, and three weekly challenges.'],
+    ['New', 'Match report on the results screen: a heatmap of where you spent the match, your kills and deaths on the map, best weapon, longest kill, time alive, distance, headshots, vehicle kills, revives and flags.'],
+    ['New', 'Sound: many more bot radio calls (contact, reloading, grenade, man down, sniper, vehicles, taking fire), optionally read aloud with a radio squelch; hits thump from the side they came from; armour and headshot hit sounds; a heartbeat when you\'re low.'],
+    ['New', 'Touch controls for tablets and phones: a move stick, drag to look, and buttons for everything (Settings → Gameplay).'],
+    ['Fix', 'Zombies was missing from the solo Play screen.'],
+  ] },
   { v: '2.9', date: 'Sep 2026', title: 'City, squads, killcam, career', items: [
     ['Fix', 'City lag: once the first soldier died, every frame on the City slowed to a crawl (ragdoll physics loaded all ~4,800 walls on the map). Ragdolls and sandbox props now only load the walls around them, so the City runs as smoothly as the other maps.'],
     ['New', 'City map (Conquest, TDM, Zombies, Sandbox): a downtown grid of streets with apartments, offices and a six-storey hotel you can walk into. Every building has doors and windows on each floor, stairs all the way up and a roof to fight from. Flags: Market, Hotel, Square, Station and Park. Bots fight on the ground floor; the upper floors are yours.'],

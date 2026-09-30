@@ -35,8 +35,8 @@ const Markers = {
       if (m.hidden) { m.el.style.display = 'none'; continue; }
       v.set(m.x, m.y, m.z).project(cam);
       const behind = v.z > 1; let x = (v.x * 0.5 + 0.5) * W, y = (-v.y * 0.5 + 0.5) * H;
-      if (behind) { x = W - x; y = H - 40; }
-      x = clamp(x, 30, W - 30); y = clamp(y, 40, H - 40);
+      if (behind) { x = W - x; y = H - 150; }
+      x = clamp(x, 70, W - 70); y = clamp(y, 60, H - 150);
       const d = L ? Math.round(Math.hypot(m.x - L.pos.x, m.z - L.pos.z)) : 0;
       m.el.style.display = ''; m.el.style.transform = `translate(${x}px,${y}px)`; m.el.style.setProperty('--mc', m.color || '#ffd24a');
       const html = `<i>${m.icon || '◆'}</i><b>${m.label}</b><small>${d} m${m.prog != null ? ' · ' + Math.round(m.prog * 100) + '%' : ''}</small>`;
@@ -278,3 +278,6 @@ Game.finishMatch = function (winner) { if (Coop.on() && Game.local && winner ===
 /* no leaving the hostage behind in a car, and Vanta doesn't shoot at them on purpose */
 const _stop54 = Game.stop.bind(Game);
 Game.stop = function () { Markers.clear(); return _stop54(); };
+/* multiplayer: the host's chosen mission goes out with the match */
+const _startCfg54 = Net.startCfgFor.bind(Net);
+Net.startCfgFor = function (cfg) { if (cfg && cfg.mode === 'coop' && !cfg.mission) { const m = UI.playCfg && UI.playCfg.mission; cfg.mission = MISSIONS[m] ? m : pick(Object.keys(MISSIONS)); } return _startCfg54(cfg); };

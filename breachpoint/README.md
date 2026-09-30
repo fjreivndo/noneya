@@ -5,10 +5,10 @@ all-out war. It has squad AI that plans and talks, peer-to-peer multiplayer,
 and a crate/skin economy. Everything is one HTML file: double-click it.
 
 ```
-Breachpoint v2.9.html     the game (built, self-contained, works offline)
+Breachpoint v3.0.html     the game (built, self-contained, works offline)
 desktop/                  Electron wrapper + LAN relay
 src/                      source, concatenated in file order by build.js
-build.js                  npm install && node build.js  →  Breachpoint v2.9.html
+build.js                  npm install && node build.js  →  Breachpoint v3.0.html
 ```
 
 ## Modes
@@ -77,6 +77,46 @@ Things spawn where you're aiming.
   physics and everyone builds in the same world; people who join late get
   the whole build.
 
+
+## New in v3.0
+
+- **New modes** (Play lists every mode now; Zombies was missing from solo):
+  - **Breakthrough**: Vanta attacks the flags sector by sector, Aegis holds.
+    Attackers have tickets and get reinforcements per sector taken.
+  - **Royale**: everyone for themselves. HALO drop, loot crates (`E`), a
+    storm that closes in over five stages; last one standing wins.
+  - **Co-op missions**: your squad against Vanta bots. Silence the Guns
+    (plant charges on three artillery pieces), Hostage Rescue (free the
+    scientist and bring them out alive), Data Raid (download from two
+    terminals). Shared lives, enemy reinforcements, extraction.
+  - **Map editor**: build maps from walls, floors, blocks, stairs, crates,
+    sandbags, fences and containers; place spawns, flags and vehicles; save
+    and play them in TDM, Zombies, Royale, Co-op and Sandbox (and Conquest /
+    Breakthrough with three flags). The host's map is sent to everyone in
+    multiplayer.
+- **Medic class** with a defibrillator (one-second revives at full health)
+  and a med bag. **Revives for everyone** in the respawn modes: bots and solo
+  players get downed, bots run over to pick friends up, hold `Space` to give
+  up.
+- **Destructible cover**: explosions wreck crates, sandbags and low walls,
+  blow gaps in fences and holes in walls (every building in the City);
+  vehicles smash through the light stuff. Bots use the new holes.
+- **Night and dusk** (Play → Time of day): moon, stars, street lamps,
+  flashlights (`L`), night vision (`M`), flares (`J`). Bots only see you up
+  close at night unless you're lit.
+- **Parachutes and HALO**: bail out of aircraft in the air and open a
+  parachute with `Space` (it opens by itself low down); a HALO jump deploy
+  option in Conquest and Breakthrough.
+- **Vehicles**: AA truck (flak bursts next to aircraft; bots man it), patrol
+  boat (bow machine gun), transport truck (four more seats in the back).
+- **Progression**: prestige from level 50 (up to 10), player cards
+  (background, title, badges) shown on the menu and kill cards, 11 badges in
+  three tiers, and weekly challenges.
+- **Match report** on the results screen: a heatmap of where you played,
+  your kills and deaths, best weapon, longest kill, time alive and more.
+- **Sound**: more bot radio calls (read aloud if you like), directional
+  hit sounds, armour and headshot hit sounds, a heartbeat when low.
+- **Touch controls** for tablets and phones (Settings → Gameplay).
 
 ## New in v2.9
 
@@ -442,7 +482,9 @@ Everything is saved in the browser's localStorage.
 `LMB`/`RMB` fire / aim (grenades: throw / lob) · `R` reload · `1-5` weapons, grenades,
 RPG · `X` last weapon · `E` plant, defuse, jeep · `B` buy · `Q` spot · `G` gadget ·
 `F` inspect · `Z` call in a killstreak · `T` squad marker · `C` (driving) chase / seat camera · `Tab` scores ·
-`Y`/`Enter` chat · `Esc` pause
+`L` flashlight · `M` night vision · `J` flare (night) · `Space` (falling) parachute · `H` medkit ·
+`Y`/`Enter` chat · `Esc` pause. Downed: hold `Space` to give up. Map editor: `LMB` place · `RMB` remove ·
+`Q` tools · wheel piece · `R` turn · `Z` undo · `V` fly/walk
 
 ## Building
 

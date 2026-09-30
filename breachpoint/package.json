@@ -1,6 +1,6 @@
 {
   "name": "breachpoint",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "private": true,
   "description": "A browser FPS: CS-style Defuse rounds and Battlefield-style Conquest, squad AI, multiplayer, and a crate/skin system.",
   "scripts": {
