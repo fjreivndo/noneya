@@ -8,6 +8,9 @@ import { acquire, getFood, cookAll } from "./planner.js";
 import { buildHouse, buildTower, storeItems, buildStructure, houseBlueprint } from "./build.js";
 import { oreExpedition, toSurface, mineAt, scanFor } from "./mining.js";
 import { placeBlock, mineBlock, eat } from "./actions.js";
+import { townOf, buildHouseOnPlot, workOnProject, nextProject, placeTownSign } from "./town.js";
+import { religionOf, hasTenet, isHolyDay, obeys, pray } from "./religion.js";
+import { askForHelp } from "./social.js";
 import {
   enterNether, returnToOverworld, buildNetherPortal, getBlazeRods, getPearls, findStronghold, dragonFight,
 } from "./progression.js";
@@ -69,7 +72,7 @@ export const MILESTONES = {
     label: "building a home",
     want: (b) => cfg().buildHouses && (b.mode === "builder" || b.mode === "survivor" || b.personality.builder > 0.55),
     done: (b) => !!b.mem.home,
-    run: (b) => buildHouse(b),
+    run: (b) => (townOf(b) ? buildHouseOnPlot(b, townOf(b)) : buildHouse(b)),
   },
   iron_pickaxe: {
     label: "getting an iron pickaxe",
@@ -332,6 +335,45 @@ function* plantTrees(bot) {
   return true;
 }
 
+function* townWork(bot) {
+  const town = townOf(bot);
+  if (!town || !nextProject(town)) return false;
+  placeTownSign(bot, town);
+  return yield* workOnProject(bot, town);
+}
+
+function* moveIntoTown(bot) {
+  const town = townOf(bot);
+  if (!town) return false;
+  return yield* buildHouseOnPlot(bot, town);
+}
+
+/** Harvest ripe wheat on the town farm and replant it. */
+function* harvestFarm(bot) {
+  const town = townOf(bot);
+  const farm = town && town.built.find((b) => b.type === "farm");
+  if (!farm || bot.dimName !== "overworld") return false;
+  bot.setTask("harvesting wheat");
+  yield* goTo(bot, { x: farm.x + 0.5, y: farm.y, z: farm.z + 0.5 }, { range: 6, timeout: 20 * 90 });
+  const wheat = scanFor(bot, ["minecraft:wheat"], { radius: 8, up: 2, down: 2 }).filter((p) => {
+    try {
+      const b = bot.dim.getBlock(p);
+      return b && b.permutation.getState("growth") >= 7;
+    } catch (e) {
+      return false;
+    }
+  });
+  for (const p of wheat.slice(0, 20)) {
+    yield* mineAt(bot, p, { vein: false, timeout: 100 });
+    if (bot.inv.has("minecraft:wheat_seeds") && typeAt(bot.dim, { x: p.x, y: p.y - 1, z: p.z }) === "minecraft:farmland") {
+      const ok = yield* placeBlock(bot, p, "minecraft:wheat", { free: true, permanent: true });
+      if (ok) bot.inv.remove("minecraft:wheat_seeds", 1);
+    }
+  }
+  if (bot.inv.count("minecraft:wheat") >= 3) yield* acquire(bot, "minecraft:bread", Math.floor(bot.inv.count("minecraft:wheat") / 3));
+  return true;
+}
+
 const FREE = [
   { id: "explore", w: (b) => 0.6 + b.personality.curiosity * 2 + (b.mode === "explorer" ? 2.5 : 0), run: explore },
   { id: "house", w: (b) => (cfg().buildHouses && !b.mem.home && b.dimName === "overworld" ? 1.5 + b.personality.builder * 2 : 0), run: buildHouse },
@@ -342,6 +384,9 @@ const FREE = [
   { id: "store", w: (b) => (b.mem.home && b.inv.freeSlots() < 10 ? 2.5 : 0), run: storeItems },
   { id: "plant", w: (b) => (b.inv.items().some((i) => i.item.typeId.endsWith("_sapling")) ? 0.4 : 0), run: plantTrees },
   { id: "diamond_gear", w: (b) => (b.mode === "free" && !MILESTONES.diamond_armor.done(b) ? 0.6 * b.personality.ambition : 0), run: (b) => runMilestone(b, "diamond_armor") },
+  { id: "town_work", w: (b) => (townOf(b) && nextProject(townOf(b)) ? 1 + b.personality.builder * 2 + b.personality.sociability : 0), run: townWork },
+  { id: "move_in", w: (b) => (townOf(b) && !townOf(b).plots.some((p) => p.owner === b.id && p.built) ? 2.5 : 0), run: moveIntoTown },
+  { id: "harvest", w: (b) => (townOf(b) && townOf(b).built.some((x) => x.type === "farm") ? 0.8 + (b.inv.foodPoints() < 30 ? 1.5 : 0) : 0), run: harvestFarm },
   { id: "idle", w: () => 0.5, run: idle },
 ];
 
@@ -441,6 +486,21 @@ export function decide(bot) {
     return { gen: shelterForNight(bot), name: "shelter" };
   }
 
+  // 2b) morning prayer for the faithful
+  const rel = religionOf(bot);
+  const today = Math.floor(world.getAbsoluteTime() / 24000);
+  if (rel && hasTenet(bot, "dawn_prayer") && world.getTimeOfDay() < 2000 && bot.mem.lastPrayDay !== today) {
+    bot.mem.lastPrayDay = today;
+    if (obeys(bot, 0.3)) return { gen: pray(bot), name: "pray" };
+  }
+
+  // 2c) a spare tool before the current one breaks
+  if (bot.wantSpare) {
+    const id = bot.wantSpare;
+    bot.wantSpare = null;
+    return { gen: acquire(bot, id, bot.inv.count(id) + 1), name: "spare" };
+  }
+
   // 3) food emergencies
   if (bot.inv.foodPoints() < 8 && bot.food < 15) return { gen: getFood(bot, 30), name: "food" };
 
@@ -450,8 +510,10 @@ export function decide(bot) {
   // 5) storage
   if (bot.inv.freeSlots() <= 2 && bot.mem.home) return { gen: storeItems(bot), name: "store" };
 
-  // 6) milestones (with occasional whims)
-  const ms = nextMilestone(bot);
+  // 6) milestones (with occasional whims). The holy day of rest means no mining for the devout.
+  const restDay = rel && hasTenet(bot, "rest_day") && isHolyDay(rel) && obeys(bot, 0.4);
+  const ms = restDay ? null : nextMilestone(bot);
+  bot.failItem = null;
   const whim = chance(0.1 * (1.2 - bot.personality.ambition));
   if (ms && !whim) {
     return { gen: runMilestone(bot, ms), name: "milestone", ms };
@@ -468,6 +530,12 @@ export function onRoutineDone(bot, entry, result) {
     bot.currentMs = null;
     if (!result) {
       bot.cooldowns[entry.ms] = now() + 20 * Math.floor(rand(90, 240));
+      // stuck on something? learn from it and ask around
+      const f = bot.failItem;
+      if (f) {
+        bot.mem.failures[f.item] = (bot.mem.failures[f.item] || 0) + 1;
+        if (bot.mem.failures[f.item] >= 2) askForHelp(bot, f.item, Math.min(16, f.n || 1), MILESTONES[entry.ms] && MILESTONES[entry.ms].label.replace(/^(getting|making) /, ""));
+      }
     } else {
       bot.mem.msDone = bot.mem.msDone || [];
       if (!bot.mem.msDone.includes(entry.ms)) bot.mem.msDone.push(entry.ms);

@@ -4,16 +4,55 @@
     "name": "AI Players BP",
     "description": "Autonomous AI players that mine, craft, fight, build and try to beat the game.",
     "uuid": "5553eecc-91c1-4bf7-81ba-4ae684a0ccd6",
-    "version": [1, 0, 0],
-    "min_engine_version": [1, 21, 90]
+    "version": [
+      1,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
   },
   "modules": [
-    { "type": "data", "uuid": "c427cabe-ea41-4f0b-88a4-77850f96662a", "version": [1, 0, 0] },
-    { "type": "script", "language": "javascript", "uuid": "12797dcc-9112-4b83-80f7-f90ddcb39802", "entry": "scripts/main.js", "version": [1, 0, 0] }
+    {
+      "type": "data",
+      "uuid": "c427cabe-ea41-4f0b-88a4-77850f96662a",
+      "version": [
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "12797dcc-9112-4b83-80f7-f90ddcb39802",
+      "entry": "scripts/main.js",
+      "version": [
+        1,
+        1,
+        0
+      ]
+    }
   ],
   "dependencies": [
-    { "uuid": "b5a74da1-22e5-4a5c-bfd7-afef0bb9d691", "version": [1, 0, 0] },
-    { "module_name": "@minecraft/server", "version": "2.0.0" },
-    { "module_name": "@minecraft/server-ui", "version": "2.0.0" }
+    {
+      "uuid": "b5a74da1-22e5-4a5c-bfd7-afef0bb9d691",
+      "version": [
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.0.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.0.0"
+    }
   ]
 }

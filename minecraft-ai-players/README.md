@@ -7,6 +7,34 @@ AI Players adds autonomous AI players to your world. Each one has a random usern
 
 ---
 
+## New in 1.1: a living society
+
+* **Speech that isn't scripted.** Every line is assembled on the spot from what the bot is doing, remembers (its journal: deaths, finds, builds, mistakes, events), feels (stress, tiredness, mood) and believes. Each bot has its own style (slang, capitals, punctuation, emoticons, favourite words) and makes typos, which get worse under stress, and it sometimes sends a `*correction`. On a Bedrock Dedicated Server you can add the **LLM bridge** so bots talk through Claude instead (see below).
+* **Bots talk to each other and act on it.** They greet, chat, gossip, compliment and insult, and build opinions of each other (and of you). They ask for help when stuck, and friends bring them the items. They share where they found diamonds (and dishonest bots who dislike you may lie), warn about danger, answer "where is iron?", invite each other to towns and preach their faith.
+* **Planned events.** Bots propose feasts, festivals (fireworks), worship services, town meetings with **mayor elections**, build days and group mining expeditions. Others accept or decline depending on personality, opinion of the host, faith and how busy they are. Then they travel there and do it together. Some forget and apologize later, and hosts remember who didn't show up.
+* **Towns and cities.** Leaders found towns with generated names (Port Redstonefield, Mount Oakridge...). They invite others, hand out plots, and residents build their houses around a plaza. Together they build a well and lamp posts, a town hall, a farm (tilled, planted, harvested and turned into bread) and a temple, and lay gravel roads. Towns grow from village to town to city.
+* **Religions.** Spiritual bots found generated faiths (for example "Fellowship of Moon's Light" worshipping "the Moon Mother of Slimes"). Their rules actually change behaviour: sacred animals they won't hunt, a holy day of rest, morning prayer, offerings, a depth limit for mining, charity, pacifism. Members preach and convert others, hold services at the temple, and sometimes give in to temptation and feel guilty about it.
+* **Smarter.** Bots remember where resources are and go back, avoid places where they got hurt, craft a spare tool before the current one breaks, learn which items they keep failing to get and ask for them, and cooperate.
+* **Mistakes that aren't scripted.** There are no "do a mistake now" events. Each risky decision (a jump, digging down, a craft, placing a block, remembering a location, eating on time, swinging in a crowded fight) has a chance to go wrong. That chance depends on the bot's skill, carefulness, stress and tiredness. So you'll see bots misjudge a drop, dig straight down into a cave, misclick in the crafting table, put a wrong block in a wall (and sometimes fix it), forget to eat, get lost, misremember where the diamonds were, or hit an enderman by accident. They remember it and talk about it later.
+
+### Talking to bots
+
+* Right-click a bot and choose **Talk...**, then type anything: "hi", "follow me", "where can I find iron?", "can I have some bread?", "want to have a feast?", "do you believe in god?", "you're a noob"...
+* Or speak to everyone nearby: `/scriptevent aip:say <message>`. Put a bot's name in the message to address that bot.
+
+### Claude-powered speech (Bedrock Dedicated Server only)
+
+Normal worlds and Realms can't reach the internet, so they use the built-in speech generator. On a **Bedrock Dedicated Server** you can install `AIPlayers_LLM_Bridge_BDS.mcpack` as well:
+
+1. Copy the bridge into `behavior_packs/` and add it to the world next to the AI Players packs.
+2. Turn on the **Beta APIs** experiment for the world (the bridge uses the beta `@minecraft/server-net` and `@minecraft/server-admin` modules).
+3. Allow the modules in `config/default/permissions.json`:
+   `{"allowed_modules": ["@minecraft/server", "@minecraft/server-ui", "@minecraft/server-net", "@minecraft/server-admin"]}`
+4. Add your key in `config/331249c4-be95-45e4-b7cb-ac2c97702f1f/secrets.json` (the bridge's script module UUID): `{"ANTHROPIC_API_KEY": "sk-ant-..."}`.
+5. Optional: in `variables.json` in the same folder, set `{"model": "claude-opus-5-5", "effort": "low"}`.
+
+When it connects, chat shows *LLM bridge connected*. From then on, bot lines and replies to players come from Claude, in character, using the bot's personality, mood, memories, town and faith. A reply to a player can also choose an action, such as following or giving items. If a request fails or times out, the bot falls back to the built-in generator. Set **Speech** to `generated` in Settings to turn it off.
+
 ## Getting started
 
 1. Join the world. You get an **AI Player Controller** automatically. You can also craft one from a book and redstone, or use `/give @s aip:controller`.
@@ -67,6 +95,12 @@ Open **Controller → Settings**, or use `/scriptevent aip:config key=value`. Ev
 | `summonDragonIfMissing` | on | Summons a dragon if the End has none and it was never killed. |
 | `stuckTeleport` | on | Tiny teleports when physically stuck for a long time. |
 | `startingKit` | none | `none`, `basic` or `iron`. |
+| `botChat` | on | Bots talk to each other and act on what they hear. |
+| `speechMode` | auto | `auto`: Claude via the BDS bridge when installed, otherwise generated. `generated`: never use the LLM. |
+| `towns` / `maxTowns` | on / 4 | Towns and cities. |
+| `religions` / `maxReligions` | on / 3 | Religions. |
+| `events` | on | Planned events. |
+| `mistakes` | 1.0 | How error-prone bots are (0 = never). |
 | `chat` / `chatFrequency` | on / 1.0 | Chatter. |
 | `announceAdvancements`, `showTaskInName`, `joinLeaveMessages` | on | Display options. |
 | `pathNodeLimit` | 1500 | Path search budget (performance). |
@@ -77,6 +111,7 @@ To change the defaults for new worlds, edit `BP/scripts/config.js`.
 
 ```
 /scriptevent aip:spawn 3          spawn 3 AI players near you
+/scriptevent aip:say hi everyone  talk to nearby bots (name a bot to address it)
 /scriptevent aip:menu             open the menu
 /scriptevent aip:list             list AI players and what they're doing
 /scriptevent aip:status <name>    detailed status
@@ -99,7 +134,7 @@ python3 tools/gen_assets.py   # regenerates skins, models and icons (needs Pillo
 ./build.sh                    # writes dist/AIPlayers.mcaddon
 ```
 
-`tools/sim` is a headless simulator. It runs the real AI scripts against a mocked `@minecraft/server` voxel world, so behaviour can be tested without the game: `cd tools/sim && ./setup.sh && node run.mjs min=20 mode=beat_game`.
+`tools/sim` is a headless simulator. It runs the real AI scripts against a mocked `@minecraft/server` voxel world, so behaviour can be tested without the game: `cd tools/sim && ./setup.sh && node run.mjs min=20 mode=beat_game`, or `node society.mjs bots=5 min=30` to watch a whole society (the chat log, towns, religions and events).
 
 The project is laid out like this:
 
@@ -109,5 +144,8 @@ The project is laid out like this:
   * `ai/mining.js`, `ai/combat.js`, `ai/build.js`: mining, combat and building.
   * `ai/progression.js`: the Nether and the End.
   * `ai/brain.js`: decisions.
+  * `ai/speech.js`: generated speech; `ai/llm.js` + `bridge/`: optional Claude speech.
+  * `ai/social.js`, `ai/events.js`, `ai/town.js`, `ai/religion.js`: society.
+  * `ai/cognition.js`: stress, fatigue, memory, opinions and mistakes.
   * `ai/bot.js`: body and vitals.
 * `RP`: the model, 48 generated skins, animations and the render controller.

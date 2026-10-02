@@ -3,6 +3,9 @@ import { world, system } from "@minecraft/server";
 import { cfg, SKIN_COUNT } from "./config.js";
 import { randomUsername } from "./names.js";
 import { Bot } from "./ai/bot.js";
+import { journal, rememberPlace } from "./ai/cognition.js";
+import { deliver } from "./society.js";
+import { tickEvents } from "./ai/events.js";
 import { pickMode, randomPersonality } from "./ai/brain.js";
 import { loadRecord, saveRecord, deleteRecord, takenNames, allRecords } from "./registry.js";
 import { now, pick, rand, randInt, chance, safe, getDim, debug, prettyItem } from "./util.js";
@@ -157,6 +160,10 @@ export function onBotDeath(entity, source) {
   } else msg = `${bot.name} ${CAUSE_TEXT[source && source.cause] || "died"}`;
   world.sendMessage(msg);
   bot.stats.deaths++;
+  const by = killer ? safe(() => (killer.typeId === "minecraft:player" ? killer.name : prettyItem(killer.typeId).toLowerCase()), "something") : CAUSE_TEXT[source && source.cause] ? (source.cause === "fall" ? "fall damage" : source.cause) : "something";
+  journal(bot, "died", { by });
+  rememberPlace(bot, "danger", bot.pos, bot.dimName);
+  deliver({ from: bot.id, fromName: bot.name, intent: "died", data: {}, text: msg, depth: 0 });
   bot.say("died");
   // armor is dropped by the equipment component; forget what we wore
   bot.worn = {};
@@ -285,6 +292,7 @@ export function startLoop() {
       discover();
       processRespawns();
       autoJoin();
+      tickEvents(onlineBots());
     } catch (e) {
       debug(`manager error: ${e}`);
     }

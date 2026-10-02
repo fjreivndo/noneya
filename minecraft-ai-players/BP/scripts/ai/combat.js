@@ -5,6 +5,8 @@ import { V, now, wait, rand, chance, prettyItem } from "../util.js";
 import { isAlive, healthOf, entitiesNear } from "./world.js";
 import { meleeHit, attackCooldown, canShoot, shootArrow, collectNearbyItems, eat, pillarUp } from "./actions.js";
 import { steer, goTo, exploreStep } from "./movement.js";
+import { slip, journal } from "./cognition.js";
+import { hasTenet, obeys } from "./religion.js";
 
 const FLYING = new Set(["minecraft:ghast", "minecraft:blaze", "minecraft:phantom", "minecraft:ender_dragon", "minecraft:vex", "minecraft:bee", "minecraft:breeze"]);
 
@@ -28,7 +30,9 @@ export function findThreats(bot, radius) {
     const t = e.typeId;
     let hostile = false;
     try {
-      if (t === "minecraft:player") {
+      if (t === "minecraft:player" && hasTenet(bot, "pacifist") && obeys(bot, 0.5)) {
+        hostile = false;
+      } else if (t === "minecraft:player") {
         if (c.pvp === "aggressive") hostile = !e.getGameMode || e.getGameMode() === "Survival" || e.getGameMode() === "survival";
         else if (c.pvp === "retaliate") hostile = bot.recentlyHurtBy(e.id);
       } else if (t === "aip:ai_player") {
@@ -155,7 +159,13 @@ export function* fight(bot, target, opts = {}) {
             bot.motor.jump = true;
             cooldown = 6;
           } else {
-            meleeHit(bot, target);
+            // in the chaos of a fight you can hit the wrong thing
+            const oops = slip(bot, 0.01) ? entitiesNear(bot.dim, bot.pos, 3.5, { excludeTypes: ["minecraft:item", "minecraft:xp_orb"] }).find((e) => NEUTRAL_MOBS.has(e.typeId) && e.typeId !== "minecraft:ender_dragon") : null;
+            if (oops) {
+              meleeHit(bot, oops);
+              journal(bot, "mistake", { kind: "hit_neutral" });
+              bot.say("mistake", { kind: "hit_neutral" }, { prio: 1 });
+            } else meleeHit(bot, target);
             cooldown = attackCooldown(bot);
             if (EXPLODING.has(target.typeId)) {
               // hit and back off
@@ -213,6 +223,9 @@ export function* flee(bot, threats) {
  * Hunt mobs of the given types until we have `need` more of `item` (counted by countFn).
  */
 export function* hunt(bot, types, countFn, need, opts = {}) {
+  // dietary taboos: skip the sacred animal unless we're starving and our faith is weak
+  const taboo = hasTenet(bot, "taboo_kill");
+  if (taboo && types.includes(taboo.mob) && types.length > 1 && (bot.food > 4 ? obeys(bot, 0.2) : obeys(bot, 0.8))) types = types.filter((t) => t !== taboo.mob);
   const target = countFn() + need;
   const start = now();
   let idle = 0;

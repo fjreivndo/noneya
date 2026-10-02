@@ -137,6 +137,7 @@ const RULES = [
   [/^(nether|warped)_wart_block$|^shroomlight$/, 1, "hoe", 0, null, true],
   [/^glowstone$/, 0.3, null, 0, () => range("glowstone_dust", 2, 4), true],
   [/^(pumpkin|melon_block|melon)$/, 1, "axe", 0, null, true],
+  [/^wheat$/, 0, null, 0, null, true],
   [/^moss_block$|^pale_moss_block$/, 0.1, "hoe", 0, null, true],
   [/_planks$|^planks$/, 2, "axe", 0, null, false],
   [/^crafting_table$|^chest$|^barrel$|^bookshelf$/, 2.5, "axe", 0, null, false],

@@ -1,11 +1,16 @@
 // In-game menus: controller item, bot management and settings.
-import { world } from "@minecraft/server";
+import { world, system } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 import { cfg, saveConfig, resetConfig, DEFAULTS, OPTIONS, SKIN_COUNT } from "./config.js";
 import { bots, onlineBots, spawnBot, spotNear, removeBot, forgetBot, applyTargetingToAll, respawnPending } from "./manager.js";
 import { allRecords } from "./registry.js";
 import { progressText, nextMilestone, MILESTONES } from "./ai/brain.js";
-import { V, prettyItem } from "./util.js";
+import { V, prettyItem, fmtTime, now } from "./util.js";
+import { soc } from "./society.js";
+import { townOf, townRank, townSummary } from "./ai/town.js";
+import { faithSummary } from "./ai/religion.js";
+import { moodOf } from "./ai/cognition.js";
+import { handlePlayerTalk } from "./ai/social.js";
 import { ItemStack } from "@minecraft/server";
 
 const MODE_LABELS = {
@@ -28,6 +33,7 @@ export function openMainMenu(player) {
     .button("Command everyone")
     .button("Settings")
     .button("Leaderboard")
+    .button("Towns, religions & events")
     .button("Help");
   f.show(player).then((r) => {
     if (r.canceled) return;
@@ -53,6 +59,9 @@ export function openMainMenu(player) {
         openLeaderboard(player);
         break;
       case 6:
+        openSociety(player);
+        break;
+      case 7:
         openHelp(player);
         break;
     }
@@ -133,6 +142,17 @@ export function statusText(b) {
   if (b.mem.flags.beatGame) lines.push("§6★ Has beaten the game!");
   const p = b.personality;
   lines.push(`§fPersonality: §7brave ${Math.round(p.bravery * 100)}% · curious ${Math.round(p.curiosity * 100)}% · builder ${Math.round(p.builder * 100)}% · social ${Math.round(p.sociability * 100)}%`);
+  const town = townOf(b);
+  if (town) lines.push(`§fTown: §b${town.name}§f (${townRank(town)}${town.mayor === b.id ? ", mayor" : ""})`);
+  lines.push(`§fFaith: §d${faithSummary(b)}`);
+  const mood = moodOf(b);
+  lines.push(`§fMood: §7${mood > 0.35 ? "happy" : mood > -0.2 ? "okay" : "stressed"} · stress ${Math.round(b.cog.stress * 100)}% · tired ${Math.round(b.cog.fatigue * 100)}%`);
+  const friends = Object.entries(b.mem.opinions).filter(([k]) => !k.startsWith("p:") && k !== b.id).sort((x, y) => y[1] - x[1]);
+  if (friends.length) lines.push(`§fLikes: §a${friends.slice(0, 2).map(([k, v]) => `${b.nameOf(k)} (${Math.round(v)})`).join(", ")}§f  Dislikes: §c${friends.filter(([, v]) => v < -10).slice(-2).map(([k, v]) => `${b.nameOf(k)} (${Math.round(v)})`).join(", ") || "nobody"}`);
+  const plans = b.mem.commitments.map((c) => soc().events[c.event]).filter(Boolean);
+  if (plans.length) lines.push(`§fPlans: §e${plans.map((e) => `${e.title} (${e.hostName})`).join(", ")}`);
+  const memories = b.mem.journal.slice(-3).map((j) => j.type.replace("_", " ") + (j.what ? ` ${j.what}` : "") + (j.by ? ` (${j.by})` : "") + (j.kind ? ` (${j.kind.replace("_", " ")})` : ""));
+  if (memories.length) lines.push(`§fRecent memories: §7${memories.join("; ")}`);
   if (b.mem.adv.length) lines.push(`§fAdvancements: §a${b.mem.adv.slice(-6).join(", ")}`);
   const inv = b.inv.summary(14);
   lines.push(`§fInventory: §7${inv.length ? inv.join(", ") : "empty"}`);
@@ -146,6 +166,7 @@ export function openBotMenu(player, b) {
   const f = new ActionFormData()
     .title(b.name)
     .body(statusText(b))
+    .button("Talk...")
     .button("Follow me")
     .button("Stay here")
     .button("Do your own thing")
@@ -160,7 +181,8 @@ export function openBotMenu(player, b) {
     .button("§4Delete forever");
   f.show(player).then((r) => {
     if (r.canceled || r.selection === undefined || !b.entity.isValid) return;
-    switch (r.selection) {
+    if (r.selection === 0) return openTalk(player, b);
+    switch (r.selection - 1) {
       case 0:
         setOrder(b, { type: "follow", player: player.id });
         b.say("follow_ok");
@@ -228,7 +250,7 @@ export function openBotMenu(player, b) {
   });
 }
 
-function setOrder(b, order) {
+export function setOrder(b, order) {
   b.order = order;
   b.clearRoutines(30);
 }
@@ -308,6 +330,35 @@ function openCommandAll(player) {
     });
 }
 
+function openTalk(player, b) {
+  new ModalFormData()
+    .title(`Talk to ${b.name}`)
+    .textField("Say something", "e.g. hi! / follow me / where is iron? / can i have some bread / want to join a feast?")
+    .show(player)
+    .then((r) => {
+      if (r.canceled || !r.formValues) return;
+      const text = String(r.formValues[0] || "").trim();
+      if (!text) return;
+      world.sendMessage(`<${player.name}> ${b.name} ${text}`);
+      system.runTimeout(() => handlePlayerTalk(b, player, text, setOrder), 20 + Math.floor(Math.random() * 20));
+    });
+}
+
+function openSociety(player) {
+  const s = soc();
+  const lines = [];
+  const towns = Object.values(s.towns);
+  lines.push(`§l§bTowns (${towns.length})§r`);
+  for (const t of towns) lines.push(townSummary(t));
+  const rels = Object.values(s.religions);
+  lines.push(`\n§l§dReligions (${rels.length})§r`);
+  for (const r of rels) lines.push(`${r.name} - worships ${r.deity}, founded by ${r.founderName}, ${r.members.length} follower(s)\n  rules: ${r.tenets.map((t) => t.text).join("; ")}`);
+  const evs = Object.values(s.events).filter((e) => e.status !== "done");
+  lines.push(`\n§l§eUpcoming events (${evs.length})§r`);
+  for (const e of evs) lines.push(`${e.title} by ${e.hostName} - ${e.status === "running" ? "happening now" : `in ${fmtTime(Math.max(0, e.at - now()))}`} at ${e.where.x} ${e.where.y} ${e.where.z}, ${e.accepted.length} coming`);
+  new ActionFormData().title("Society").body(lines.join("\n")).button("Close").show(player);
+}
+
 function openLeaderboard(player) {
   const recs = allRecords().map((r) => r.rec);
   recs.sort((a, b) => (b.stats?.wins || 0) - (a.stats?.wins || 0) || (b.stats?.kills || 0) - (a.stats?.kills || 0));
@@ -365,6 +416,14 @@ const SETTINGS = [
   ["summonDragonIfMissing", "Summon dragon if missing", "toggle"],
   ["stuckTeleport", "Tiny teleports when physically stuck", "toggle"],
   ["startingKit", "Starting kit", "dropdown"],
+  ["botChat", "Bots talk to each other and act on it", "toggle"],
+  ["speechMode", "Speech (auto uses Claude if the BDS bridge is installed)", "dropdown"],
+  ["towns", "Bots found towns and cities", "toggle"],
+  ["maxTowns", "Max towns", "slider", 1, 10, 1],
+  ["religions", "Bots found religions", "toggle"],
+  ["maxReligions", "Max religions", "slider", 1, 8, 1],
+  ["events", "Bots plan events", "toggle"],
+  ["mistakes", "Mistakes (x10, 0 = never)", "slider10", 0, 30, 1],
   ["chat", "Bots chat", "toggle"],
   ["chatFrequency", "Chat frequency (x10)", "slider10", 0, 30, 1],
   ["announceAdvancements", "Announce advancements", "toggle"],

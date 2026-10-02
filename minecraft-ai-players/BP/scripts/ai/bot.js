@@ -3,14 +3,24 @@ import { world, EntityDamageCause } from "@minecraft/server";
 import { cfg } from "../config.js";
 import { Inventory } from "../inventory.js";
 import { armorInfo, toolInfo, ADVANCEMENTS, FOOD, KILL_BONUS, kindOf, K_WATER } from "../data.js";
-import { V, now, chance, rand, prettyItem, dimName, debug, safe, isNight } from "../util.js";
+import { V, now, chance, rand, dimName, debug, safe, isNight } from "../util.js";
 import { loadRecord, saveRecord, addTickingArea, removeTickingArea, tickingName } from "../registry.js";
 import { applyMotor } from "./movement.js";
 import { skyAbove, typeAt, surfaceAt, isAlive } from "./world.js";
 import { decide, onRoutineDone } from "./brain.js";
 import { findThreats, assess, fight, flee } from "./combat.js";
 import { eat, collectNearbyItems } from "./actions.js";
-import { line } from "./chat.js";
+import { initCognition, updateCognition, journal, slip, moodOf, recentJournal, rememberPlace } from "./cognition.js";
+import { generate, styleOf } from "./speech.js";
+import { llmReady, llmRequest } from "./llm.js";
+import { enqueueChat, deliver, registerListener, unregisterListener, onlineSociety } from "../society.js";
+import { processInbox, socialThink, deliverHelp, shareDiscovery } from "./social.js";
+import { dueCommitment, attendEvent, reviewCommitments } from "./events.js";
+import { townOf } from "./town.js";
+import { religionOf } from "./religion.js";
+
+const IMPORTANT = new Set(["victory", "diamonds", "died", "follow_ok", "stay_ok", "free_ok", "home_ok", "build_ok", "join", "leave", "hurt_by_player", "thanks"]);
+const PLACE_OF = { "minecraft:raw_iron": "iron", "minecraft:diamond": "diamonds", "minecraft:coal": "coal", "minecraft:raw_gold": "gold", "minecraft:redstone": "redstone" };
 
 const DURABILITY = { wooden: 59, golden: 32, stone: 131, iron: 250, diamond: 1561, netherite: 2031 };
 
@@ -77,6 +87,13 @@ export class Bot {
     this.mem.dur = this.mem.dur || {};
     this.stats = Object.assign({ kills: 0, deaths: 0, mined: 0, crafted: 0, wins: 0, born: now() }, rec.stats || {});
     this.worn = rec.worn || {};
+    initCognition(this);
+    this.inbox = [];
+    this._lastTypo = null;
+    this._style = null;
+    this.helping = null;
+    this.wantSpare = null;
+    registerListener(this);
     this.food = safe(() => entity.getDynamicProperty("aip:food"), undefined) ?? 20;
     this.sat = safe(() => entity.getDynamicProperty("aip:sat"), undefined) ?? 5;
     this.exh = 0;
@@ -201,12 +218,14 @@ export class Bot {
     if (!t && id !== "minecraft:flint_and_steel") return;
     const max = t ? DURABILITY[t.material] : 64;
     this.mem.dur[id] = (this.mem.dur[id] || 0) + 1;
+    // a careful player crafts a spare before the tool breaks
+    if (t && this.mem.dur[id] === Math.floor(max * 0.8) && this.inv.count(id) < 2 && !slip(this, 0.3)) this.wantSpare = id;
     if (this.mem.dur[id] >= max) {
       this.mem.dur[id] = 0;
       this.inv.remove(id, 1);
       safe(() => this.dim.playSound("random.break", this.pos), null);
       if (this.held === id) this.hold(this.inv.bestWeapon().id);
-      if (chance(0.5)) this.chat(`my ${prettyItem(id).toLowerCase()} broke`);
+      if (chance(0.25)) this.say("tool_broke", { item: id }, { prio: 0, msgIntent: null });
     }
   }
 
@@ -239,18 +258,76 @@ export class Bot {
     this.task = t;
   }
   chat(text) {
+    this.chatNow(text);
+  }
+  /** Send text to chat right away (high priority), as this bot. */
+  chatNow(text) {
     if (!cfg().chat || !text) return;
-    world.sendMessage(`<${this.name}> ${text}`);
+    enqueueChat(this.name, text, 3);
     this.lastChat = now();
   }
-  say(kind, p) {
+  /** A line for an intent, without sending it. */
+  line(intent, ctx = {}) {
+    return generate(this, intent, ctx);
+  }
+  /** Short self-description handed to the language model. */
+  persona() {
+    const p = this.personality;
+    const st = styleOf(this);
+    const trait = (k, hi, lo) => ((p[k] ?? 0.5) > 0.66 ? hi : (p[k] ?? 0.5) < 0.33 ? lo : null);
+    const traits = [trait("bravery", "brave", "cautious"), trait("sociability", "outgoing", "shy"), trait("spirituality", "religious", "skeptical"), trait("temper", "hot-headed", "calm"), trait("generosity", "generous", "stingy"), trait("leadership", "a natural leader", null), trait("curiosity", "curious", null)].filter(Boolean).join(", ");
+    const mood = moodOf(this);
+    const town = townOf(this);
+    const rel = religionOf(this);
+    return {
+      name: this.name,
+      traits: traits || "easygoing",
+      style: `${st.lower ? "all lowercase" : "normal capitalization"}, ${st.slang > 0.5 ? "lots of slang like " + st.quirks.join("/") : "plain words"}, ${st.emoji ? "sometimes :) or xD" : "no emoticons"}, ${st.formal ? "a bit formal" : "casual"}`,
+      mood: mood > 0.35 ? "happy" : mood > -0.2 ? "okay" : "stressed and annoyed",
+      task: this.task,
+      town: town ? town.name : null,
+      faith: rel ? `${rel.name}, worshipping ${rel.deity}` : null,
+      memory: recentJournal(this).slice(-4).map((j) => j.type + (j.what ? ` ${j.what}` : "") + (j.by ? ` by ${j.by}` : "") + (j.item ? ` ${j.item.replace("minecraft:", "")}` : "")).join("; "),
+    };
+  }
+  /**
+   * Say something. opts: prio (0 smalltalk .. 3 urgent), to (bot id), msgIntent (what other bots understand), data, depth.
+   */
+  say(intent, ctx = {}, opts = {}) {
     const c = cfg();
     if (!c.chat || c.chatFrequency <= 0) return;
-    const gap = 20 * 20 / c.chatFrequency;
-    const important = ["victory", "diamonds", "died", "follow_ok", "stay_ok", "free_ok", "home_ok", "build_ok", "join", "leave", "hurt_by_player", "thanks"].includes(kind);
-    if (!important && now() - this.lastChat < gap) return;
-    if (!important && !chance(Math.min(1, (0.25 + this.personality.chattiness * 0.6) * c.chatFrequency))) return;
-    this.chat(line(kind, p));
+    if (typeof ctx === "string") ctx = { target: ctx };
+    const prio = opts.prio ?? (IMPORTANT.has(intent) ? 2 : 0);
+    if (prio < 1) {
+      const gap = (20 * 15) / c.chatFrequency;
+      if (now() - this.lastChat < gap) return;
+      if (!chance(Math.min(1, (0.3 + (this.personality.chattiness ?? 0.5) * 0.6) * c.chatFrequency))) return;
+    }
+    this.lastChat = now();
+    const send = (text, typo) => {
+      if (!text) return;
+      enqueueChat(this.name, text, prio, () => {
+        if (opts.msgIntent !== null) {
+          deliver({ from: this.id, fromName: this.name, to: opts.to, intent: opts.msgIntent ?? intent, data: opts.data, text, depth: opts.depth || 0 });
+        }
+        if (typo && chance(0.35)) enqueueChat(this.name, `*${typo}`, 0);
+      });
+    };
+    if (llmReady() && (prio >= 1 || chance(0.5))) {
+      llmRequest(intent, this.persona(), { ...ctx, otherId: undefined }, (t) => {
+        if (t) send(t.replace(/^["']|["']$/g, "").replace(/\s+/g, " ").slice(0, 200));
+        else send(this.line(intent, ctx), this._lastTypo);
+      });
+    } else send(this.line(intent, ctx), this._lastTypo);
+  }
+  speak(intent, ctx = {}, prio = 1) {
+    this.say(intent, ctx, { prio });
+  }
+  nameOf(id) {
+    const b = onlineSociety().find((x) => x.id === id);
+    if (b) return b.name;
+    const r = loadRecord(id);
+    return r ? r.name : "someone";
   }
   announce(text) {
     if (!cfg().announceAdvancements) return;
@@ -263,6 +340,15 @@ export class Bot {
       if (cfg().announceAdvancements) world.sendMessage(`${this.name} has made the advancement §a[${adv}]`);
       if (id === "minecraft:diamond") this.say("diamonds");
       if (id === "minecraft:iron_ingot") this.say("iron");
+    }
+    // remember where good stuff is, and tell friends about the really good stuff
+    const kind = PLACE_OF[id];
+    if (kind) {
+      rememberPlace(this, kind, this.pos, this.dimName);
+      if (kind === "diamonds") {
+        journal(this, "found", { item: id, n });
+        shareDiscovery(this, kind, this.pos);
+      }
     }
   }
   onKill(target) {
@@ -299,6 +385,9 @@ export class Bot {
     }
     if (this.ticks % 600 === 0) this.save();
     if (this.ticks % 10 === 0) this.interrupts();
+    if (this.ticks % 10 === 5) processInbox(this, onlineSociety());
+    if (this.ticks % 400 === 0 && this.stack.every((e) => e.prio < 30)) socialThink(this, onlineSociety());
+    if (this.ticks % 600 === 300) reviewCommitments(this);
 
     let top = this.stack[this.stack.length - 1];
     if (!top) {
@@ -337,13 +426,35 @@ export class Bot {
         return;
       }
     }
-    // eat
+    // eat (busy or tired bots sometimes forget until they're starving)
     if (prio < 40 && this.inv.bestFood()) {
       const hp = this.health;
       if (this.food <= 14 || (hp < 14 && this.food < 20) || (hp < 8 && this.food < 20)) {
-        this.push(eatRoutine(this), 40, "eat");
+        if (this.food > 6 && hp > 8 && slip(this, 0.2)) {
+          this.forgotFood = (this.forgotFood || 0) + 1;
+        } else {
+          if (this.forgotFood > 3) {
+            journal(this, "mistake", { kind: "forgot_eat" });
+            this.say("mistake", { kind: "forgot_eat" }, { prio: 0 });
+          }
+          this.forgotFood = 0;
+          this.push(eatRoutine(this), 40, "eat");
+          return;
+        }
+      }
+    }
+    // keep promises: planned events and deliveries
+    if (prio < 30) {
+      const ev = dueCommitment(this);
+      if (ev) {
+        this.push(attendEvent(this, ev), 30, "event");
         return;
       }
+      if (this.helping && now() < this.helping.until) {
+        this.push(deliverHelp(this, onlineSociety()), 25, "help");
+        return;
+      }
+      if (this.helping) this.helping = null;
     }
     // day / night chatter
     const night = isNight();
@@ -361,6 +472,7 @@ export class Bot {
       else this.food = Math.max(0, this.food - 1);
     }
     this.exh += 0.04; // being alive and busy
+    updateCognition(this, !!this.combatTarget || [...this.hurtBy.values()].some((t) => now() - t < 200));
     const hpComp = safe(() => this.entity.getComponent("minecraft:health"), undefined);
     if (!hpComp) return;
     const hp = hpComp.currentValue;
@@ -436,6 +548,7 @@ export class Bot {
   }
 
   destroy() {
+    unregisterListener(this.id);
     this.clearRoutines();
     removeTickingArea(null, tickingName(this.id));
   }

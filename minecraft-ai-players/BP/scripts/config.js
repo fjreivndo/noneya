@@ -44,6 +44,16 @@ export const DEFAULTS = {
   stuckTeleport: true, // tiny teleports when physically stuck for a long time
   startingKit: "none", // none | basic | iron
 
+  // --- society ---
+  botChat: true, // bots talk to each other and act on what they hear
+  speechMode: "auto", // auto = Claude via the BDS bridge pack when present, otherwise generated speech; generated = never use the LLM
+  towns: true, // bots found towns that grow into cities
+  maxTowns: 4,
+  religions: true, // bots found and spread religions
+  maxReligions: 3,
+  events: true, // bots plan feasts, festivals, worship, elections, build days...
+  mistakes: 1.0, // how error-prone bots are (0 = never make mistakes)
+
   // --- chat / display ---
   chat: true,
   chatFrequency: 1.0, // 0..3
@@ -61,6 +71,7 @@ export const OPTIONS = {
   pvp: ["off", "retaliate", "aggressive"],
   oreVision: ["honest", "xray"],
   startingKit: ["none", "basic", "iron"],
+  speechMode: ["auto", "generated"],
 };
 
 let cache = null;

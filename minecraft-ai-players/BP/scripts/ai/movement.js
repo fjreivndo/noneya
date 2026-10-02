@@ -6,6 +6,7 @@ import { V, now, wait, yawTo, pitchTo, rand, chance } from "../util.js";
 import { typeAt, getBlock, surfaceAt, kindAt, isPassable } from "./world.js";
 import { mineBlock, placeBlock, pillarUp, canDig } from "./actions.js";
 import { toSurface } from "./mining.js";
+import { slip, journal, recallPlace } from "./cognition.js";
 
 const WALK = 0.2158;
 const SPRINT = 0.28;
@@ -167,6 +168,8 @@ export function* findPath(bot, goal, opts = {}) {
   const blocksAvail = allowPlace ? bot.inv.buildingCount() : 0;
   const range = opts.range ?? 1.2;
   const goalFn = opts.goalFn;
+  // misjudging heights: a stressed or careless bot sometimes takes drops that will hurt
+  const maxDrop = opts.risky ? 6 : 3;
   const gc = { x: goal.x, y: goal.y, z: goal.z };
   const sx = start.x;
   const sz = start.z;
@@ -306,11 +309,11 @@ export function* findPath(bot, goal, opts = {}) {
               if (lk !== K_AIR) break;
               const below = K(nx, y - k - 1, nz);
               if (below === K_SOLID) {
-                if (k <= 3) push(n, nx, y - k, nz, 1 + k * 0.5, "drop");
+                if (k <= maxDrop) push(n, nx, y - k, nz, 1 + k * 0.5, "drop");
                 break;
               }
               if (below === K_LAVA || below === K_HAZARD || below === K_HURT || below === K_UNLOADED) break;
-              if (k >= 3 && below !== K_WATER && below !== K_AIR) break;
+              if (k >= maxDrop && below !== K_WATER && below !== K_AIR) break;
             }
           }
           // bridge: place a block under the next step
@@ -533,7 +536,7 @@ export function* goTo(bot, target, opts = {}) {
       goal = waypointTowards(bot, tgt, segDist);
       segOpts = { ...opts, range: 3, goalFn: undefined };
     }
-    const path = yield* findPath(bot, goal, segOpts);
+    const path = yield* findPath(bot, goal, slip(bot, 0.06) ? { ...segOpts, risky: true } : segOpts);
     if (!path || path.length < 2) {
       fails++;
       segDist = Math.max(10, segDist * 0.6);
@@ -617,6 +620,15 @@ export function* exploreStep(bot, dist = 40) {
     if (!ok) return false;
   }
   bot.mem.heading = (bot.mem.heading ?? rand(0, 360)) + rand(-35, 35);
+  if (slip(bot, 0.05)) {
+    // wandered off the wrong way
+    bot.mem.heading += rand(90, 200);
+    journal(bot, "mistake", { kind: "lost" });
+    if (chance(0.3)) bot.say("mistake", { kind: "lost" }, { prio: 0 });
+  }
+  // avoid places where we (or friends) got hurt
+  const danger = recallPlace(bot, "danger", bot.dimName, bot.pos);
+  if (danger && V.hdist(danger, bot.pos) < 64) bot.mem.heading = (Math.atan2(bot.pos.z - danger.z, bot.pos.x - danger.x) * 180) / Math.PI + rand(-40, 40);
   for (let tries = 0; tries < 4; tries++) {
     const a = (bot.mem.heading * Math.PI) / 180;
     const p = bot.pos;

@@ -148,7 +148,16 @@ export function* mineBlock(bot, p, opts = {}) {
   }
   b = getBlock(dim, p);
   if (!b || b.typeId !== t) return true;
-  const drops = canHarvest(t, tool) ? blockInfo(t).drop() : [];
+  let drops = canHarvest(t, tool) ? blockInfo(t).drop() : [];
+  if (t === "minecraft:wheat") {
+    let growth = 0;
+    try {
+      growth = Number(b.permutation.getState("growth")) || 0;
+    } catch (e) {
+      growth = 0;
+    }
+    drops = growth >= 7 ? [{ id: "minecraft:wheat", n: 1 }, { id: "minecraft:wheat_seeds", n: 1 + Math.floor(Math.random() * 3) }] : [{ id: "minecraft:wheat_seeds", n: 1 }];
+  }
   try {
     b.setType("minecraft:air");
   } catch (e) {

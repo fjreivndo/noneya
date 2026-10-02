@@ -127,6 +127,7 @@ class Block {
     this.dimension._states.set(`${this.x},${this.y},${this.z}`, p.states);
   }
   getComponent(name) {
+    if (name === "minecraft:sign") return { setText: (t) => SIM.log(`[sign] ${t.replace(/\n/g, " / ")}`) };
     if (name === "minecraft:inventory" && this.typeId === "minecraft:chest") {
       const k = `${this.x},${this.y},${this.z}`;
       if (!this.dimension._chests.has(k)) this.dimension._chests.set(k, new Container(27));
@@ -487,6 +488,7 @@ export const world = {
   sendMessage: (m) => SIM.log(String(m)),
   getAllPlayers: () => SIM.players,
   getTimeOfDay: () => (SIM.time + TICK) % 24000,
+  getAbsoluteTime: () => SIM.time + TICK,
   getEntity: (id) => {
     for (const d of Object.values(dims)) for (const e of d._entities) if (e.id === id && e.isValid) return e;
     return undefined;

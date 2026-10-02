@@ -1,16 +1,17 @@
 // Building: site selection, blueprints (house, tower) and a generic structure builder.
 import { cfg } from "../config.js";
 import { kindOf, K_AIR, K_WATER, isReplaceable, matches } from "../data.js";
-import { V, wait } from "../util.js";
+import { V, wait, chance, now } from "../util.js";
 import { getBlock, typeAt, surfaceAt } from "./world.js";
 import { mineBlock, placeBlock, canDig, inProtectedZone } from "./actions.js";
 import { goTo, reachGoal, goNear } from "./movement.js";
 import { acquire } from "./planner.js";
+import { slip, journal } from "./cognition.js";
 import { toSurface } from "./mining.js";
 
 /** Find a reasonably flat, dry spot of size w x d near the bot. Returns feet-level origin. */
-export function findBuildSite(bot, w, d, maxR = 24) {
-  const p = bot.feetBlock();
+export function findBuildSite(bot, w, d, maxR = 24, center) {
+  const p = center || bot.feetBlock();
   let best = null;
   let bestScore = Infinity;
   for (let r = 0; r <= maxR; r += 4) {
@@ -171,6 +172,30 @@ export function* buildStructure(bot, origin, bp, label = "building") {
         yield* mineBlock(bot, b.p);
         continue;
       }
+      if (b.till || b.needs) {
+        // tilling soil, pouring water, planting seeds: uses a tool or item, not a block from the inventory
+        if (b.till ? !/grass_block|dirt/.test(t) || /path/.test(t) : t === b.id || !isReplaceable(t)) continue;
+        if (b.needs && !bot.inv.has(b.needs)) continue;
+        if (V.dist(bot.eye, V.center(b.p)) > reach) {
+          const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach), timeout: 20 * 20, allowDig: false });
+          if (!ok) continue;
+        }
+        bot.motor.look = V.center(b.p);
+        bot.placeAnim();
+        const blk = getBlock(bot.dim, b.p);
+        if (!blk) continue;
+        try {
+          blk.setType(b.id);
+        } catch (e) {
+          continue;
+        }
+        if (b.needs === "minecraft:water_bucket") {
+          bot.inv.remove("minecraft:water_bucket", 1);
+          bot.inv.add("minecraft:bucket", 1);
+        } else if (b.needs) bot.inv.remove(b.needs, 1);
+        yield* wait(2);
+        continue;
+      }
       if (b.fill) {
         // foundation: only fill holes
         if (!isReplaceable(t)) continue;
@@ -207,6 +232,24 @@ export function* buildStructure(bot, origin, bp, label = "building") {
         b.tries = (b.tries || 0) + 1;
         if (b.tries < 4) pending.push(b);
         continue;
+      }
+      // people misplace blocks; sometimes they notice and fix it, sometimes the house just ends up a bit wonky
+      if (!b.fill && slip(bot, 0.006)) {
+        const wrong = bot.inv.buildingBlock();
+        if (wrong && wrong !== mat && (yield* placeBlock(bot, b.p, wrong, { permanent: true, delay: 3 }))) {
+          journal(bot, "mistake", { kind: "build" });
+          if (chance(0.55)) {
+            yield* wait(20);
+            if ((bot.cooldowns.buildOops || 0) < now()) {
+              bot.cooldowns.buildOops = now() + 20 * 300;
+              bot.say("mistake", { kind: "build" }, { prio: 0 });
+            }
+            bot.rememberOwnBlock(b.p);
+            yield* mineBlock(bot, b.p);
+            pending.push(b);
+          }
+          continue;
+        }
       }
       const ok = yield* placeBlock(bot, b.p, mat, { permanent: true, delay: 3 });
       if (!ok) {

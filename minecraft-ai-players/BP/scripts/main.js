@@ -5,6 +5,10 @@ import { TYPE, attach, botByEntity, onBotDeath, startLoop, spawnBot, spotNear, o
 import { openMainMenu, openBotMenu, setConfigValue, giveController, statusText } from "./ui.js";
 import { safe, chance, now } from "./util.js";
 import { removeAllBotTickingAreas } from "./registry.js";
+import { onScriptEvent as llmEvent } from "./ai/llm.js";
+import { handlePlayerTalk } from "./ai/social.js";
+import { journal } from "./ai/cognition.js";
+import { setOrder } from "./ui.js";
 
 // --- spawning (spawn egg, /summon, our own spawns) -------------------------
 world.afterEvents.entitySpawn.subscribe((ev) => {
@@ -44,6 +48,10 @@ world.afterEvents.entityHurt.subscribe((ev) => {
   const bot = botByEntity(hurt);
   if (!bot) return;
   bot.exhaust(0.1);
+  if (ev.damageSource.cause === "fall" && ev.damage >= 2) {
+    journal(bot, "mistake", { kind: "fall" });
+    if (chance(0.5)) bot.say("mistake", { kind: "fall" }, { prio: 1 });
+  }
   const src = ev.damageSource.damagingEntity;
   if (src && src.isValid && src.id !== hurt.id) {
     bot.hurtBy.set(src.id, now());
@@ -92,6 +100,10 @@ world.beforeEvents.playerInteractWithEntity.subscribe((ev) => {
 // --- /scriptevent commands -------------------------------------------------
 system.afterEvents.scriptEventReceive.subscribe((ev) => {
   if (!ev.id.startsWith("aip:")) return;
+  if (ev.id.startsWith("aip:llm_")) {
+    llmEvent(ev.id, ev.message);
+    return;
+  }
   const cmd = ev.id.slice(4);
   const arg = (ev.message || "").trim();
   const src = ev.sourceEntity;
@@ -105,6 +117,11 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
       let made = 0;
       for (let i = 0; i < n; i++) if (spawnBot(player.dimension, spotNear(player))) made++;
       reply(`spawned ${made} AI player(s)`);
+      break;
+    }
+    case "say": {
+      if (!player || !arg) return reply("usage: /scriptevent aip:say <message>");
+      talkNearby(player, arg);
       break;
     }
     case "menu":
@@ -141,5 +158,20 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
       reply("commands: spawn [n], menu, list, status <name>, kickall, config [key=value], cleanup, controller");
   }
 });
+
+/** A player said something: the bot they named answers, otherwise one or two bots nearby. */
+export function talkNearby(player, text) {
+  const low = text.toLowerCase();
+  const online = onlineBots();
+  let targets = online.filter((b) => low.includes(b.name.toLowerCase()));
+  if (!targets.length) {
+    targets = online
+      .filter((b) => b.dim.id === player.dimension.id && Math.hypot(b.pos.x - player.location.x, b.pos.z - player.location.z) < 48)
+      .sort((a, b) => Math.hypot(a.pos.x - player.location.x, a.pos.z - player.location.z) - Math.hypot(b.pos.x - player.location.x, b.pos.z - player.location.z))
+      .slice(0, chance(0.4) ? 2 : 1);
+  }
+  world.sendMessage(`<${player.name}> ${text}`);
+  targets.forEach((b, i) => system.runTimeout(() => handlePlayerTalk(b, player, text, setOrder), 20 + i * 30 + Math.floor(Math.random() * 20)));
+}
 
 startLoop();

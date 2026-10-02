@@ -1,10 +1,12 @@
 // Mining strategies: mining visible blocks, tree felling, staircases, branch mines, getting back up.
 import { cfg } from "../config.js";
 import { K_AIR, K_WATER, K_LAVA, K_SOLID, K_HURT } from "../data.js";
-import { V, pick, now } from "../util.js";
+import { V, pick, now, wait, chance } from "../util.js";
 import { findBlocks, typeAt, kindAt, isPassable, isStandable, skyAbove, surfaceAt, lavaNear } from "./world.js";
 import { mineBlock, placeBlock, pillarUp, canDig } from "./actions.js";
 import { goTo, steer, reachGoal, exploreStep } from "./movement.js";
+import { slip, journal, recallPlace } from "./cognition.js";
+import { hasTenet, obeys } from "./religion.js";
 
 const ORE_RE = /_ore$/;
 
@@ -219,7 +221,18 @@ export function* oreExpedition(bot, wantTypes, targetY, doneFn, budgetTicks = 20
       if (steps % 6 === 0) yield* mineVisibleOres(bot, extra, 5);
     }
     let ok;
-    if (y > targetY + 2) ok = yield* stairStep(bot, -1);
+    if (y > targetY + 2 && slip(bot, 0.02)) {
+      // the classic: digging straight down
+      const f = bot.feetBlock();
+      ok = yield* mineBlock(bot, { x: f.x, y: f.y - 1, z: f.z });
+      if (ok) {
+        yield* wait(15);
+        if (bot.feetBlock().y < f.y - 2) {
+          journal(bot, "mistake", { kind: "dig_down" });
+          bot.say("mistake", { kind: "dig_down" }, { prio: 0 });
+        }
+      }
+    } else if (y > targetY + 2) ok = yield* stairStep(bot, -1);
     else if (y < targetY - 6) ok = yield* stairStep(bot, +1);
     else ok = yield* tunnelStep(bot);
     if (!ok) {
@@ -297,7 +310,22 @@ export function* gatherFromBlocks(bot, item, need, method, countFn) {
     if (method.surface) {
       yield* exploreStep(bot, 40);
     } else if (method.y !== undefined && method.y !== null) {
-      yield* oreExpedition(bot, types, method.y, () => countFn() >= target, 20 * 120);
+      // somewhere we (or a friend) saw this before?
+      const kind = { "minecraft:iron_ore": "iron", "minecraft:diamond_ore": "diamonds", "minecraft:coal_ore": "coal", "minecraft:gold_ore": "gold" }[types[0]];
+      const known = kind && idle <= 2 ? recallPlace(bot, kind, bot.dimName, bot.pos) : null;
+      if (known && V.dist(bot.pos, known) > 12) {
+        bot.setTask(`going back to the ${kind} spot`);
+        const ok = yield* goTo(bot, { x: known.x + 0.5, y: known.y, z: known.z + 0.5 }, { range: 4, timeout: 20 * 150 });
+        if (ok && !scanFor(bot, types, { radius: 10, up: 6, down: 6 }).length) {
+          bot.mem.places = bot.mem.places.filter((p) => p !== known && !(p.x === known.x && p.z === known.z));
+          if (known.fuzzy || chance(0.5)) bot.say("mistake", { kind: "misremember" }, { prio: 0 });
+        }
+        continue;
+      }
+      let y = method.y;
+      const rule = hasTenet(bot, "no_deep");
+      if (rule && y < rule.y && obeys(bot, 0.6)) y = rule.y;
+      yield* oreExpedition(bot, types, y, () => countFn() >= target, 20 * 120);
     } else {
       // e.g. stone: dig down until we hit it
       const y = bot.feetBlock().y;

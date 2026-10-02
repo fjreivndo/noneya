@@ -9,6 +9,7 @@ import { placeBlock, giveItem, mineBlock } from "./actions.js";
 import { goNear, exploreStep } from "./movement.js";
 import { gatherFromBlocks, oreExpedition, mineAt, scanFor } from "./mining.js";
 import { hunt } from "./combat.js";
+import { slip, journal } from "./cognition.js";
 
 const PICK_FOR_TIER = { 1: "minecraft:wooden_pickaxe", 2: "minecraft:stone_pickaxe", 3: "minecraft:iron_pickaxe", 4: "minecraft:diamond_pickaxe" };
 
@@ -30,7 +31,10 @@ export function* acquire(bot, item, count, depth = 0) {
     if (attempts++ > 5) return false;
     const need = count - bot.inv.count(item);
     const methods = methodsFor(item);
-    if (!methods.length) return false;
+    if (!methods.length) {
+      noteFailure(bot, item, need, depth);
+      return false;
+    }
     let ok = false;
     for (const m of methods) {
       if (m.craft) ok = yield* craft(bot, item, need, depth);
@@ -40,9 +44,17 @@ export function* acquire(bot, item, count, depth = 0) {
       else if (m.special) ok = yield* special(bot, m.special, need, depth);
       if (ok) break;
     }
-    if (!ok) return false;
+    if (!ok) {
+      noteFailure(bot, item, need, depth);
+      return false;
+    }
   }
   return true;
+}
+
+function noteFailure(bot, item, n, depth) {
+  if (item.startsWith("#") && item !== "#logs") return;
+  if (!bot.failItem || depth >= bot.failItem.depth) bot.failItem = { item, n, depth };
 }
 
 function* mineFor(bot, item, need, m, depth) {
@@ -110,6 +122,13 @@ export function* craft(bot, item, need, depth = 0) {
     giveItem(bot, item, r.n * times);
   }
   bot.stats.crafted += times;
+  // misclicks: occasionally craft something extra and waste the materials
+  if (slip(bot, 0.04) && bot.inv.count("#planks") >= 2 && item !== "minecraft:stick") {
+    bot.inv.remove("#planks", 2);
+    giveItem(bot, "minecraft:stick", 4);
+    journal(bot, "mistake", { kind: "craft", what: "planks" });
+    bot.say("mistake", { kind: "craft", what: "planks" }, { prio: 0 });
+  }
   try {
     bot.dim.playSound("random.click", bot.pos, { volume: 0.3 });
   } catch (e) {
