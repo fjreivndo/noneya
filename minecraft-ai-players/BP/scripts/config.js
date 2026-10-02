@@ -9,7 +9,10 @@ export const SKIN_COUNT = 48;
  * AI Player Controller item (Settings), which saves to the world.
  * Editing these values changes the defaults for new worlds.
  */
+export const CONFIG_VERSION = 2;
+
 export const DEFAULTS = {
+  configVersion: CONFIG_VERSION,
   // --- population ---
   maxBots: 6, // hard cap of AI players alive at once
   autoJoin: false, // AI players "join the server" by themselves
@@ -34,7 +37,7 @@ export const DEFAULTS = {
   miningSpeed: 1.0, // multiplier on block breaking speed
   craftSpeed: 2.0, // multiplier on crafting speed
   smeltSpeed: 4.0, // multiplier on furnace speed
-  reach: 5,
+  reach: 4, // eye-to-block reach in blocks (survival players have about 4-4.5)
 
   // --- progression help (bots can't read /locate output) ---
   stuckAssistMinutes: 20, // after this long stuck on a step, the bot gets a small nudge (0 = never)
@@ -78,12 +81,18 @@ let cache = null;
 
 export function cfg() {
   if (cache) return cache;
+  /** @type {any} */
   let saved = {};
   try {
     const raw = world.getDynamicProperty("aip:config");
     if (typeof raw === "string") saved = JSON.parse(raw);
   } catch (e) {
     saved = {};
+  }
+  if ((saved.configVersion || 1) < CONFIG_VERSION) {
+    // 1.0 shipped with a reach of 5, which looked like bots mining from far away
+    delete saved.reach;
+    saved.configVersion = CONFIG_VERSION;
   }
   cache = Object.assign({}, DEFAULTS, saved);
   return cache;

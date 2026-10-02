@@ -5,7 +5,7 @@ import { cfg } from "../config.js";
 import { RECIPES, SMELT, SOURCES, FUEL, COOK, FOOD_ANIMALS, logToPlanks, blockInfo, K_WATER } from "../data.js";
 import { V, wait, now, prettyItem } from "../util.js";
 import { findBlocks, getBlock, isPassable, isStandable, kindAt } from "./world.js";
-import { placeBlock, giveItem, mineBlock } from "./actions.js";
+import { placeBlock, giveItem, mineBlock, reachOf, inReach } from "./actions.js";
 import { goNear, exploreStep } from "./movement.js";
 import { gatherFromBlocks, oreExpedition, mineAt, scanFor } from "./mining.js";
 import { hunt } from "./combat.js";
@@ -142,8 +142,8 @@ export function* ensureStation(bot, id, depth = 0) {
   const near = findBlocks(bot.dim, bot.pos, id === "minecraft:furnace" ? ["minecraft:furnace", "minecraft:lit_furnace"] : [id], { radius: 12, up: 4, down: 4, cap: 10 });
   if (near.length) {
     const p = near[0];
-    if (V.dist(bot.eye, V.center(p)) <= cfg().reach) return true;
-    const ok = yield* goNear(bot, p, cfg().reach - 1);
+    if (inReach(bot, p)) return true;
+    const ok = yield* goNear(bot, p, reachOf() - 0.6);
     if (ok) return true;
   }
   if (!bot.inv.has(id)) {
@@ -176,6 +176,7 @@ function findPlaceSpot(bot) {
     for (const dy of [0, 1, -1]) {
       const p = { x: f.x + dx, y: f.y + dy, z: f.z + dz };
       if (!isPassable(bot.dim, p) || bot.occupies(p) || kindAt(bot.dim, p) === K_WATER) continue;
+      if (!inReach(bot, p, 0.3)) continue;
       if (isStandable(bot.dim, { x: p.x, y: p.y - 1, z: p.z })) grounded.push(p);
       else floating.push(p); // blocks can float in Bedrock
     }
@@ -299,7 +300,7 @@ function* fillBucket(bot, liquid, depth) {
     const found = findBlocks(bot.dim, bot.pos, [`minecraft:${liquid}`], { radius: 40, up: 10, down: liquid === "lava" ? 24 : 12, cap: 300 }).filter((p) => isSource(bot, p));
     if (found.length) {
       const p = found[0];
-      const ok2 = yield* goNear(bot, p, cfg().reach - 1);
+      const ok2 = yield* goNear(bot, p, reachOf() - 0.6);
       if (!ok2) continue;
       bot.motor.look = V.center(p);
       yield* wait(5);
@@ -349,7 +350,7 @@ export function* makeObsidian(bot, need, depth) {
     const lava = findBlocks(bot.dim, bot.pos, ["minecraft:lava"], { radius: 20, up: 6, down: 12, cap: 200 }).filter((p) => isSource(bot, p));
     if (lava.length) {
       const p = lava[0];
-      ok = yield* goNear(bot, p, cfg().reach - 1);
+      ok = yield* goNear(bot, p, reachOf() - 0.6);
       if (!ok) {
         bot.blacklist(p, 20 * 120);
         continue;

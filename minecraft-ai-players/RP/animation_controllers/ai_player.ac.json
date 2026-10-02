@@ -1,0 +1,56 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.aip.action": {
+      "initial_state": "none",
+      "states": {
+        "none": {
+          "transitions": [
+            {
+              "mine": "query.property('aip:action') == 1"
+            },
+            {
+              "bow": "query.property('aip:action') == 2"
+            },
+            {
+              "eat": "query.property('aip:action') == 3"
+            }
+          ]
+        },
+        "mine": {
+          "animations": [
+            "mine"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "none": "query.property('aip:action') != 1"
+            }
+          ]
+        },
+        "bow": {
+          "animations": [
+            "bow_hold"
+          ],
+          "blend_transition": 0.15,
+          "transitions": [
+            {
+              "none": "query.property('aip:action') != 2"
+            }
+          ]
+        },
+        "eat": {
+          "animations": [
+            "eat_loop"
+          ],
+          "blend_transition": 0.1,
+          "transitions": [
+            {
+              "none": "query.property('aip:action') != 3"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

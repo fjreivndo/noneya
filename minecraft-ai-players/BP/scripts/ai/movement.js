@@ -4,7 +4,7 @@ import { cfg } from "../config.js";
 import { kindOf, K_AIR, K_SOLID, K_WATER, K_LAVA, K_TALL, K_HURT, K_HAZARD, K_UNLOADED } from "../data.js";
 import { V, now, wait, yawTo, pitchTo, rand, chance } from "../util.js";
 import { typeAt, getBlock, surfaceAt, kindAt, isPassable } from "./world.js";
-import { mineBlock, placeBlock, pillarUp, canDig } from "./actions.js";
+import { mineBlock, placeBlock, pillarUp, canDig, lineOfSight, reachOf } from "./actions.js";
 import { toSurface } from "./mining.js";
 import { slip, journal, recallPlace } from "./cognition.js";
 
@@ -45,11 +45,17 @@ export function applyMotor(bot) {
     let speed = m.sprint ? SPRINT : WALK;
     if (inWater) speed *= 0.55;
     if (m.slow) speed = Math.min(speed, d * 0.6 + 0.02);
+    // people turn towards where they're going before they walk off
+    if (d > 0.3 && !m.look) {
+      const off = Math.abs(wrapDeg(yawTo(p, m.target) - bot.yaw));
+      if (off > 75) speed *= 0.2;
+      else if (off > 40) speed *= 0.6;
+    }
     if (d > 0.04) {
       const s = Math.min(speed, d);
       ix = (dx / d) * s - v.x;
       iz = (dz / d) * s - v.z;
-      if (!face) face = { x: m.target.x, y: p.y + 1.62, z: m.target.z };
+      if (!face && d > 0.15) face = { x: m.target.x, y: p.y + 1.62 + (m.target.y - p.y) * 0.5 - 0.15, z: m.target.z };
     } else {
       ix = -v.x * 0.8;
       iz = -v.z * 0.8;
@@ -90,14 +96,7 @@ export function applyMotor(bot) {
       /* entity may be riding / invalid */
     }
   }
-  if (face) {
-    try {
-      const eye = { x: p.x, y: p.y + 1.62, z: p.z };
-      e.setRotation({ x: Math.max(-89, Math.min(89, pitchTo(eye, face))), y: yawTo(eye, face) });
-    } catch (err) {
-      /* ignore */
-    }
-  }
+  turnTowards(bot, face, p);
   if (m.target) {
     const moved = Math.sqrt(v.x * v.x + v.z * v.z);
     bot.exhaust(moved * (m.sprint ? 0.1 : 0.01));
@@ -107,6 +106,61 @@ export function applyMotor(bot) {
   m.look = null;
   m.sprint = false;
   m.slow = false;
+}
+
+export function wrapDeg(a) {
+  a = ((a + 180) % 360 + 360) % 360 - 180;
+  return a;
+}
+
+/**
+ * Smoothly turn body and head towards a point. Body yaw goes through setRotation; head pitch is a
+ * synced entity property because Bedrock ignores pitch on mobs.
+ */
+function turnTowards(bot, face, p) {
+  const e = bot.entity;
+  let wantYaw = bot.yaw;
+  let wantPitch = 0;
+  if (face) {
+    const eye = { x: p.x, y: p.y + 1.62, z: p.z };
+    wantYaw = yawTo(eye, face);
+    wantPitch = Math.max(-85, Math.min(85, pitchTo(eye, face)));
+  } else wantPitch = bot.pitch * 0.85;
+  const rate = 22 + cfg().skill * 25;
+  const dy = wrapDeg(wantYaw - bot.yaw);
+  bot.yaw = wrapDeg(bot.yaw + Math.max(-rate, Math.min(rate, dy)));
+  const dp = wantPitch - bot.pitch;
+  bot.pitch += Math.max(-rate, Math.min(rate, dp));
+  try {
+    e.setRotation({ x: bot.pitch, y: bot.yaw });
+  } catch (err) {
+    /* ignore */
+  }
+  if (Math.abs(bot.pitch - bot.shownPitch) > 1.5) {
+    bot.shownPitch = bot.pitch;
+    try {
+      e.setProperty("aip:pitch", Math.round(bot.pitch * 10) / 10);
+    } catch (err) {
+      /* ignore */
+    }
+  }
+}
+
+/** Degrees between where the bot looks and a point. */
+export function facingError(bot, point) {
+  const p = bot.pos;
+  const eye = { x: p.x, y: p.y + 1.62, z: p.z };
+  return Math.max(Math.abs(wrapDeg(yawTo(eye, point) - bot.yaw)), Math.abs(pitchTo(eye, point) - bot.pitch));
+}
+
+/** Turn to face a point; returns once roughly facing it (or after a short timeout). */
+export function* faceTowards(bot, point, maxTicks = 12) {
+  for (let i = 0; i < maxTicks; i++) {
+    if (facingError(bot, point) < 12) return true;
+    bot.motor.look = point;
+    yield;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -461,6 +515,7 @@ export function* followPath(bot, path, movingTarget, opts = {}) {
       const hd = V.hdist(p, target);
       const needJump = (step.act === "up" || step.y > Math.floor(p.y + 0.01)) && hd < 1.4 && step.act !== "swim";
       steer(bot, target, { sprint: opts.sprint && !last && step.act === "walk", slow: last || step.act === "bridge", jump: needJump });
+      if (step.act === "bridge" || (step.act === "drop" && hd < 1)) bot.setSneak(true);
       if (step.act === "bridge" && hd < 1.2) bot.motor.slow = true;
       yield;
       t++;
@@ -595,7 +650,7 @@ export function* unstick(bot, tgt, severity) {
 }
 
 /** goal function: within reach of a block, not standing inside it */
-export function reachGoal(p, reach) {
+export function reachGoal(p, reach, dim) {
   const cx = p.x + 0.5;
   const cy = p.y + 0.5;
   const cz = p.z + 0.5;
@@ -604,13 +659,15 @@ export function reachGoal(p, reach) {
     const dx = n.x + 0.5 - cx;
     const dy = n.y + 1.62 - cy;
     const dz = n.z + 0.5 - cz;
-    return dx * dx + dy * dy + dz * dz <= reach * reach;
+    if (dx * dx + dy * dy + dz * dz > reach * reach) return false;
+    // must be able to actually see the block from there
+    return !dim || lineOfSight(dim, { x: n.x + 0.5, y: n.y + 1.62, z: n.z + 0.5 }, p);
   };
 }
 
 export function* goNear(bot, p, reach) {
-  const r = reach ?? cfg().reach - 0.5;
-  return yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, r), range: r });
+  const r = reach ?? reachOf() - 0.3;
+  return yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, r, bot.dim), range: r });
 }
 
 /** Explore the surface: walk ~dist blocks in a slowly drifting direction. */

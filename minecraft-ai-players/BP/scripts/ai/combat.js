@@ -4,7 +4,7 @@ import { NEUTRAL_MOBS, RANGED_MOBS, EXPLODING } from "../data.js";
 import { V, now, wait, rand, chance, prettyItem } from "../util.js";
 import { isAlive, healthOf, entitiesNear } from "./world.js";
 import { meleeHit, attackCooldown, canShoot, shootArrow, collectNearbyItems, eat, pillarUp } from "./actions.js";
-import { steer, goTo, exploreStep } from "./movement.js";
+import { steer, goTo, exploreStep, facingError } from "./movement.js";
 import { slip, journal } from "./cognition.js";
 import { hasTenet, obeys } from "./religion.js";
 
@@ -110,13 +110,7 @@ export function* fight(bot, target, opts = {}) {
         bot.hold("minecraft:bow");
         bot.motor.look = { x: tp.x, y: tp.y + 1, z: tp.z };
         if (d < 4 && !flying) steer(bot, V.add(bot.pos, V.sub(bot.pos, tp)), {});
-        if (drawing === 0) {
-          try {
-            bot.entity.playAnimation("animation.aip.bow", { blendOutTime: 0.1 });
-          } catch (e) {
-            /* ignore */
-          }
-        }
+        bot.setAction(2);
         drawing++;
         if (drawing >= Math.round(22 - cfg().skill * 8)) {
           shootArrow(bot, target, opts.aimY ?? (flying ? 0.5 : 1.0));
@@ -153,7 +147,9 @@ export function* fight(bot, target, opts = {}) {
         bot.motor.look = { x: tp.x, y: tp.y + 1.2, z: tp.z };
       } else {
         bot.motor.look = { x: tp.x, y: tp.y + 1.2, z: tp.z };
-        if (cooldown <= 0) {
+        if (cooldown <= 0 && facingError(bot, { x: tp.x, y: tp.y + 1.2, z: tp.z }) > 35) {
+          // still turning to face it
+        } else if (cooldown <= 0) {
           // jump for crits sometimes
           if (bot.entity.isOnGround && chance(cfg().skill * 0.35)) {
             bot.motor.jump = true;

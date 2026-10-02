@@ -88,6 +88,13 @@ export class Bot {
     this.stats = Object.assign({ kills: 0, deaths: 0, mined: 0, crafted: 0, wins: 0, born: now() }, rec.stats || {});
     this.worn = rec.worn || {};
     initCognition(this);
+    this.yaw = safe(() => entity.getRotation().y, 0);
+    this.pitch = 0;
+    this.shownPitch = 0;
+    this.action = 0;
+    this.actionUntil = 0;
+    this.sneaking = false;
+    this.sneakUntil = 0;
     this.inbox = [];
     this._lastTypo = null;
     this._style = null;
@@ -149,6 +156,10 @@ export class Bot {
     return false;
   }
   rebind(entity) {
+    // a fresh entity starts with default property values
+    this.action = 0;
+    this.sneaking = false;
+    this.shownPitch = 0;
     this.entity = entity;
     this.entityId = entity.id;
     this.inv.entity = entity;
@@ -173,6 +184,19 @@ export class Bot {
     if (this.held === want) return;
     this.held = want;
     safe(() => this.entity.runCommand(`replaceitem entity @s slot.weapon.mainhand 0 ${want}`), null);
+  }
+  /** Looping arm pose shown to clients: 0 none, 1 mining, 2 drawing a bow, 3 eating. Expires unless refreshed. */
+  setAction(a, ticks = 3) {
+    this.actionUntil = now() + ticks;
+    if (a === this.action) return;
+    this.action = a;
+    safe(() => this.entity.setProperty("aip:action", a), null);
+  }
+  setSneak(on, ticks = 3) {
+    if (on) this.sneakUntil = now() + ticks;
+    if (on === this.sneaking) return;
+    this.sneaking = on;
+    safe(() => this.entity.setProperty("aip:sneak", on), null);
   }
   swing() {
     safe(() => this.entity.playAnimation("animation.aip.swing", { blendOutTime: 0.05 }), null);
@@ -410,6 +434,8 @@ export class Bot {
       }
     }
     if (this.currentMs) this.msTicks++;
+    if (this.action && now() > this.actionUntil) this.setAction(0);
+    if (this.sneaking && now() > this.sneakUntil) this.setSneak(false);
     applyMotor(this);
     this.updateNameTag();
   }

@@ -1,10 +1,10 @@
 // Primitive actions: mine, place, pillar, eat, attack, shoot.
 import { world, EntityDamageCause, ItemStack } from "@minecraft/server";
 import { cfg } from "../config.js";
-import { blockInfo, canHarvest, kindOf, isReplaceable, K_AIR, K_WATER, K_LAVA, FOOD, toolInfo } from "../data.js";
-import { V, wait, chance, rand, now } from "../util.js";
+import { blockInfo, canHarvest, kindOf, isReplaceable, K_AIR, K_WATER, K_LAVA, K_SOLID, K_HURT, K_TALL, FOOD, toolInfo } from "../data.js";
+import { V, wait, chance, rand, now, safe, debug } from "../util.js";
 import { getBlock, typeAt, lavaNear, kindAt } from "./world.js";
-import { goTo } from "./movement.js";
+import { goTo, faceTowards } from "./movement.js";
 
 const PROTECTED = /chest|barrel|shulker|furnace|crafting_table|bed$|door|sign|banner|glass|wool|carpet|torch|lantern|rail|spawner|portal|frame|beacon|anvil|enchant|brewing|smoker|hopper|dropper|dispenser|lectern|bookshelf|note|jukebox|bell|chain/;
 
@@ -99,7 +99,92 @@ export function giveItem(bot, id, n) {
   bot.onGotItem(id, n);
 }
 
-/** Mines one block. The bot must already be within reach. */
+/** Survival-like reach (eye to block centre). */
+export function reachOf() {
+  return Math.max(2.5, Math.min(cfg().reach, 4.5));
+}
+
+/**
+ * Line of sight from an eye position to a block: the first solid block the ray hits must be the target.
+ * Passable targets (crops, grass) only need a clear line.
+ */
+export function lineOfSight(dim, eye, p) {
+  // aim at the centre and at the faces turned towards us, like a player picking a visible face
+  const pts = [V.center(p)];
+  if (eye.y > p.y + 1) pts.push({ x: p.x + 0.5, y: p.y + 0.98, z: p.z + 0.5 });
+  if (eye.y < p.y) pts.push({ x: p.x + 0.5, y: p.y + 0.02, z: p.z + 0.5 });
+  if (eye.x < p.x) pts.push({ x: p.x + 0.02, y: p.y + 0.5, z: p.z + 0.5 });
+  if (eye.x > p.x + 1) pts.push({ x: p.x + 0.98, y: p.y + 0.5, z: p.z + 0.5 });
+  if (eye.z < p.z) pts.push({ x: p.x + 0.5, y: p.y + 0.5, z: p.z + 0.02 });
+  if (eye.z > p.z + 1) pts.push({ x: p.x + 0.5, y: p.y + 0.5, z: p.z + 0.98 });
+  for (const pt of pts) if (rayReaches(dim, eye, p, pt)) return true;
+  return false;
+}
+
+function rayReaches(dim, eye, p, aim) {
+  const d = V.sub(aim, eye);
+  const dist = V.len(d);
+  if (dist < 0.9) return true;
+  const t = typeAt(dim, p);
+  const k = t ? kindOf(t) : K_AIR;
+  const passable = k !== K_SOLID && k !== K_HURT && k !== K_TALL;
+  const ec = V.floor(eye);
+  const isTarget = (q) => q.x === p.x && q.y === p.y && q.z === p.z;
+  const ek = kindAt(dim, ec);
+  const eyeBlocked = ek === K_SOLID || ek === K_HURT || ek === K_TALL;
+  if (!eyeBlocked) {
+    try {
+      const hit = dim.getBlockFromRay(eye, V.norm(d), { maxDistance: dist + 0.6, includeLiquidBlocks: false, includePassableBlocks: passable });
+      if (!hit) return passable;
+      if (isTarget(hit.block)) return true;
+      // something solid *behind* an empty/passable target doesn't block the view of it
+      return passable && V.dist(eye, V.center(hit.block)) > dist + 0.2;
+    } catch (e) {
+      /* fall through to stepping */
+    }
+  }
+  // head inside a block (leaves, a fresh spawn) or no raycast: step along the line, ignoring our own cell
+  const n = Math.ceil(dist / 0.2);
+  for (let i = 1; i <= n + 1; i++) {
+    const q = V.floor(V.add(eye, V.scale(d, Math.min(1.02, i / n))));
+    if (isTarget(q)) return true;
+    if (q.x === ec.x && q.y === ec.y && q.z === ec.z) continue;
+    const qk = kindAt(dim, q);
+    if (qk === K_SOLID || qk === K_HURT || qk === K_TALL) return false;
+  }
+  return true;
+}
+
+export function inReach(bot, p, extra = 0) {
+  return V.dist(bot.eye, V.center(p)) <= reachOf() + extra && lineOfSight(bot.dim, bot.eye, p);
+}
+
+/** Breaks a block with the vanilla particles and sound, then removes the vanilla drops (we hand out our own). */
+function* breakWithEffects(bot, p) {
+  const dim = bot.dim;
+  const c = V.center(p);
+  const before = new Set(safe(() => dim.getEntities({ type: "minecraft:item", location: c, maxDistance: 2 }).map((e) => e.id), []));
+  let ok = safe(() => {
+    dim.runCommand(`setblock ${p.x} ${p.y} ${p.z} air destroy`);
+    return true;
+  }, false);
+  if (!ok || typeAt(dim, p) !== "minecraft:air") {
+    const b = getBlock(dim, p);
+    ok = !!b && safe(() => {
+      b.setType("minecraft:air");
+      return true;
+    }, false);
+  }
+  if (!ok) return false;
+  // vanilla "destroy" drops loot without knowing our tool; swap it for the correct drops
+  for (let i = 0; i < 3; i++) {
+    for (const e of safe(() => dim.getEntities({ type: "minecraft:item", location: c, maxDistance: 1.6 }), [])) if (!before.has(e.id)) safe(() => e.remove(), null);
+    if (i < 2) yield;
+  }
+  return true;
+}
+
+/** Mines one block. The bot must be within reach and able to see it. */
 export function* mineBlock(bot, p, opts = {}) {
   const dim = bot.dim;
   let b = getBlock(dim, p);
@@ -109,16 +194,21 @@ export function* mineBlock(bot, p, opts = {}) {
   if (k === K_AIR && blockInfo(t).hardness !== 0) return true;
   if (k === K_WATER || k === K_LAVA) return true;
   if (t === "minecraft:air" || t === "minecraft:cave_air") return true;
-  if (!opts.force && !canDig(bot, t, p)) return false;
-  const reach = cfg().reach + 1;
-  if (V.dist(bot.eye, V.center(p)) > reach) return false;
+  if (!opts.force && !canDig(bot, t, p)) {
+    debug(`${bot.name}: won't dig ${t}`);
+    return false;
+  }
+  if (!inReach(bot, p, 0.4)) {
+    debug(`${bot.name}: ${t} at ${p.x} ${p.y} ${p.z} is out of reach or not visible`);
+    return false;
+  }
 
   // plug lava next to the block before opening it up
   if (!opts.ignoreLava) {
     const lava = lavaNear(dim, p);
     if (lava) {
       const id = bot.inv.buildingBlock();
-      if (!id || V.dist(bot.eye, V.center(lava)) > reach) return false;
+      if (!id || V.dist(bot.eye, V.center(lava)) > reachOf() + 0.5) return false;
       const ok = yield* placeBlock(bot, lava, id, { force: true });
       if (!ok) return false;
     }
@@ -126,24 +216,19 @@ export function* mineBlock(bot, p, opts = {}) {
 
   const tool = bot.inv.toolFor(t);
   bot.hold(tool);
+  const c = V.center(p);
+  yield* faceTowards(bot, c);
   const ticks = Math.max(1, Math.ceil(bot.inv.ticksToBreak(t) / Math.max(0.05, cfg().miningSpeed)));
-  bot.setTask(bot.task, true);
   for (let i = 0; i < ticks; i++) {
-    bot.motor.look = V.center(p);
+    bot.motor.look = c;
+    bot.setAction(1);
     if (i % 5 === 0) {
-      bot.swing();
-      if (i % 10 === 0) {
-        try {
-          dim.playSound(digSound(t), V.center(p), { volume: 0.4, pitch: 0.8 });
-        } catch (e) {
-          /* ignore */
-        }
-      }
+      safe(() => dim.playSound(digSound(t), c, { volume: 0.45, pitch: 0.75 }), null);
     }
     yield;
-    if (i % 4 === 0) {
-      const now = typeAt(dim, p);
-      if (now !== t) return true;
+    if (i % 4 === 0 && typeAt(dim, p) !== t) {
+      bot.setAction(0);
+      return true;
     }
   }
   b = getBlock(dim, p);
@@ -158,16 +243,9 @@ export function* mineBlock(bot, p, opts = {}) {
     }
     drops = growth >= 7 ? [{ id: "minecraft:wheat", n: 1 }, { id: "minecraft:wheat_seeds", n: 1 + Math.floor(Math.random() * 3) }] : [{ id: "minecraft:wheat_seeds", n: 1 }];
   }
-  try {
-    b.setType("minecraft:air");
-  } catch (e) {
-    return false;
-  }
-  try {
-    dim.playSound(digSound(t), V.center(p), { volume: 0.8 });
-  } catch (e) {
-    /* ignore */
-  }
+  const broke = yield* breakWithEffects(bot, p);
+  bot.setAction(0);
+  if (!broke) return false;
   if (bot.ownBlocks) bot.ownBlocks.delete(V.key(p));
   for (const d of drops) giveItem(bot, d.id, d.n);
   bot.stats.mined++;
@@ -176,7 +254,7 @@ export function* mineBlock(bot, p, opts = {}) {
   return true;
 }
 
-/** Places a block. opts: perm (BlockPermutation), force (allow over lava / near self), bridge */
+/** Places a block. opts: perm (BlockPermutation), force (allow over lava / near self, skip sight check), bridge */
 export function* placeBlock(bot, p, id, opts = {}) {
   id = id ?? bot.inv.buildingBlock();
   if (!id) return false;
@@ -186,10 +264,13 @@ export function* placeBlock(bot, p, id, opts = {}) {
   if (!isReplaceable(b.typeId)) return b.typeId === id;
   if (inProtectedZone(bot, p)) return false;
   if (!opts.force && bot.occupies(p)) return false;
-  if (V.dist(bot.eye, V.center(p)) > cfg().reach + 1.5) return false;
+  if (V.dist(bot.eye, V.center(p)) > reachOf() + 0.6) return false;
+  if (!opts.force && !opts.bridge && !lineOfSight(bot.dim, bot.eye, p)) return false;
   bot.hold(id);
-  bot.motor.look = V.center(p);
-  yield;
+  const c = V.center(p);
+  // aim at the face we're placing against
+  yield* faceTowards(bot, { x: c.x, y: c.y - 0.4, z: c.z }, 8);
+  if (opts.bridge) bot.setSneak(true, 10);
   bot.placeAnim();
   try {
     if (opts.perm) b.setPermutation(opts.perm);
@@ -199,12 +280,8 @@ export function* placeBlock(bot, p, id, opts = {}) {
   }
   if (!opts.free) bot.inv.remove(id, 1);
   if (bot.ownBlocks && !opts.permanent) bot.rememberOwnBlock(p);
-  try {
-    bot.dim.playSound(id.includes("planks") || id.includes("log") ? "dig.wood" : "dig.stone", V.center(p), { volume: 0.7 });
-  } catch (e) {
-    /* ignore */
-  }
-  yield* wait(opts.delay ?? 2);
+  safe(() => bot.dim.playSound(id.includes("planks") || id.includes("log") ? "dig.wood" : "dig.stone", c, { volume: 0.7 }), null);
+  yield* wait(opts.delay ?? 3);
   return true;
 }
 
@@ -245,12 +322,8 @@ export function* eat(bot) {
   if (!food) return false;
   bot.setTask("eating");
   bot.hold(food);
-  try {
-    bot.entity.playAnimation("animation.aip.eat", { blendOutTime: 0.2 });
-  } catch (e) {
-    /* ignore */
-  }
   for (let i = 0; i < 32; i++) {
+    bot.setAction(3);
     if (i % 4 === 0) {
       try {
         bot.dim.playSound("random.eat", bot.pos, { volume: 0.5, pitch: rand(0.8, 1.2) });

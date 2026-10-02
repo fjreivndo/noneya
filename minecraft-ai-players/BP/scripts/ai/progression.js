@@ -4,7 +4,7 @@ import { cfg } from "../config.js";
 import { K_SOLID, K_AIR, K_LAVA } from "../data.js";
 import { V, wait, now, rand, pick, getDim } from "../util.js";
 import { getBlock, typeAt, kindAt, findBlocks, entitiesNear, isAlive, surfaceAt, isPassable, isStandable } from "./world.js";
-import { placeBlock, mineBlock, meleeHit, canShoot, shootArrow, collectNearbyItems, pillarUp } from "./actions.js";
+import { placeBlock, mineBlock, meleeHit, canShoot, shootArrow, collectNearbyItems, pillarUp, reachOf, inReach } from "./actions.js";
 import { goTo, goNear, steer, exploreStep, reachGoal } from "./movement.js";
 import { fight } from "./combat.js";
 import { acquire } from "./planner.js";
@@ -170,7 +170,7 @@ export function* buildNetherPortal(bot) {
       const p = { x: o.x + x, y: o.y + y, z: o.z };
       const k = kindAt(bot.dim, p);
       if (k !== K_AIR && !(FRAME.some(([fx, fy]) => fx === x && fy === y) && typeAt(bot.dim, p) === "minecraft:obsidian")) {
-        yield* goNear(bot, p, cfg().reach - 1);
+        yield* goNear(bot, p, reachOf() - 0.6);
         const mined = yield* mineBlock(bot, p);
         if (!mined) setBlock(bot.dim, p, "minecraft:air");
       }
@@ -178,7 +178,7 @@ export function* buildNetherPortal(bot) {
   for (const [x, y] of FRAME) {
     const p = { x: o.x + x, y: o.y + y, z: o.z };
     if (typeAt(bot.dim, p) === "minecraft:obsidian") continue;
-    if (V.dist(bot.eye, V.center(p)) > cfg().reach - 0.5) yield* goTo(bot, V.feet(p), { goalFn: reachGoal(p, cfg().reach - 0.5), allowDig: false, timeout: 400 });
+    if (!inReach(bot, p)) yield* goTo(bot, V.feet(p), { goalFn: reachGoal(p, reachOf() - 0.3, bot.dim), allowDig: false, timeout: 400 });
     let placed = yield* placeBlock(bot, p, "minecraft:obsidian", { permanent: true });
     if (!placed) {
       // corner case: something is in the way, place it anyway from where we stand
@@ -547,13 +547,11 @@ function* destroyCrystal(bot, crystal) {
     const cp = crystal.location;
     yield* goTo(bot, { x: cp.x + 0.5, y: bot.pos.y, z: cp.z + 0.5 }, { range: 24, timeout: 20 * 60, allowPlace: true });
     for (let i = 0; i < 6 && isAlive(crystal) && canShoot(bot); i++) {
-      bot.motor.look = crystal.location;
-      try {
-        bot.entity.playAnimation("animation.aip.bow");
-      } catch (e) {
-        /* ignore */
+      for (let k = 0; k < 18; k++) {
+        bot.motor.look = crystal.location;
+        bot.setAction(2);
+        yield;
       }
-      yield* wait(18);
       if (!crystal.isValid) break;
       shootArrow(bot, crystal, 0.3);
       yield* wait(20);

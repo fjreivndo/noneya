@@ -410,6 +410,7 @@ const SETTINGS = [
   ["miningSpeed", "Mining speed (x10)", "slider10", 1, 50, 1],
   ["craftSpeed", "Crafting speed (x10)", "slider10", 1, 100, 1],
   ["smeltSpeed", "Smelting speed (x10)", "slider10", 1, 200, 5],
+  ["reach", "Reach in blocks (x10)", "slider10", 25, 45, 1],
   ["stuckAssistMinutes", "Stuck assist after N minutes (0 = off)", "slider", 0, 120, 5],
   ["endPortalAssist", "Build own end portal if no stronghold found", "toggle"],
   ["strongholdSearchMinutes", "Stronghold search minutes", "slider", 5, 120, 5],

@@ -7,6 +7,13 @@ AI Players adds autonomous AI players to your world. Each one has a random usern
 
 ---
 
+## New in 1.2: looking and acting like real players
+
+* **They face what they're doing.** Body and head turn smoothly towards the block they're mining, the spot they're placing on, the mob they're fighting, the player they're talking to, or where they're walking. Head pitch is synced through an entity property, because Bedrock ignores pitch on mobs, so bots really look down at the ground they dig and up at trees. They turn before they walk off and only swing once they're facing their target.
+* **Survival reach.** Reach is 4 blocks (eye to block, configurable 2.5–4.5), and a bot must be able to *see* a face of the block. It walks to a spot with a clear line of sight, like a player, instead of mining through other blocks or from far away. Worlds that saved the old reach of 5 are migrated automatically.
+* **Blocks visibly break.** Mining plays a looping arm-swing animation with dig sounds while the block takes its proper break time. It then breaks with the vanilla particles and sound. The correct drops (for the tool used) go to the bot.
+* **More poses.** Holding a drawn bow while aiming, eating with the food raised to the mouth, sneaking at edges while bridging, and a place-block arm motion.
+
 ## New in 1.1: a living society
 
 * **Speech that isn't scripted.** Every line is assembled on the spot from what the bot is doing, remembers (its journal: deaths, finds, builds, mistakes, events), feels (stress, tiredness, mood) and believes. Each bot has its own style (slang, capitals, punctuation, emoticons, favourite words) and makes typos, which get worse under stress, and it sometimes sends a `*correction`. On a Bedrock Dedicated Server you can add the **LLM bridge** so bots talk through Claude instead (see below).

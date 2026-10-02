@@ -3,7 +3,7 @@ import { cfg } from "../config.js";
 import { K_AIR, K_WATER, K_LAVA, K_SOLID, K_HURT } from "../data.js";
 import { V, pick, now, wait, chance } from "../util.js";
 import { findBlocks, typeAt, kindAt, isPassable, isStandable, skyAbove, surfaceAt, lavaNear } from "./world.js";
-import { mineBlock, placeBlock, pillarUp, canDig } from "./actions.js";
+import { mineBlock, placeBlock, pillarUp, canDig, reachOf, inReach } from "./actions.js";
 import { goTo, steer, reachGoal, exploreStep } from "./movement.js";
 import { slip, journal, recallPlace } from "./cognition.js";
 import { hasTenet, obeys } from "./religion.js";
@@ -29,15 +29,21 @@ export function scanFor(bot, types, opts = {}) {
 export function* mineAt(bot, p, opts = {}) {
   const t = typeAt(bot.dim, p);
   if (!t) return false;
-  const reach = cfg().reach - 0.5;
-  if (V.dist(bot.eye, V.center(p)) > reach) {
-    const ok = yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, reach), range: reach, timeout: opts.timeout ?? 20 * 60 });
+  const reach = reachOf() - 0.3;
+  if (!inReach(bot, p)) {
+    const ok = yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, reach, bot.dim), range: reach, timeout: opts.timeout ?? 20 * 60 });
     if (!ok) {
       bot.blacklist(p, 20 * 120);
       return false;
     }
   }
-  const ok = yield* mineBlock(bot, p);
+  let ok = yield* mineBlock(bot, p);
+  if (!ok && !inReach(bot, p, 0.4) && canDig(bot, t, p)) {
+    // we ended up slightly off the planned spot: get a little closer and try once more
+    const closer = Math.max(1.6, reach - 1.2);
+    const moved = yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, closer, bot.dim), range: closer, timeout: 20 * 15 });
+    if (moved) ok = yield* mineBlock(bot, p);
+  }
   if (!ok) {
     bot.blacklist(p, 20 * 300);
     return false;
@@ -48,7 +54,7 @@ export function* mineAt(bot, p, opts = {}) {
     for (let i = 0; i < (isLog ? 8 : 10); i++) {
       const next = findBlocks(bot.dim, p, [t], { radius: isLog ? 1 : 1, up: isLog ? 6 : 1, down: 1, cap: 12 })
         .filter((q) => !bot.isBlacklisted(q))
-        .filter((q) => V.dist(bot.eye, V.center(q)) <= reach + 0.8);
+        .filter((q) => inReach(bot, q, 0.3));
       if (!next.length) break;
       const q = next[0];
       const ok2 = yield* mineBlock(bot, q);

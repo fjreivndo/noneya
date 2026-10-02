@@ -1,9 +1,8 @@
 // Building: site selection, blueprints (house, tower) and a generic structure builder.
-import { cfg } from "../config.js";
 import { kindOf, K_AIR, K_WATER, isReplaceable, matches } from "../data.js";
 import { V, wait, chance, now } from "../util.js";
 import { getBlock, typeAt, surfaceAt } from "./world.js";
-import { mineBlock, placeBlock, canDig, inProtectedZone } from "./actions.js";
+import { mineBlock, placeBlock, canDig, inProtectedZone, reachOf, inReach } from "./actions.js";
 import { goTo, reachGoal, goNear } from "./movement.js";
 import { acquire } from "./planner.js";
 import { slip, journal } from "./cognition.js";
@@ -150,7 +149,7 @@ export function* buildStructure(bot, origin, bp, label = "building") {
   bot.setTask(label);
   if (bot.isUnderground()) yield* toSurface(bot);
 
-  const reach = cfg().reach - 0.5;
+  const reach = reachOf() - 0.3;
   const phases = [...new Set(bp.list.map((b) => b.phase))].sort((a, b) => a - b);
   for (const ph of phases) {
     let pending = bp.list.filter((b) => b.phase === ph).map((b) => ({ ...b, p: { x: origin.x + b.x, y: origin.y + b.y, z: origin.z + b.z } }));
@@ -165,8 +164,8 @@ export function* buildStructure(bot, origin, bp, label = "building") {
         const k = kindOf(t);
         if (k === K_AIR || k === K_WATER) continue;
         if (!canDig(bot, t, b.p)) continue;
-        if (V.dist(bot.eye, V.center(b.p)) > reach) {
-          const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach), timeout: 20 * 20 });
+        if (!inReach(bot, b.p)) {
+          const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20 });
           if (!ok) continue;
         }
         yield* mineBlock(bot, b.p);
@@ -177,7 +176,7 @@ export function* buildStructure(bot, origin, bp, label = "building") {
         if (b.till ? !/grass_block|dirt/.test(t) || /path/.test(t) : t === b.id || !isReplaceable(t)) continue;
         if (b.needs && !bot.inv.has(b.needs)) continue;
         if (V.dist(bot.eye, V.center(b.p)) > reach) {
-          const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach), timeout: 20 * 20, allowDig: false });
+          const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20, allowDig: false });
           if (!ok) continue;
         }
         bot.motor.look = V.center(b.p);
@@ -202,7 +201,7 @@ export function* buildStructure(bot, origin, bp, label = "building") {
       } else if (!isReplaceable(t)) {
         if (b.id.startsWith("#") ? matches(b.id, t) : t === b.id) continue;
         if (canDig(bot, t, b.p) && kindOf(t) !== K_AIR) {
-          if (V.dist(bot.eye, V.center(b.p)) > reach) yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach), timeout: 20 * 20 });
+          if (!inReach(bot, b.p)) yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20 });
           yield* mineBlock(bot, b.p);
         } else continue;
       }
@@ -220,8 +219,8 @@ export function* buildStructure(bot, origin, bp, label = "building") {
         pending.push(b);
         continue;
       }
-      if (V.dist(bot.eye, V.center(b.p)) > reach || bot.occupies(b.p)) {
-        const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach), timeout: 20 * 20, allowDig: false });
+      if (!inReach(bot, b.p, 0.3) || bot.occupies(b.p)) {
+        const ok = yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20, allowDig: false });
         if (!ok) {
           b.tries = (b.tries || 0) + 1;
           if (b.tries < 3) pending.push(b);
@@ -296,7 +295,7 @@ export function* buildTower(bot) {
 export function* storeItems(bot) {
   const home = bot.mem.home;
   if (!home || !home.chest || bot.dimName !== "overworld") return false;
-  const ok = yield* goNear(bot, home.chest, cfg().reach - 1);
+  const ok = yield* goNear(bot, home.chest, reachOf() - 0.6);
   if (!ok) return false;
   const b = getBlock(bot.dim, home.chest);
   if (!b || b.typeId !== "minecraft:chest") return false;

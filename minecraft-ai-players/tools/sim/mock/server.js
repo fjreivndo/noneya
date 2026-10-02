@@ -456,7 +456,31 @@ class Dimension {
   spawnParticle() {}
   runCommand(cmd) {
     if (cmd.startsWith("tickingarea")) SIM.ticking.push(cmd);
+    const m = cmd.match(/^setblock (-?\d+) (-?\d+) (-?\d+) air destroy$/);
+    if (m) {
+      const [x, y, z] = [Number(m[1]), Number(m[2]), Number(m[3])];
+      SIM.breaks.push({ x, y, z, t: TICK, type: this._get(x, y, z) });
+      this._set(x, y, z, "minecraft:air");
+      this.spawnItem(new ItemStack("minecraft:cobblestone", 1), { x: x + 0.5, y: y + 0.5, z: z + 0.5 }); // vanilla drop to be cleaned up
+    }
     return { successCount: 1 };
+  }
+  getBlockFromRay(from, dir, opts = {}) {
+    const max = opts.maxDistance ?? 64;
+    let last = null;
+    for (let d = 0; d <= max; d += 0.05) {
+      const x = Math.floor(from.x + dir.x * d);
+      const y = Math.floor(from.y + dir.y * d);
+      const z = Math.floor(from.z + dir.z * d);
+      const k = `${x},${y},${z}`;
+      if (k === last) continue;
+      last = k;
+      const t = this._get(x, y, z);
+      const kind = kindOf(t);
+      const hit = kind === 1 || kind === 4 || kind === 5 || (opts.includePassableBlocks && kind === 0 && t !== "minecraft:air") || (opts.includeLiquidBlocks && (kind === 2 || kind === 3));
+      if (hit) return { block: new Block(this, x, y, z), face: "Up", faceLocation: { x: 0, y: 0, z: 0 } };
+    }
+    return undefined;
   }
 }
 
@@ -521,6 +545,7 @@ export const SIM = {
   time: 1000,
   players: [],
   ticking: [],
+  breaks: [],
   logs: [],
   pending: [],
   dims,

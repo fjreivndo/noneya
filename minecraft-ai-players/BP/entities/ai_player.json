@@ -20,6 +20,29 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "aip:pitch": {
+          "type": "float",
+          "range": [
+            -90.0,
+            90.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
+        "aip:action": {
+          "type": "int",
+          "range": [
+            0,
+            7
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "aip:sneak": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },
@@ -138,14 +161,6 @@
       },
       "minecraft:behavior.float": {
         "priority": 0
-      },
-      "minecraft:behavior.look_at_player": {
-        "priority": 9,
-        "look_distance": 8,
-        "probability": 0.02
-      },
-      "minecraft:behavior.random_look_around": {
-        "priority": 10
       },
       "minecraft:conditional_bandwidth_optimization": {}
     },

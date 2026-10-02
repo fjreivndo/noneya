@@ -67,7 +67,13 @@
         "animate": [
           "look",
           "walk",
-          "idle"
+          {
+            "idle": "query.property('aip:action') == 0"
+          },
+          {
+            "sneak_pose": "query.property('aip:sneak')"
+          },
+          "action"
         ]
       },
       "animations": {
@@ -77,7 +83,12 @@
         "swing": "animation.aip.swing",
         "bow": "animation.aip.bow",
         "eat": "animation.aip.eat",
-        "place": "animation.aip.place"
+        "place": "animation.aip.place",
+        "mine": "animation.aip.mine",
+        "bow_hold": "animation.aip.bow_hold",
+        "eat_loop": "animation.aip.eat_loop",
+        "sneak_pose": "animation.aip.sneak",
+        "action": "controller.animation.aip.action"
       },
       "render_controllers": [
         "controller.render.aip.player"
