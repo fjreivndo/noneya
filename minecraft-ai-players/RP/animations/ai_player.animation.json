@@ -1,0 +1,65 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.aip.look": {
+      "loop": true,
+      "bones": {
+        "head": { "rotation": [ "query.target_x_rotation", "query.target_y_rotation", 0.0 ] }
+      }
+    },
+    "animation.aip.walk": {
+      "loop": true,
+      "bones": {
+        "leftArm":  { "rotation": [ "variable.tcos0", 0.0, 0.0 ] },
+        "rightArm": { "rotation": [ "-variable.tcos0", 0.0, 0.0 ] },
+        "leftLeg":  { "rotation": [ "-variable.tcos0 * 1.4", 0.0, 0.0 ] },
+        "rightLeg": { "rotation": [ "variable.tcos0 * 1.4", 0.0, 0.0 ] }
+      }
+    },
+    "animation.aip.idle": {
+      "loop": true,
+      "bones": {
+        "leftArm":  { "rotation": [ 0.0, 0.0, "-(math.cos(query.life_time * 103.2) * 2.865) - 2.865" ] },
+        "rightArm": { "rotation": [ 0.0, 0.0, "(math.cos(query.life_time * 103.2) * 2.865) + 2.865" ] }
+      }
+    },
+    "animation.aip.swing": {
+      "animation_length": 0.3,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.0":  [ 0, 0, 0 ],
+            "0.1":  [ -110, 15, 10 ],
+            "0.2":  [ -40, -10, 0 ],
+            "0.3":  [ 0, 0, 0 ]
+          }
+        },
+        "body": {
+          "rotation": { "0.0": [0, 0, 0], "0.1": [0, 12, 0], "0.3": [0, 0, 0] }
+        }
+      }
+    },
+    "animation.aip.place": {
+      "animation_length": 0.25,
+      "bones": {
+        "rightArm": { "rotation": { "0.0": [0, 0, 0], "0.12": [-60, 0, 0], "0.25": [0, 0, 0] } }
+      }
+    },
+    "animation.aip.eat": {
+      "animation_length": 1.6,
+      "loop": false,
+      "bones": {
+        "rightArm": { "rotation": [ "-70 + math.sin(query.anim_time * 1200) * 8", -20, 0 ] },
+        "head": { "rotation": [ "15 + math.sin(query.anim_time * 1200) * 4", 0, 0 ] }
+      }
+    },
+    "animation.aip.bow": {
+      "animation_length": 1.0,
+      "loop": false,
+      "bones": {
+        "rightArm": { "rotation": [ "-90 + query.target_x_rotation", "-5 + query.target_y_rotation", 0 ] },
+        "leftArm":  { "rotation": [ "-90 + query.target_x_rotation", "40 + query.target_y_rotation", 0 ] }
+      }
+    }
+  }
+}

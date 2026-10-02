@@ -1,0 +1,92 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "aip:ai_player",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "skin_0": "textures/entity/aip_skins/skin_0",
+        "skin_1": "textures/entity/aip_skins/skin_1",
+        "skin_2": "textures/entity/aip_skins/skin_2",
+        "skin_3": "textures/entity/aip_skins/skin_3",
+        "skin_4": "textures/entity/aip_skins/skin_4",
+        "skin_5": "textures/entity/aip_skins/skin_5",
+        "skin_6": "textures/entity/aip_skins/skin_6",
+        "skin_7": "textures/entity/aip_skins/skin_7",
+        "skin_8": "textures/entity/aip_skins/skin_8",
+        "skin_9": "textures/entity/aip_skins/skin_9",
+        "skin_10": "textures/entity/aip_skins/skin_10",
+        "skin_11": "textures/entity/aip_skins/skin_11",
+        "skin_12": "textures/entity/aip_skins/skin_12",
+        "skin_13": "textures/entity/aip_skins/skin_13",
+        "skin_14": "textures/entity/aip_skins/skin_14",
+        "skin_15": "textures/entity/aip_skins/skin_15",
+        "skin_16": "textures/entity/aip_skins/skin_16",
+        "skin_17": "textures/entity/aip_skins/skin_17",
+        "skin_18": "textures/entity/aip_skins/skin_18",
+        "skin_19": "textures/entity/aip_skins/skin_19",
+        "skin_20": "textures/entity/aip_skins/skin_20",
+        "skin_21": "textures/entity/aip_skins/skin_21",
+        "skin_22": "textures/entity/aip_skins/skin_22",
+        "skin_23": "textures/entity/aip_skins/skin_23",
+        "skin_24": "textures/entity/aip_skins/skin_24",
+        "skin_25": "textures/entity/aip_skins/skin_25",
+        "skin_26": "textures/entity/aip_skins/skin_26",
+        "skin_27": "textures/entity/aip_skins/skin_27",
+        "skin_28": "textures/entity/aip_skins/skin_28",
+        "skin_29": "textures/entity/aip_skins/skin_29",
+        "skin_30": "textures/entity/aip_skins/skin_30",
+        "skin_31": "textures/entity/aip_skins/skin_31",
+        "skin_32": "textures/entity/aip_skins/skin_32",
+        "skin_33": "textures/entity/aip_skins/skin_33",
+        "skin_34": "textures/entity/aip_skins/skin_34",
+        "skin_35": "textures/entity/aip_skins/skin_35",
+        "skin_36": "textures/entity/aip_skins/skin_36",
+        "skin_37": "textures/entity/aip_skins/skin_37",
+        "skin_38": "textures/entity/aip_skins/skin_38",
+        "skin_39": "textures/entity/aip_skins/skin_39",
+        "skin_40": "textures/entity/aip_skins/skin_40",
+        "skin_41": "textures/entity/aip_skins/skin_41",
+        "skin_42": "textures/entity/aip_skins/skin_42",
+        "skin_43": "textures/entity/aip_skins/skin_43",
+        "skin_44": "textures/entity/aip_skins/skin_44",
+        "skin_45": "textures/entity/aip_skins/skin_45",
+        "skin_46": "textures/entity/aip_skins/skin_46",
+        "skin_47": "textures/entity/aip_skins/skin_47"
+      },
+      "geometry": {
+        "wide": "geometry.aip.player_wide",
+        "slim": "geometry.aip.player_slim"
+      },
+      "scripts": {
+        "pre_animation": [
+          "variable.tcos0 = math.cos(query.modified_distance_moved * 38.17) * math.clamp(query.modified_move_speed, 0, 1) * 57.3;"
+        ],
+        "animate": [
+          "look",
+          "walk",
+          "idle"
+        ]
+      },
+      "animations": {
+        "look": "animation.aip.look",
+        "walk": "animation.aip.walk",
+        "idle": "animation.aip.idle",
+        "swing": "animation.aip.swing",
+        "bow": "animation.aip.bow",
+        "eat": "animation.aip.eat",
+        "place": "animation.aip.place"
+      },
+      "render_controllers": [
+        "controller.render.aip.player"
+      ],
+      "enable_attachables": true,
+      "spawn_egg": {
+        "base_color": "#3a7bd5",
+        "overlay_color": "#f4c542"
+      }
+    }
+  }
+}
