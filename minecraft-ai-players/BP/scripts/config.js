@@ -9,7 +9,7 @@ export const SKIN_COUNT = 48;
  * AI Player Controller item (Settings), which saves to the world.
  * Editing these values changes the defaults for new worlds.
  */
-export const CONFIG_VERSION = 2;
+export const CONFIG_VERSION = 3;
 
 export const DEFAULTS = {
   configVersion: CONFIG_VERSION,
@@ -44,7 +44,7 @@ export const DEFAULTS = {
   endPortalAssist: true, // if no stronghold is found in time, the bot builds its own end portal
   strongholdSearchMinutes: 25,
   summonDragonIfMissing: true,
-  stuckTeleport: true, // tiny teleports when physically stuck for a long time
+  stuckTeleport: false, // last-resort 1-2 block teleport after being stuck a long time (off: bots dig/pillar/walk out instead)
   startingKit: "none", // none | basic | iron
 
   // --- society ---
@@ -91,7 +91,9 @@ export function cfg() {
   }
   if ((saved.configVersion || 1) < CONFIG_VERSION) {
     // 1.0 shipped with a reach of 5, which looked like bots mining from far away
-    delete saved.reach;
+    if ((saved.configVersion || 1) < 2) delete saved.reach;
+    // 1.2 and earlier teleported stuck bots by default, which looked like random teleporting
+    delete saved.stuckTeleport;
     saved.configVersion = CONFIG_VERSION;
   }
   cache = Object.assign({}, DEFAULTS, saved);

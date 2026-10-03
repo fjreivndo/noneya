@@ -27,3 +27,5 @@ for (let t = 0; t < (Number(args.min||40)) * 1200; t++) {
 const b = [...mgr.bots.values()][0];
 console.log("\nLOGS:\n" + SIM.logs.slice(-40).join("\n"));
 if (b) console.log(`\nFINAL dim=${b.dimName} hp=${b.health} inv: ${b.inv.summary(30).join(", ")}\ncooldowns=${JSON.stringify(b.cooldowns)} msDone=${JSON.stringify(b.mem.msDone)}`);
+
+console.log(`same-dimension teleports: ${SIM.teleports.length}`, SIM.teleports.slice(0, 3).map((t) => t.stack).join(" | "));

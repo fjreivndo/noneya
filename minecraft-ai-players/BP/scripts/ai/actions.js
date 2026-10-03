@@ -296,24 +296,29 @@ export function* pillarUp(bot) {
   const id = bot.inv.buildingBlock();
   if (!id) return false;
   bot.hold(id);
-  let t = 0;
-  bot.motor.jump = true;
-  bot.motor.look = { x: f.x + 0.5, y: f.y - 1, z: f.z + 0.5 };
-  yield;
-  while (bot.pos.y < f.y + 1.02 && t < 10) {
-    bot.motor.look = { x: f.x + 0.5, y: f.y - 1, z: f.z + 0.5 };
-    yield;
-    t++;
-  }
-  if (bot.pos.y < f.y + 1.0) {
-    try {
-      bot.entity.teleport({ x: f.x + 0.5, y: f.y + 1.05, z: f.z + 0.5 });
-    } catch (e) {
-      return false;
+  const under = { x: f.x + 0.5, y: f.y - 1, z: f.z + 0.5 };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // wait until we're standing still on the ground, then jump straight up
+    for (let t = 0; t < 10 && !bot.entity.isOnGround; t++) {
+      bot.motor.look = under;
+      yield;
     }
+    bot.motor.jump = true;
+    bot.motor.jumpPower = 0.46;
+    bot.motor.look = under;
+    yield;
+    let peak = bot.pos.y;
+    for (let t = 0; t < 12; t++) {
+      bot.motor.look = under;
+      peak = Math.max(peak, bot.pos.y);
+      if (bot.pos.y >= f.y + 1.0) break;
+      if (t > 3 && bot.entity.isOnGround) break; // came back down without making it
+      yield;
+    }
+    if (bot.pos.y >= f.y + 1.0) return yield* placeBlock(bot, f, id, { force: true, delay: 3 });
+    if (bot.feetBlock().y !== f.y) return false; // moved somewhere else; let the caller re-plan
   }
-  const ok = yield* placeBlock(bot, f, id, { force: true, delay: 3 });
-  return ok;
+  return false;
 }
 
 /** Eat the best food we carry. */

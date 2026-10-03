@@ -415,7 +415,7 @@ const SETTINGS = [
   ["endPortalAssist", "Build own end portal if no stronghold found", "toggle"],
   ["strongholdSearchMinutes", "Stronghold search minutes", "slider", 5, 120, 5],
   ["summonDragonIfMissing", "Summon dragon if missing", "toggle"],
-  ["stuckTeleport", "Tiny teleports when physically stuck", "toggle"],
+  ["stuckTeleport", "Last-resort teleport when stuck for a long time", "toggle"],
   ["startingKit", "Starting kit", "dropdown"],
   ["botChat", "Bots talk to each other and act on it", "toggle"],
   ["speechMode", "Speech (auto uses Claude if the BDS bridge is installed)", "dropdown"],

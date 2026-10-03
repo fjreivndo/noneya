@@ -7,6 +7,10 @@ AI Players adds autonomous AI players to your world. Each one has a random usern
 
 ---
 
+## New in 1.2.1: no more teleporting
+
+Bots no longer teleport. Pillaring up used to teleport a bot upward whenever its jump fell short, and stuck bots were nudged a few blocks by teleport. Now a stuck bot gets out the way a player would: it swims up, digs through what's in the way, hops up a step, pillars out of a hole, or walks off in another direction. Following a player is done on foot too. A 1-2 block teleport is still available as an opt-in last resort (**Last-resort teleport when stuck for a long time** in Settings, off by default). Existing worlds are switched off automatically.
+
 ## New in 1.2: looking and acting like real players
 
 * **They face what they're doing.** Body and head turn smoothly towards the block they're mining, the spot they're placing on, the mob they're fighting, the player they're talking to, or where they're walking. Head pitch is synced through an entity property, because Bedrock ignores pitch on mobs, so bots really look down at the ground they dig and up at trees. They turn before they walk off and only swing once they're facing their target.
@@ -100,7 +104,7 @@ Open **Controller → Settings**, or use `/scriptevent aip:config key=value`. Ev
 | `stuckAssistMinutes` | 20 | After this long stuck on blaze rods or pearls, a blaze or enderman spawns near the bot. 0 turns this off. |
 | `endPortalAssist` / `strongholdSearchMinutes` | on / 25 | If no stronghold is found in time, the bot builds its own End portal. |
 | `summonDragonIfMissing` | on | Summons a dragon if the End has none and it was never killed. |
-| `stuckTeleport` | on | Tiny teleports when physically stuck for a long time. |
+| `stuckTeleport` | off | Last-resort 1-2 block teleport after being stuck for a long time. Off means bots dig, pillar or walk out instead. |
 | `startingKit` | none | `none`, `basic` or `iron`. |
 | `botChat` | on | Bots talk to each other and act on what they hear. |
 | `speechMode` | auto | `auto`: Claude via the BDS bridge when installed, otherwise generated. `generated`: never use the LLM. |

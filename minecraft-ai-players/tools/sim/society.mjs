@@ -31,3 +31,5 @@ console.log("== RELIGIONS", JSON.stringify(Object.values(s.religions).map((r) =>
 console.log("== EVENTS", JSON.stringify(Object.values(s.events).map((e) => ({ title: e.title, host: e.hostName, status: e.status, accepted: e.accepted.length, attended: e.attended.length }))));
 for (const b of mgr.bots.values()) console.log(`${b.name} [${b.mode}] task="${b.task}" town=${b.mem.town || "-"} faith=${b.mem.faith ? b.mem.faith.rel : "-"} mistakes=${b.mem.journal.filter((j) => j.type === "mistake").map((j) => j.kind).join(",")} ms=${(b.mem.msDone || []).length}`);
 console.log(`chat lines: ${chat.length}, worst tick ${worst.toFixed(0)}ms, wall ${(Date.now() - t0) / 1000}s`);
+
+console.log(`same-dimension teleports: ${SIM.teleports.length}`, SIM.teleports.slice(0, 3).map((t) => t.stack).join(" | "));

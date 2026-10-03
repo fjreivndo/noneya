@@ -419,7 +419,7 @@ function* followOrder(bot, order) {
     }
     bot.setTask(`following ${p.name}`);
     const d = V.dist(p.location, bot.pos);
-    if (d > 48 && cfg().stuckTeleport) {
+    if (d > 96 && cfg().stuckTeleport) {
       try {
         bot.entity.teleport(p.location);
       } catch (e) {

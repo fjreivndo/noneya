@@ -230,6 +230,9 @@ class Entity {
     return { x: this.location.x, y: this.location.y + 1.62, z: this.location.z };
   }
   teleport(loc, opts = {}) {
+    if (this.typeId === "aip:ai_player" && (!opts.dimension || opts.dimension === this.dimension)) {
+      SIM.teleports.push({ t: TICK, from: { ...this.location }, to: { ...loc }, stack: new Error().stack.split("\n")[2].trim() });
+    }
     if (opts.dimension && opts.dimension !== this.dimension) {
       this.dimension._entities.delete(this);
       this.dimension = opts.dimension;
@@ -546,6 +549,7 @@ export const SIM = {
   players: [],
   ticking: [],
   breaks: [],
+  teleports: [],
   logs: [],
   pending: [],
   dims,

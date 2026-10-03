@@ -2,7 +2,7 @@
 // and path following.
 import { cfg } from "../config.js";
 import { kindOf, K_AIR, K_SOLID, K_WATER, K_LAVA, K_TALL, K_HURT, K_HAZARD, K_UNLOADED } from "../data.js";
-import { V, now, wait, yawTo, pitchTo, rand, chance } from "../util.js";
+import { V, now, wait, yawTo, pitchTo, rand, chance, safe } from "../util.js";
 import { typeAt, getBlock, surfaceAt, kindAt, isPassable } from "./world.js";
 import { mineBlock, placeBlock, pillarUp, canDig, lineOfSight, reachOf } from "./actions.js";
 import { toSurface } from "./mining.js";
@@ -86,7 +86,7 @@ export function applyMotor(bot) {
   }
 
   if (m.jump && onGround) {
-    iy = 0.42 - v.y;
+    iy = (m.jumpPower || 0.42) - v.y;
     bot.exhaust(0.05);
   }
   if (Math.abs(ix) > 0.001 || Math.abs(iy) > 0.001 || Math.abs(iz) > 0.001) {
@@ -103,6 +103,7 @@ export function applyMotor(bot) {
   }
   m.target = null;
   m.jump = false;
+  m.jumpPower = 0;
   m.look = null;
   m.sprint = false;
   m.slow = false;
@@ -617,31 +618,86 @@ export function* goTo(bot, target, opts = {}) {
   }
 }
 
-/** Wiggles free; with stuckTeleport enabled, finally nudges the bot towards the target. */
+/**
+ * Gets a stuck bot moving again the way a player would: swim up, dig through what's in the way,
+ * hop up a step, pillar out of a hole, or walk off in another direction. Teleporting is only a last
+ * resort, and only if the stuckTeleport setting is switched on.
+ */
 export function* unstick(bot, tgt, severity) {
+  const dim = bot.dim;
+  const f = bot.feetBlock();
   const p = bot.pos;
+  // 1) in water: swim up
+  if (bot.entity.isInWater) {
+    for (let i = 0; i < 20 && bot.entity.isInWater; i++) {
+      steer(bot, tgt || p, { jump: true });
+      yield;
+    }
+    return true;
+  }
+  // 2) blocked towards the target: dig through, or hop up a one-block step
+  if (tgt) {
+    const dx = tgt.x - p.x;
+    const dz = tgt.z - p.z;
+    const step = Math.abs(dx) > Math.abs(dz) ? { x: Math.sign(dx), z: 0 } : { x: 0, z: Math.sign(dz) || 1 };
+    const feet = { x: f.x + step.x, y: f.y, z: f.z + step.z };
+    const head = { x: f.x + step.x, y: f.y + 1, z: f.z + step.z };
+    const above = { x: f.x + step.x, y: f.y + 2, z: f.z + step.z };
+    const solid = (q) => {
+      const k = kindAt(dim, q);
+      return k === K_SOLID || k === K_HURT || k === K_TALL;
+    };
+    if (solid(feet) && !solid(head) && !solid(above) && !solid({ x: f.x, y: f.y + 2, z: f.z }) && kindAt(dim, feet) !== K_TALL) {
+      for (let i = 0; i < 14; i++) {
+        steer(bot, { x: feet.x + 0.5, y: f.y + 1, z: feet.z + 0.5 }, { jump: i % 5 === 0 });
+        yield;
+      }
+      if (bot.feetBlock().y > f.y) return true;
+    }
+    let dug = false;
+    for (const q of [head, feet]) {
+      if (!solid(q)) continue;
+      const t = typeAt(dim, q);
+      if (t && canDig(bot, t, q) && (yield* mineBlock(bot, q))) dug = true;
+    }
+    if (dug) {
+      for (let i = 0; i < 12; i++) {
+        steer(bot, { x: feet.x + 0.5, y: f.y, z: feet.z + 0.5 }, {});
+        yield;
+      }
+      return true;
+    }
+  }
+  // 3) boxed in a hole: pillar out
+  let exits = 0;
+  for (const [ax, az] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    if (isPassable(dim, { x: f.x + ax, y: f.y, z: f.z + az }) && isPassable(dim, { x: f.x + ax, y: f.y + 1, z: f.z + az })) exits++;
+  }
+  if (!exits && bot.inv.buildingCount() > 0) {
+    for (let i = 0; i < 3; i++) if (!(yield* pillarUp(bot))) break;
+    return true;
+  }
+  // 4) walk off in a fresh direction, hopping over small things
   const a = rand(0, Math.PI * 2);
-  for (let i = 0; i < 12; i++) {
-    steer(bot, { x: p.x + Math.cos(a) * 3, y: p.y, z: p.z + Math.sin(a) * 3 }, { jump: i % 4 === 0 });
+  for (let i = 0; i < 20; i++) {
+    steer(bot, { x: p.x + Math.cos(a) * 4, y: p.y, z: p.z + Math.sin(a) * 4 }, { jump: i % 6 === 0 });
     yield;
   }
-  if (severity >= 3 && cfg().stuckTeleport && tgt) {
-    // find a standable spot 2-4 blocks towards the target
+  // 5) last resort, opt-in only, after being stuck for a long time
+  if (severity >= 8 && cfg().stuckTeleport && tgt) {
     const dx = tgt.x - p.x;
     const dz = tgt.z - p.z;
     const d = Math.sqrt(dx * dx + dz * dz) || 1;
-    for (let s = 4; s >= 1; s--) {
+    for (let s = 2; s >= 1; s--) {
       const x = Math.floor(p.x + (dx / d) * s);
       const z = Math.floor(p.z + (dz / d) * s);
-      for (let dy = 2; dy >= -2; dy--) {
+      for (let dy = 1; dy >= -1; dy--) {
         const y = Math.floor(p.y) + dy;
-        if (isPassable(bot.dim, { x, y, z }) && isPassable(bot.dim, { x, y: y + 1, z }) && isStandableNow(bot, { x, y: y - 1, z })) {
-          try {
+        if (isPassable(dim, { x, y, z }) && isPassable(dim, { x, y: y + 1, z }) && isStandableNow(bot, { x, y: y - 1, z })) {
+          return safe(() => {
             bot.entity.teleport({ x: x + 0.5, y, z: z + 0.5 });
             return true;
-          } catch (e) {
-            return false;
-          }
+          }, false);
         }
       }
     }

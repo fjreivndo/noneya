@@ -29,3 +29,5 @@ const b = [...mgr.bots.values()][0];
 console.log("\nLOGS:\n" + SIM.logs.filter(l => !l.includes("tickingarea")).slice(-60).join("\n"));
 if (b) { console.log(`\nFINAL ${b.name} mode=${b.mode} hp=${b.health} food=${b.food} worn=${JSON.stringify(b.worn)}\ninv: ${b.inv.summary(30).join(", ")}\nstats ${JSON.stringify(b.stats)} msDone=${JSON.stringify(b.mem.msDone)} cooldowns=${JSON.stringify(b.cooldowns)}`); }
 console.log(`wall ${(Date.now()-t0)/1000}s, slow ticks ${slow}`);
+
+console.log(`same-dimension teleports: ${SIM.teleports.length}`, SIM.teleports.slice(0, 3).map((t) => t.stack).join(" | "));
