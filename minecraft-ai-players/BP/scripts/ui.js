@@ -498,7 +498,9 @@ export function giveController(player) {
   try {
     const inv = player.getComponent("minecraft:inventory").container;
     inv.addItem(new ItemStack("aip:controller", 1));
+    return true;
   } catch (e) {
-    /* ignore */
+    console.warn(`[AI Players] couldn't give the controller: ${e}`);
+    return false;
   }
 }

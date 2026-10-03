@@ -1,4 +1,4 @@
 entity.aip:ai_player.name=AI Player
 item.spawn_egg.entity.aip:ai_player.name=Spawn AI Player
-item.aip:controller=AI Player Controller
+item.aip:controller.name=AI Player Controller
 action.interact.aip_manage=Manage

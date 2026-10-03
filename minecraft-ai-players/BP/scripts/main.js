@@ -74,9 +74,10 @@ world.afterEvents.playerSpawn.subscribe((ev) => {
   system.runTimeout(() => {
     if (!p.isValid) return;
     if (!p.hasTag("aip_has_controller")) {
-      giveController(p);
-      p.addTag("aip_has_controller");
-      p.sendMessage("§a[AI Players]§r You got an §bAI Player Controller§r. Use it to spawn and manage AI players.");
+      if (giveController(p)) {
+        p.addTag("aip_has_controller");
+        p.sendMessage("§a[AI Players]§r You got an §bAI Player Controller§r. Use it to spawn and manage AI players.");
+      } else p.sendMessage("§c[AI Players]§r Couldn't give you the controller. Type §e/scriptevent aip:spawn§r to spawn a bot, or §e/scriptevent aip:menu§r for the menu.");
     }
     greetPlayer(p);
   }, 60);

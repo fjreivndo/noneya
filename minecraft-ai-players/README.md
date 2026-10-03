@@ -7,6 +7,10 @@ AI Players adds autonomous AI players to your world. Each one has a random usern
 
 ---
 
+## New in 1.3.1: controller item fixed
+
+The **AI Player Controller** didn't load on current Minecraft versions: it used a removed item component, which makes Bedrock skip the whole item. It now shows up in the creative inventory (Equipment tab), with `/give @s aip:controller` and on join. If giving it ever fails, you're told to use `/scriptevent aip:spawn` and `/scriptevent aip:menu` instead.
+
 ## New in 1.3: trading, wars, real lives, and better aim
 
 * **They really face the block.** The model is turned client-side to a synced yaw, so the body and head point at the block even when Bedrock would let a mob's body drift. Bots aim at the face of a block they can actually see, not its hidden centre.
