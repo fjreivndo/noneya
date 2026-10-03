@@ -1,0 +1,18 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "AI Players LLM Bridge (BDS only)",
+    "description": "Optional. Lets AI Players talk using Claude. Only works on a Bedrock Dedicated Server with Beta APIs enabled.",
+    "uuid": "403edc77-66e7-40fa-a5a1-6d77d0e70192",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 90]
+  },
+  "modules": [
+    { "type": "script", "language": "javascript", "uuid": "331249c4-be95-45e4-b7cb-ac2c97702f1f", "entry": "scripts/main.js", "version": [1, 0, 0] }
+  ],
+  "dependencies": [
+    { "module_name": "@minecraft/server", "version": "2.0.0" },
+    { "module_name": "@minecraft/server-net", "version": "1.0.0-beta" },
+    { "module_name": "@minecraft/server-admin", "version": "1.0.0-beta" }
+  ]
+}

@@ -1,0 +1,68 @@
+[t5] §eEzraPlays457 joined the game
+[t5] §eIvyAlex joined the game
+[t5] §eBoPlays joined the game
+[t5] §eFinnJay joined the game
+[t5] §eAvaVic joined the game
+[t52] <AvaVic> Lol yo
+[t79] <FinnJay> Hey guys
+[t107] <BoPlays> hey guyys, also going great.
+[t141] <EzraPlays457> hi ~ xD
+[t168] <IvyAlex> Hiii
+[t194] <BoPlays> *guys,
+[t336] <AvaVic> Honestly im hosting a mining expedition, 13 67 -1, in a bit btw be there :P
+[t399] <BoPlays> sure avavic.
+[t496] <BoPlays> can someone give me diamonds please - its for a diamond sword.
+[t954] §eEzraPlays457 built a house
+[t988] §eAvaVic built a house
+[t989] <AvaVic> Done building :) btw going great :P
+[t1032] §eIvyAlex built a house
+[t1033] <IvyAlex> How does it look?. pretty goood actually
+[t1071] <IvyAlex> *good
+[t1306] <IvyAlex> hey Tester
+[t1602] §eFinnJay built a house
+[t1603] <FinnJay> How does it look? xD
+[t3884] <EzraPlays457> finally iron. going gret
+[t4322] §bIvyAlex founded the village of Port Creeperbrook
+[t4323] <IvyAlex> Welcome to Port Creeperbrook, everyone can join
+[t5193] <FinnJay> Got iron
+[t5523] <IvyAlex> BoPlays wanna move to Port Creeperbrook?
+[t5579] <BoPlays> paass.
+[t5923] <IvyAlex> Join Port Creeperbrook AvaVic!
+[t5961] <AvaVic> Not feeling it btw im happy where i live
+[t6323] <IvyAlex> EzraPlays457 wanna move to Port Creeperbrook? :)
+[t6723] <IvyAlex> FinnJay wanna move to Port Creeperbrook?
+[t7523] <IvyAlex> Who wants to cmoe to a Port Creeperbrook festival
+[t7564] <FinnJay> Sorry im busy. anyway im collecting raw_iron like
+[t7605] <AvaVic> Sorry im busy, also im mining for diamond lol
+[t7645] <EzraPlays457> pass and im mining for diamond ~ <3
+[t7980] <AvaVic> Neeed a new iron pickaxe. anyway lol
+[t8723] <IvyAlex> AvaViic wanna move to Port Creeperbrook? :P
+[t8762] <IvyAlex> *AvaVic
+[t8789] <AvaVic> Lol maybe next time - im happy where i live :D
+[t8829] <FinnJay> AvaVic is fine and pretty good actually
+[t9594] <FinnJay> Hi
+[t9960] §6The Port Creeperbrook festival hosted by IvyAlex has started!
+[t10229] <IvyAlex> Happy festival!
+[t10803] <IvyAlex> Party time
+[t11194] <FinnJay> O/ BoPlays xD
+[t11223] <IvyAlex> Having a good time
+[t11543] <IvyAlex> Its getting dark
+[t11573] <AvaVic> Should probably hide
+[t11605] <EzraPlays457> its getting dark :D
+[t12203] <IvyAlex> Port Creeperbrook was my idea btw <3
+[t12661] <IvyAlex> Party time :P
+[t13000] <IvyAlex> Misclicked in the crafting table
+[t13162] [sign] Port Creeperbrook / founded by / IvyAlex
+[t13923] <IvyAlex> Thiis wall looks weird now
+[t13957] <IvyAlex> *this
+[t14065] <FinnJay> Diamonds!!!
+
+== TOWNS [{"name":"Port Creeperbrook","members":1,"mayor":"IvyAlex","built":[],"projects":["plaza"],"plots":1}]
+== RELIGIONS []
+== EVENTS [{"title":"mining expedition","host":"AvaVic","status":"done","accepted":2,"attended":2},{"title":"Port Creeperbrook festival","host":"IvyAlex","status":"done","accepted":1,"attended":1}]
+EzraPlays457 [beat_game] task="mining for diamond" town=- faith=- mistakes=craft ms=2
+IvyAlex [builder] task="building the town plaza" town=t3 faith=- mistakes=build,craft ms=4
+BoPlays [beat_game] task="crafting wooden pickaxe" town=- faith=- mistakes=craft ms=0
+FinnJay [survivor] task="smelting iron ingot" town=- faith=- mistakes=craft ms=6
+AvaVic [survivor] task="going back to the iron spot" town=- faith=- mistakes= ms=1
+chat lines: 58, worst tick 93ms, wall 12.813s
