@@ -7,6 +7,8 @@ import { typeAt, getBlock, surfaceAt, kindAt, isPassable } from "./world.js";
 import { mineBlock, placeBlock, pillarUp, canDig, lineOfSight, reachOf } from "./actions.js";
 import { toSurface } from "./mining.js";
 import { slip, journal, recallPlace } from "./cognition.js";
+import { onlineSociety } from "../society.js";
+import { boatTo, hasBoatMaterials, waterAhead } from "./life.js";
 
 const WALK = 0.2158;
 const SPRINT = 0.28;
@@ -137,6 +139,16 @@ function turnTowards(bot, face, p) {
   } catch (err) {
     /* ignore */
   }
+  // Bedrock lets a mob's rendered body drift towards its movement direction, so the model is turned
+  // client-side to this synced yaw (see animation.aip.look) and always shows where the bot looks.
+  if (Math.abs(wrapDeg(bot.yaw - bot.shownYaw)) > 2) {
+    bot.shownYaw = bot.yaw;
+    try {
+      e.setProperty("aip:yaw", Math.round(bot.yaw * 10) / 10);
+    } catch (err) {
+      /* ignore */
+    }
+  }
   if (Math.abs(bot.pitch - bot.shownPitch) > 1.5) {
     bot.shownPitch = bot.pitch;
     try {
@@ -162,6 +174,19 @@ export function* faceTowards(bot, point, maxTicks = 12) {
     yield;
   }
   return false;
+}
+
+// Shared path-finding budget: with many bots online, searches queue up instead of spiking the tick.
+const budget = { tick: -1, used: 0 };
+const PER_TICK = 2400;
+function spend(n) {
+  const t = now();
+  if (budget.tick !== t) {
+    budget.tick = t;
+    budget.used = 0;
+  }
+  budget.used += n;
+  return budget.used <= PER_TICK;
 }
 
 // ---------------------------------------------------------------------------
@@ -217,10 +242,13 @@ export function* findPath(bot, goal, opts = {}) {
   const dim = bot.dim;
   const c = cfg();
   const start = bot.feetBlock();
-  const maxNodes = opts.maxNodes ?? c.pathNodeLimit;
+  const crowd = onlineSociety().length;
+  const maxNodes = opts.maxNodes ?? Math.round(c.pathNodeLimit * (crowd > 8 ? 0.6 : 1));
   const allowDig = (opts.allowDig ?? true) && c.canBreakBlocks;
   const allowPlace = opts.allowPlace ?? true;
   const blocksAvail = allowPlace ? bot.inv.buildingCount() : 0;
+  // pillaring keeps failing here: plan without it for a while
+  const allowPillar = !(bot.pillarFails >= 2 && now() - (bot.pillarFailAt || 0) < 20 * 60);
   const range = opts.range ?? 1.2;
   const goalFn = opts.goalFn;
   // misjudging heights: a stressed or careless bot sometimes takes drops that will hurt
@@ -320,7 +348,10 @@ export function* findPath(bot, goal, opts = {}) {
       closest = n;
     }
     if (++expanded > maxNodes) break;
-    if (expanded % 60 === 0) yield;
+    if (expanded % 60 === 0) {
+      yield;
+      while (!spend(60)) yield;
+    }
 
     const { x, y, z } = n;
     const inWater = K(x, y, z) === K_WATER;
@@ -412,7 +443,7 @@ export function* findPath(bot, goal, opts = {}) {
     }
 
     // 4) pillar straight up
-    if (supported && !inWater && allowPlace && blocksAvail > n.blocks) {
+    if (supported && !inWater && allowPlace && allowPillar && blocksAvail > n.blocks) {
       const c = clearCost(x, y + 2, z);
       if (c !== Infinity) push(n, x, y + 1, z, 5 + c, "pillar", c > 0 ? [{ x, y: y + 2, z }] : null, null, true);
     }
@@ -489,7 +520,12 @@ export function* followPath(bot, path, movingTarget, opts = {}) {
     }
     if (step.act === "pillar") {
       const ok = yield* pillarUp(bot);
-      if (!ok) return "fail";
+      if (!ok) {
+        bot.pillarFailAt = now();
+        bot.pillarFails = (bot.pillarFails || 0) + 1;
+        return "fail";
+      }
+      bot.pillarFails = 0;
       continue;
     }
     if (step.act === "down") {
@@ -751,6 +787,21 @@ export function* exploreStep(bot, dist = 40) {
     if (!s) {
       dist = Math.max(12, dist / 2);
       continue;
+    }
+    if (s.water && cfg().boats && hasBoatMaterials(bot) && (bot.mode === "explorer" || chance(0.35))) {
+      // look for land on the other side and sail there
+      for (let far = dist + 16; far <= 160; far += 16) {
+        const lx = Math.floor(p.x + Math.cos(a) * far);
+        const lz = Math.floor(p.z + Math.sin(a) * far);
+        const land = surfaceAt(bot.dim, lx, lz);
+        if (land && !land.water) {
+          if (waterAhead(bot, land)) {
+            const ok = yield* boatTo(bot, { x: lx + 0.5, y: land.y, z: lz + 0.5 });
+            if (ok) return true;
+          }
+          break;
+        }
+      }
     }
     if (s.water && chance(0.8)) {
       bot.mem.heading += rand(70, 150);

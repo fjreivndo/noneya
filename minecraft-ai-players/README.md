@@ -7,6 +7,17 @@ AI Players adds autonomous AI players to your world. Each one has a random usern
 
 ---
 
+## New in 1.3: trading, wars, real lives, and better aim
+
+* **They really face the block.** The model is turned client-side to a synced yaw, so the body and head point at the block even when Bedrock would let a mob's body drift. Bots aim at the face of a block they can actually see, not its hidden centre.
+* **Nothing in the way.** If leaves, grass, dirt or a stone corner hide a block, the bot digs that out of the way first, the way a player does, instead of walking around or giving up. It never digs out its own floor or player-built blocks to do it.
+* **Trading.** Ask a bot "what are you selling?", "trade?" or "I'll give you 3 iron for a diamond". It haggles based on what it needs; say "deal" to close. Bots trade surplus with each other and sell to (and buy from) villagers for emeralds. Toggles: **Trading**, **Villager trading**.
+* **Rivalries and wars.** Towns build relations. They become friends, allies or rivals and talk about each other. With **Town wars** on (off by default), rival towns skirmish and raid each other's town chests. They never touch player builds.
+* **Better cities.** Roads with lamps and bridges, walls with gates, markets, libraries, and house styles from cottages to manors.
+* **Life.** Bots craft and sleep in beds, fish, breed animals, enchant gear at an enchanting table, and build boats to cross water.
+* **Performance.** Nearby bots share ticking areas (**Max ticking areas**, default 8 of Bedrock's 10), path-finding is budgeted across bots, and searches shrink when many bots are online. 15 bots average about 3 ms per tick in the test simulator.
+* **Optional chat pack.** `release/AIPlayers_Chat_BetaAPIs.mcpack` lets bots read normal chat, so you can just type to them. It needs **Beta APIs** enabled and Minecraft 1.26.50 or newer. Without it, talk to bots through the controller item as before.
+
 ## New in 1.2.1: no more teleporting
 
 Bots no longer teleport. Pillaring up used to teleport a bot upward whenever its jump fell short, and stuck bots were nudged a few blocks by teleport. Now a stuck bot gets out the way a player would: it swims up, digs through what's in the way, hops up a step, pillars out of a hole, or walks off in another direction. Following a player is done on foot too. A 1-2 block teleport is still available as an opt-in last resort (**Last-resort teleport when stuck for a long time** in Settings, off by default). Existing worlds are switched off automatically.

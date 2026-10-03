@@ -3,7 +3,7 @@ import { cfg } from "../config.js";
 import { K_AIR, K_WATER, K_LAVA, K_SOLID, K_HURT } from "../data.js";
 import { V, pick, now, wait, chance } from "../util.js";
 import { findBlocks, typeAt, kindAt, isPassable, isStandable, skyAbove, surfaceAt, lavaNear } from "./world.js";
-import { mineBlock, placeBlock, pillarUp, canDig, reachOf, inReach } from "./actions.js";
+import { mineBlock, placeBlock, pillarUp, canDig, reachOf, inReach, inReachOrClearable } from "./actions.js";
 import { goTo, steer, reachGoal, exploreStep } from "./movement.js";
 import { slip, journal, recallPlace } from "./cognition.js";
 import { hasTenet, obeys } from "./religion.js";
@@ -30,7 +30,7 @@ export function* mineAt(bot, p, opts = {}) {
   const t = typeAt(bot.dim, p);
   if (!t) return false;
   const reach = reachOf() - 0.3;
-  if (!inReach(bot, p)) {
+  if (!inReachOrClearable(bot, p)) {
     const ok = yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { goalFn: reachGoal(p, reach, bot.dim), range: reach, timeout: opts.timeout ?? 20 * 60 });
     if (!ok) {
       bot.blacklist(p, 20 * 120);

@@ -7,7 +7,8 @@ import { journal, rememberPlace } from "./ai/cognition.js";
 import { deliver } from "./society.js";
 import { tickEvents } from "./ai/events.js";
 import { pickMode, randomPersonality } from "./ai/brain.js";
-import { loadRecord, saveRecord, deleteRecord, takenNames, allRecords } from "./registry.js";
+import { loadRecord, saveRecord, deleteRecord, takenNames, allRecords, updateClusters } from "./registry.js";
+import { updatePolitics } from "./ai/politics.js";
 import { now, pick, rand, randInt, chance, safe, getDim, debug, prettyItem } from "./util.js";
 import { isPassable, isStandable } from "./ai/world.js";
 
@@ -277,6 +278,8 @@ function discover() {
   }
 }
 
+let clusterTimer = 0;
+
 export function startLoop() {
   system.runInterval(() => {
     for (const bot of bots.values()) {
@@ -293,6 +296,9 @@ export function startLoop() {
       processRespawns();
       autoJoin();
       tickEvents(onlineBots());
+      clusterTimer++;
+      if (clusterTimer % 3 === 0) updateClusters(onlineBots());
+      if (clusterTimer % 60 === 0) updatePolitics(onlineBots());
     } catch (e) {
       debug(`manager error: ${e}`);
     }

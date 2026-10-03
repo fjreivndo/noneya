@@ -5,12 +5,15 @@ import { V, wait, now, rand, pick, chance, isNight } from "../util.js";
 import { surfaceAt, typeAt } from "./world.js";
 import { goTo, steer, exploreStep, goNear } from "./movement.js";
 import { acquire, getFood, cookAll } from "./planner.js";
-import { buildHouse, buildTower, storeItems, buildStructure, houseBlueprint } from "./build.js";
+import { buildHouse, buildTower, storeItems, buildStructure, houseBlueprint, houseStyleFor } from "./build.js";
 import { oreExpedition, toSurface, mineAt, scanFor } from "./mining.js";
 import { placeBlock, mineBlock, eat } from "./actions.js";
 import { townOf, buildHouseOnPlot, workOnProject, nextProject, placeTownSign } from "./town.js";
 import { religionOf, hasTenet, isHolyDay, obeys, pray } from "./religion.js";
 import { askForHelp } from "./social.js";
+import { sleepInBed, fish, canBreed, breedAnimals, canEnchant, enchant, placeBed } from "./life.js";
+import { wantsVillagerTrade, tradeWithVillagers } from "./trade.js";
+import { raid } from "./politics.js";
 import {
   enterNether, returnToOverworld, buildNetherPortal, getBlazeRods, getPearls, findStronghold, dragonFight,
 } from "./progression.js";
@@ -287,6 +290,13 @@ function* socialize(bot) {
 
 function* shelterForNight(bot) {
   bot.say("night");
+  if (bot.mem.bed && bot.dimName === "overworld" && V.dist(bot.mem.bed, bot.pos) < 120) {
+    const slept = yield* sleepInBed(bot);
+    if (slept) {
+      bot.say("morning");
+      return true;
+    }
+  }
   const home = bot.mem.home;
   if (home && bot.dimName === "overworld" && V.dist(home, bot.pos) < 120) {
     bot.setTask("going home for the night");
@@ -374,6 +384,22 @@ function* harvestFarm(bot) {
   return true;
 }
 
+/** Get wool and put a bed in our house. */
+function* furnishBed(bot) {
+  const spot = bot.mem.home && bot.mem.home.bed;
+  if (!spot || bot.dimName !== "overworld") return false;
+  bot.setTask("getting a bed");
+  if (bot.inv.count("#wool") < 3) {
+    const ok = yield* acquire(bot, "#wool", 3);
+    if (!ok) return false;
+  }
+  if (bot.inv.count("#planks") < 3) yield* acquire(bot, "#planks", 3);
+  const ok = yield* goTo(bot, { x: spot.x + 0.5, y: spot.y, z: spot.z + 0.5 }, { range: 3, timeout: 20 * 120 });
+  if (!ok) return false;
+  bot.placeAnim();
+  return placeBed(bot, spot);
+}
+
 const FREE = [
   { id: "explore", w: (b) => 0.6 + b.personality.curiosity * 2 + (b.mode === "explorer" ? 2.5 : 0), run: explore },
   { id: "house", w: (b) => (cfg().buildHouses && !b.mem.home && b.dimName === "overworld" ? 1.5 + b.personality.builder * 2 : 0), run: buildHouse },
@@ -387,6 +413,12 @@ const FREE = [
   { id: "town_work", w: (b) => (townOf(b) && nextProject(townOf(b)) ? 1 + b.personality.builder * 2 + b.personality.sociability : 0), run: townWork },
   { id: "move_in", w: (b) => (townOf(b) && !townOf(b).plots.some((p) => p.owner === b.id && p.built) ? 2.5 : 0), run: moveIntoTown },
   { id: "harvest", w: (b) => (townOf(b) && townOf(b).built.some((x) => x.type === "farm") ? 0.8 + (b.inv.foodPoints() < 30 ? 1.5 : 0) : 0), run: harvestFarm },
+  { id: "fish", w: (b) => (b.dimName === "overworld" ? 0.3 + (b.personality.curiosity < 0.4 ? 0.4 : 0) + (b.inv.foodPoints() < 30 ? 0.5 : 0) : 0), run: fish },
+  { id: "breed", w: (b) => (canBreed(b) ? 0.8 : 0), run: breedAnimals },
+  { id: "enchant", w: (b) => (canEnchant(b) ? 2 : 0), run: enchant },
+  { id: "villagers", w: (b) => (wantsVillagerTrade(b) ? 1.2 : 0), run: tradeWithVillagers },
+  { id: "bed", w: (b) => (b.mem.home && b.mem.home.bed && !b.mem.bed ? 1.2 : 0), run: furnishBed },
+  { id: "raid", w: (b) => (cfg().townWars && b.mem.town && (b.personality.bravery ?? 0.5) > 0.6 ? 0.4 : 0), run: raid },
   { id: "idle", w: () => 0.5, run: idle },
 ];
 
@@ -457,7 +489,7 @@ function* homeOrder(bot) {
 }
 
 function* buildHereOrder(bot, order) {
-  const bp = houseBlueprint();
+  const bp = houseBlueprint(houseStyleFor(bot));
   const ok = yield* buildStructure(bot, { x: order.pos.x - 3, y: order.pos.y, z: order.pos.z - 3 }, bp, "building a house (requested)");
   if (ok) {
     bot.mem.home = { x: order.pos.x, y: order.pos.y, z: order.pos.z, dim: "overworld", chest: { x: order.pos.x - 2, y: order.pos.y, z: order.pos.z + 2 } };

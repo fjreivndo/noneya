@@ -11,6 +11,8 @@ import { townOf, joinTown, foundTown, nextProject, projectLabel, adoptReligion }
 import { religionOf, considerConversion, foundReligion, hasTenet, isHolyDay, pickPreachTarget, devotion } from "./religion.js";
 import { directionWords } from "./speech.js";
 import { llmRequest, llmReady } from "./llm.js";
+import { parseTrade, playerOffer, playerAccepts, shopList, proposeBotTrade, keepAmount, valueOf } from "./trade.js";
+import { rivalryTalk } from "./politics.js";
 
 // ---------------------------------------------------------------------------
 // Incoming messages
@@ -48,6 +50,17 @@ function handle(bot, msg, sender, online) {
       break;
     case "ask_help":
       considerHelp(bot, msg, sender);
+      break;
+    case "trade_offer": {
+      if (msg.to !== bot.id || !d.pay) break;
+      const can = bot.inv.count(d.pay.id) - keepAmount(bot, d.pay.id) >= d.pay.n;
+      const worth = valueOf(d.item) * d.n >= valueOf(d.pay.id) * d.pay.n * (0.7 + (1 - (bot.personality.generosity ?? 0.5)) * 0.3);
+      if (can && worth) bot.say("accept", { target: msg.fromName }, { prio: 1, to: from, msgIntent: "trade_accept", data: d });
+      else bot.say("decline", { reason: can ? "too expensive" : null }, { prio: 0, to: from, msgIntent: "decline" });
+      break;
+    }
+    case "trade_accept":
+      if (msg.to === bot.id && d.item && sender && !bot.helping) bot.helping = { to: sender.id, item: d.item, n: d.n, pay: d.pay, until: now() + 20 * 120 };
       break;
     case "offer_help":
       if (msg.to === bot.id) adjustOpinion(bot, from, 5);
@@ -145,7 +158,16 @@ function considerHelp(bot, msg, requester) {
   let p = 0.15 + (bot.personality.generosity ?? 0.5) * 0.5 + opinionOf(bot, msg.from) / 100;
   if (hasTenet(bot, "charity")) p += 0.35 * devotion(bot);
   if (requester.dimName !== bot.dimName || V.dist(requester.pos, bot.pos) > 250) p -= 0.6;
-  if (!chance(p)) return;
+  if (!chance(p)) {
+    // not generous enough to give it away; offer a trade instead
+    if (cfg().trading && opinionOf(bot, msg.from) > -30 && chance(0.6)) {
+      const deal = proposeBotTrade(bot, requester, d.item, n);
+      if (deal) {
+        bot.say("trade_offer", { target: msg.fromName, item: d.item, n, pay: deal.pay.id, payN: deal.pay.n }, { prio: 1, to: msg.from, msgIntent: "trade_offer", data: deal });
+      }
+    }
+    return;
+  }
   bot.helping = { to: requester.id, item: d.item, n, until: now() + 20 * 120 };
   bot.say("offer_help", { item: d.item, n, target: msg.fromName }, { prio: 2, to: msg.from, msgIntent: "offer_help" });
 }
@@ -166,6 +188,9 @@ export function* deliverHelp(bot, online) {
     for (const m of moved) {
       target.inv.add(m.id, m.n);
       n += m.n;
+    }
+    if (n > 0 && h.pay) {
+      for (const m of target.inv.remove(h.pay.id, h.pay.n)) bot.inv.add(m.id, m.n);
     }
     if (n > 0) {
       bot.swing();
@@ -231,6 +256,8 @@ export function socialThink(bot, online) {
     const ev = planSomething(bot, town, rel);
     if (ev) return;
   }
+  // trash talk rival towns
+  if (chance(0.05) && rivalryTalk(bot, online)) return;
   // chit-chat
   if (cfg().botChat && chance(0.06 + (p.chattiness ?? 0.5) * 0.08)) {
     const target = others.length && chance(0.5) ? pick(others) : null;
@@ -306,6 +333,9 @@ export function shareDiscovery(bot, kind, pos) {
 // ---------------------------------------------------------------------------
 /** @type {[string, RegExp][]} */
 const PLAYER_INTENTS = [
+  ["deal", /^\s*(deal|ok deal|accept|deal!|fine|alright then)\b/],
+  ["shop", /what (do|have) (you|u) (got|have|sell)|anything (for sale|to sell)|sell me|what are you selling/],
+  ["trade", /\b(trade|swap|exchange|sell|buy)\b|\bfor\b.*\d|\d.*\bfor\b/],
   ["follow", /\b(follow|come with|tag along)\b/],
   ["stay", /\b(stay|wait|stop|halt)\b/],
   ["come", /\b(come here|come to me|over here|get over)\b/],
@@ -404,6 +434,19 @@ function applyPlayerIntent(bot, player, key, intent, item, setOrder, text, spoke
       if (bot.mem.home) setOrder(bot, { type: "home" });
       say(bot.mem.home ? "free_ok" : "confused");
       break;
+    case "deal": {
+      const r = playerAccepts(bot, player);
+      bot.chatNow(r || bot.line("confused", {}));
+      break;
+    }
+    case "shop":
+      bot.chatNow(shopList(bot, player));
+      break;
+    case "trade": {
+      const offer = parseTrade(text, findItemWord);
+      bot.chatNow(offer ? playerOffer(bot, player, offer) : shopList(bot, player));
+      break;
+    }
     case "give": {
       const it = item && (item.startsWith("minecraft:") || item.startsWith("#")) ? item : findItemWord(text);
       const generous = (bot.personality.generosity ?? 0.5) + op / 100 > 0.35;

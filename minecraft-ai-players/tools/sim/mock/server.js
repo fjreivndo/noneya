@@ -184,6 +184,13 @@ class Entity {
       };
     }
     if (n === "minecraft:item") return this.item ? { itemStack: this.item } : undefined;
+    if (n === "minecraft:rideable" && this.typeId === "minecraft:boat") {
+      const boat = this;
+      return {
+        addRider(r) { boat.rider = r; r.riding = boat; return true; },
+        ejectRider(r) { if (boat.rider === r) { r.riding = null; boat.rider = null; r.location = { x: boat.location.x, y: boat.location.y + 1, z: boat.location.z }; } },
+      };
+    }
     if (n === "minecraft:projectile") {
       const e = this;
       return { set owner(o) { e.owner = o; }, get owner() { return e.owner; }, shoot(v) { e.v = { ...v }; } };
@@ -307,6 +314,29 @@ class Entity {
   physics() {
     const d = this.dimension;
     const p = this.location;
+    if (this.riding) {
+      this.location = { x: this.riding.location.x, y: this.riding.location.y + 0.3, z: this.riding.location.z };
+      this.v = { x: 0, y: 0, z: 0 };
+      return;
+    }
+    if (this.typeId === "minecraft:boat") {
+      const below = d._get(Math.floor(p.x), Math.floor(p.y - 0.1), Math.floor(p.z));
+      if (below === "minecraft:water") {
+        const nx = p.x + this.v.x;
+        const nz = p.z + this.v.z;
+        const t = d._get(Math.floor(nx), Math.floor(p.y - 0.1), Math.floor(nz));
+        if (t === "minecraft:water" && d._get(Math.floor(nx), Math.floor(p.y + 0.2), Math.floor(nz)) === "minecraft:air") {
+          p.x = nx;
+          p.z = nz;
+        } else {
+          this.v.x = 0;
+          this.v.z = 0;
+        }
+        this.v.x *= 0.9;
+        this.v.z *= 0.9;
+        return;
+      }
+    }
     const water = this.isInWater;
     const hw = 0.3;
     const collide = (x, y, z) => {
@@ -380,6 +410,11 @@ class Dimension {
     }
     if (y <= -64) return "minecraft:bedrock";
     const h = 63 + Math.floor(Math.sin(x / 13) * 2 + Math.cos(z / 17) * 2);
+    if (x >= 70 && x <= 150 && z >= -30 && z <= 30) {
+      if (y > 62) return "minecraft:air";
+      if (y > 58) return "minecraft:water";
+      if (y > 56) return "minecraft:sand";
+    }
     if (x >= 20 && x <= 26 && z >= -10 && z <= -4 && y <= h && y >= h - 2) return y === h - 2 ? "minecraft:sand" : "minecraft:water";
     if (x >= -30 && x <= -27 && z >= 20 && z <= 23 && y === h) return "minecraft:lava";
     if (y > h) {
@@ -443,7 +478,7 @@ class Dimension {
     }
     return list;
   }
-  spawnEntity(type, loc) {
+  spawnEntity(type, loc, opts) {
     const e = new Entity(this, type, loc);
     this._entities.add(e);
     SIM.queue("entitySpawn", { entity: e });

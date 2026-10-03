@@ -9,5 +9,6 @@ cp -r RP "dist/tmp/AI Players RP"
 ( cd "dist/tmp/AI Players BP" && zip -qr ../../AIPlayers_BP.mcpack . )
 ( cd "dist/tmp/AI Players RP" && zip -qr ../../AIPlayers_RP.mcpack . )
 ( cd bridge && zip -qr ../dist/AIPlayers_LLM_Bridge_BDS.mcpack . )
+( cd chatpack && zip -qr ../dist/AIPlayers_Chat_BetaAPIs.mcpack . )
 rm -rf dist/tmp
 ls -la dist

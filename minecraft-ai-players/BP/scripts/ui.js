@@ -9,6 +9,7 @@ import { V, prettyItem, fmtTime, now } from "./util.js";
 import { soc } from "./society.js";
 import { townOf, townRank, townSummary } from "./ai/town.js";
 import { faithSummary } from "./ai/religion.js";
+import { politicsSummary } from "./ai/politics.js";
 import { moodOf } from "./ai/cognition.js";
 import { handlePlayerTalk } from "./ai/social.js";
 import { ItemStack } from "@minecraft/server";
@@ -153,6 +154,8 @@ export function statusText(b) {
   if (plans.length) lines.push(`§fPlans: §e${plans.map((e) => `${e.title} (${e.hostName})`).join(", ")}`);
   const memories = b.mem.journal.slice(-3).map((j) => j.type.replace("_", " ") + (j.what ? ` ${j.what}` : "") + (j.by ? ` (${j.by})` : "") + (j.kind ? ` (${j.kind.replace("_", " ")})` : ""));
   if (memories.length) lines.push(`§fRecent memories: §7${memories.join("; ")}`);
+  const ench = Object.entries(b.mem.enchants || {}).map(([k, e]) => `${k}: ${e.kind} ${e.level}`);
+  lines.push(`§fXP: §a${b.mem.xp || 0}§f${ench.length ? `  Enchants: §d${ench.join(", ")}` : ""}${b.mem.bed ? "  §fHas a bed" : ""}`);
   if (b.mem.adv.length) lines.push(`§fAdvancements: §a${b.mem.adv.slice(-6).join(", ")}`);
   const inv = b.inv.summary(14);
   lines.push(`§fInventory: §7${inv.length ? inv.join(", ") : "empty"}`);
@@ -353,6 +356,8 @@ function openSociety(player) {
   const rels = Object.values(s.religions);
   lines.push(`\n§l§dReligions (${rels.length})§r`);
   for (const r of rels) lines.push(`${r.name} - worships ${r.deity}, founded by ${r.founderName}, ${r.members.length} follower(s)\n  rules: ${r.tenets.map((t) => t.text).join("; ")}`);
+  const pol = politicsSummary();
+  if (pol.length) lines.push(`\n§l§cTown relations§r\n${pol.join("\n")}`);
   const evs = Object.values(s.events).filter((e) => e.status !== "done");
   lines.push(`\n§l§eUpcoming events (${evs.length})§r`);
   for (const e of evs) lines.push(`${e.title} by ${e.hostName} - ${e.status === "running" ? "happening now" : `in ${fmtTime(Math.max(0, e.at - now()))}`} at ${e.where.x} ${e.where.y} ${e.where.z}, ${e.accepted.length} coming`);
@@ -417,6 +422,11 @@ const SETTINGS = [
   ["summonDragonIfMissing", "Summon dragon if missing", "toggle"],
   ["stuckTeleport", "Last-resort teleport when stuck for a long time", "toggle"],
   ["startingKit", "Starting kit", "dropdown"],
+  ["trading", "Bots trade with players and each other", "toggle"],
+  ["villagerTrading", "Bots trade with villagers", "toggle"],
+  ["townWars", "Rival towns can go to war (raids only hit bot-built chests)", "toggle"],
+  ["boats", "Bots use boats", "toggle"],
+  ["maxTickingAreas", "Ticking areas for bots (shared by nearby bots)", "slider", 1, 10, 1],
   ["botChat", "Bots talk to each other and act on it", "toggle"],
   ["speechMode", "Speech (auto uses Claude if the BDS bridge is installed)", "dropdown"],
   ["towns", "Bots found towns and cities", "toggle"],

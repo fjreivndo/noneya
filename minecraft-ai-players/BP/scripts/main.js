@@ -48,6 +48,13 @@ world.afterEvents.entityHurt.subscribe((ev) => {
   const bot = botByEntity(hurt);
   if (!bot) return;
   bot.exhaust(0.1);
+  const prot = bot.mem.enchants && bot.mem.enchants.armor ? bot.mem.enchants.armor.level : 0;
+  if (prot && ev.damage > 0) {
+    safe(() => {
+      const h = hurt.getComponent("minecraft:health");
+      h.setCurrentValue(Math.min(h.effectiveMax, h.currentValue + ev.damage * prot * 0.04));
+    }, null);
+  }
   if (ev.damageSource.cause === "fall" && ev.damage >= 2) {
     journal(bot, "mistake", { kind: "fall" });
     if (chance(0.5)) bot.say("mistake", { kind: "fall" }, { prio: 1 });
@@ -102,6 +109,13 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
   if (!ev.id.startsWith("aip:")) return;
   if (ev.id.startsWith("aip:llm_")) {
     llmEvent(ev.id, ev.message);
+    return;
+  }
+  if (ev.id === "aip:chat") {
+    // from the optional chat pack: a player typed in normal chat
+    const data = safe(() => JSON.parse(ev.message), null);
+    const pl = data && world.getAllPlayers().find((pp) => pp.name === data.p);
+    if (pl && data.m && !data.m.startsWith("/")) talkNearby(pl, String(data.m), false);
     return;
   }
   const cmd = ev.id.slice(4);
@@ -160,7 +174,7 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
 });
 
 /** A player said something: the bot they named answers, otherwise one or two bots nearby. */
-export function talkNearby(player, text) {
+export function talkNearby(player, text, echo = true) {
   const low = text.toLowerCase();
   const online = onlineBots();
   let targets = online.filter((b) => low.includes(b.name.toLowerCase()));
@@ -170,7 +184,9 @@ export function talkNearby(player, text) {
       .sort((a, b) => Math.hypot(a.pos.x - player.location.x, a.pos.z - player.location.z) - Math.hypot(b.pos.x - player.location.x, b.pos.z - player.location.z))
       .slice(0, chance(0.4) ? 2 : 1);
   }
-  world.sendMessage(`<${player.name}> ${text}`);
+  if (echo) world.sendMessage(`<${player.name}> ${text}`);
+  // in normal chat, only answer when it sounds like it's for us: a name, a greeting, a question or a request
+  if (!echo && !online.some((b) => low.includes(b.name.toLowerCase())) && !/\b(hi|hey|hello|yo|anyone|everyone|guys|bots|who|where|what|can|trade|sell|buy|help|follow|party|feast)\b|\?/.test(low)) return;
   targets.forEach((b, i) => system.runTimeout(() => handlePlayerTalk(b, player, text, setOrder), 20 + i * 30 + Math.floor(Math.random() * 20)));
 }
 

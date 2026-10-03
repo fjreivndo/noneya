@@ -14,6 +14,9 @@
             },
             {
               "eat": "query.property('aip:action') == 3"
+            },
+            {
+              "sleep": "query.property('aip:action') == 4"
             }
           ]
         },
@@ -47,6 +50,17 @@
           "transitions": [
             {
               "none": "query.property('aip:action') != 3"
+            }
+          ]
+        },
+        "sleep": {
+          "animations": [
+            "sleep"
+          ],
+          "blend_transition": 0.3,
+          "transitions": [
+            {
+              "none": "query.property('aip:action') != 4"
             }
           ]
         }

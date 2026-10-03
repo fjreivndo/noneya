@@ -23,6 +23,7 @@ for (let t = 0; t < minutes * 1200; t++) {
   const b = [...mgr.bots.values()][0];
   if (!b) continue;
   if (b.task !== lastTask) { lastTask = b.task; if (args.tasks !== "0") console.log(`[t${SIM.tick}] task: ${b.task}  @ ${b.pos.x.toFixed(1)},${b.pos.y.toFixed(1)},${b.pos.z.toFixed(1)}`); }
+  if (t % 1200 === 0 && args.stack) console.log(`   stack: ${b.stack.map((e) => e.name).join(">")} pos ${b.pos.x.toFixed(1)},${b.pos.y.toFixed(1)},${b.pos.z.toFixed(1)} v ${JSON.stringify(b.entity.v)} ground ${b.entity.isOnGround} ms=${b.currentMs}`);
   if (t % 1200 === 0) console.log(`== min ${t/1200}: hp ${b.health} food ${b.food} inv: ${b.inv.summary(20).join(", ")}`);
 }
 const b = [...mgr.bots.values()][0];

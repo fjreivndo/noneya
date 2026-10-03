@@ -251,6 +251,7 @@ const B = {
   insult: (bot, c) => [pick([`${c.target} stop it`, `${c.target} ur so annoying`, `go away ${c.target}`, `${c.target} rude`])],
   apologize: (bot, c) => [pick([`sorry ${c.target || "guys"}`, "my bad", "oops sorry", `sorry about the ${c.what || "thing"}`])],
   mistake: (bot, c) => [mistakeSentence(c.kind, c)],
+  trade_offer: (bot, c) => [pick([`${c.target} ill give you ${c.n} ${item(c.item, c.n)} for ${c.payN} ${item(c.pay, c.payN)}`, `${c.n} ${item(c.item, c.n)} for ${c.payN} ${item(c.pay, c.payN)}? deal ${c.target}?`, `not for free ${c.target}, but ${c.payN} ${item(c.pay, c.payN)} and its yours`])],
   tool_broke: (bot, c) => [pick([`my ${item(c.item)} broke`, `rip my ${item(c.item)}`, `need a new ${item(c.item)}`, `${item(c.item)} just snapped`]), chance(0.4) ? pick(["again", "ugh", "lol", "time to craft another"]) : ""],
   election: (bot, c) => [pick([`vote for me! ill build ${c.project}`, `i'll make ${c.town} great`, `${c.town} needs a ${c.project}, vote me`])],
   vote: (bot, c) => [pick([`i vote ${c.target}`, `${c.target} for mayor`, `my vote: ${c.target}`])],

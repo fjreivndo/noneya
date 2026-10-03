@@ -65,8 +65,12 @@
           "variable.tcos0 = math.cos(query.modified_distance_moved * 38.17) * math.clamp(query.modified_move_speed, 0, 1) * 57.3;"
         ],
         "animate": [
-          "look",
-          "walk",
+          {
+            "look": "query.property('aip:action') != 4"
+          },
+          {
+            "walk": "query.property('aip:action') != 4"
+          },
           {
             "idle": "query.property('aip:action') == 0"
           },
@@ -88,7 +92,8 @@
         "bow_hold": "animation.aip.bow_hold",
         "eat_loop": "animation.aip.eat_loop",
         "sneak_pose": "animation.aip.sneak",
-        "action": "controller.animation.aip.action"
+        "action": "controller.animation.aip.action",
+        "sleep": "animation.aip.sleep"
       },
       "render_controllers": [
         "controller.render.aip.player"

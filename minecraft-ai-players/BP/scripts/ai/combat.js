@@ -7,6 +7,12 @@ import { meleeHit, attackCooldown, canShoot, shootArrow, collectNearbyItems, eat
 import { steer, goTo, exploreStep, facingError } from "./movement.js";
 import { slip, journal } from "./cognition.js";
 import { hasTenet, obeys } from "./religion.js";
+import { enemies } from "./politics.js";
+import { onlineSociety } from "../society.js";
+
+function botByEntityLocal(e) {
+  return onlineSociety().find((b) => b.entity && b.entity.id === e.id);
+}
 
 const FLYING = new Set(["minecraft:ghast", "minecraft:blaze", "minecraft:phantom", "minecraft:ender_dragon", "minecraft:vex", "minecraft:bee", "minecraft:breeze"]);
 
@@ -36,7 +42,8 @@ export function findThreats(bot, radius) {
         if (c.pvp === "aggressive") hostile = !e.getGameMode || e.getGameMode() === "Survival" || e.getGameMode() === "survival";
         else if (c.pvp === "retaliate") hostile = bot.recentlyHurtBy(e.id);
       } else if (t === "aip:ai_player") {
-        hostile = c.botsFightBots ? bot.recentlyHurtBy(e.id) || bot.rivalIds.has(e.id) : false;
+        const other = botByEntityLocal(e);
+        hostile = (c.townWars && other && enemies(bot, other)) || (c.botsFightBots ? bot.recentlyHurtBy(e.id) || bot.rivalIds.has(e.id) : false);
       } else if (NEUTRAL_MOBS.has(t)) {
         hostile = bot.recentlyHurtBy(e.id);
       } else if (e.matches({ families: ["monster"] })) {

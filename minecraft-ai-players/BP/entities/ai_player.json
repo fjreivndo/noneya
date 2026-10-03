@@ -30,6 +30,15 @@
           "default": 0.0,
           "client_sync": true
         },
+        "aip:yaw": {
+          "type": "float",
+          "range": [
+            -180.0,
+            180.0
+          ],
+          "default": 0.0,
+          "client_sync": true
+        },
         "aip:action": {
           "type": "int",
           "range": [

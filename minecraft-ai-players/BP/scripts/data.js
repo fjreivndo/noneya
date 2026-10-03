@@ -300,6 +300,7 @@ export const RECIPES = {
   "minecraft:ender_eye": { n: 1, needs: { "minecraft:blaze_powder": 1, "minecraft:ender_pearl": 1 }, table: false },
   "minecraft:bread": { n: 1, needs: { "minecraft:wheat": 3 }, table: true },
   "minecraft:ladder": { n: 3, needs: { "minecraft:stick": 7 }, table: true },
+  "minecraft:fishing_rod": { n: 1, needs: { "minecraft:stick": 3, "minecraft:string": 2 }, table: true },
 };
 const TOOL_SHAPES = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
 const TOOL_MATS = { wooden: "#planks", stone: "#stone_tool", iron: "minecraft:iron_ingot", diamond: "minecraft:diamond", golden: "minecraft:gold_ingot" };

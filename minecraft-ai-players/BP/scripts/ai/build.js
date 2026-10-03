@@ -6,6 +6,7 @@ import { mineBlock, placeBlock, canDig, inProtectedZone, reachOf, inReach } from
 import { goTo, reachGoal, goNear } from "./movement.js";
 import { acquire } from "./planner.js";
 import { slip, journal } from "./cognition.js";
+import { placeBed } from "./life.js";
 import { toSurface } from "./mining.js";
 
 /** Find a reasonably flat, dry spot of size w x d near the bot. Returns feet-level origin. */
@@ -43,42 +44,67 @@ export function findBuildSite(bot, w, d, maxR = 24, center) {
   return best;
 }
 
-/** Simple starter house: 7x7, log corners, plank walls, cobble roof, door gap, windows, torches, chest, table, furnace. */
-export function houseBlueprint() {
-  const W = 7;
+export const HOUSE_STYLES = ["cottage", "cabin", "stone", "manor"];
+
+/** Pick a house style that fits the bot's personality (remembered so rebuilds match). */
+export function houseStyleFor(bot) {
+  if (bot.mode === "beat_game" && !bot.mem.flags.beatGame) return "cottage"; // speedrunners don't build manors
+  if (!bot.mem.houseStyle) {
+    const p = bot.personality;
+    bot.mem.houseStyle = (p.builder ?? 0.5) > 0.75 ? "manor" : (p.bravery ?? 0.5) > 0.65 ? "stone" : (p.curiosity ?? 0.5) > 0.6 ? "cabin" : "cottage";
+  }
+  return bot.mem.houseStyle;
+}
+
+/**
+ * Houses in a few styles, with a bed, chest, crafting table, furnace, torches and some decoration.
+ * cottage: plank walls, log corners, cobble roof · cabin: log walls, plank roof · stone: cobble walls,
+ * plank roof · manor: bigger, two-tone walls, glass windows, tall roof.
+ */
+export function houseBlueprint(style = "cottage") {
+  const big = style === "manor";
+  const W = big ? 9 : 7;
   const D = 7;
-  const H = 3;
+  const H = big ? 4 : 3;
+  const wall = { cottage: "#planks", cabin: "#logs", stone: "minecraft:cobblestone", manor: "#planks" }[style] || "#planks";
+  const wallAlt = { cottage: "#building", cabin: "#planks", stone: "#building", manor: "#building" }[style];
+  const corner = style === "cabin" ? "#logs" : style === "stone" ? "#logs" : "#logs";
+  const roof = { cottage: "minecraft:cobblestone", cabin: "#planks", stone: "#planks", manor: "minecraft:cobblestone" }[style];
+  const doorX = Math.floor(W / 2);
   const list = [];
-  // foundation fill (only where there's a hole)
   for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) list.push({ x, y: -1, z, id: "#building", fill: true, phase: 0 });
-  // clear interior + wall space
-  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) for (let y = 0; y <= H; y++) list.push({ x, y, z, id: "air", phase: 1 });
-  // walls
+  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) for (let y = 0; y <= H + 2; y++) list.push({ x, y, z, id: "air", phase: 1 });
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       for (let z = 0; z < D; z++) {
         const edgeX = x === 0 || x === W - 1;
         const edgeZ = z === 0 || z === D - 1;
         if (!edgeX && !edgeZ) continue;
-        const corner = edgeX && edgeZ;
-        const door = z === 0 && x === 3 && y <= 1;
-        if (door) continue;
-        const window = y === 1 && ((x === 0 && z === 3) || (x === W - 1 && z === 3) || (z === D - 1 && x === 3));
-        list.push({ x, y, z, id: corner ? "#logs" : window ? "minecraft:glass" : "#planks", alt: window ? "#planks" : undefined, phase: 2 });
+        const isCorner = edgeX && edgeZ;
+        if (z === 0 && x === doorX && y <= 1) continue; // doorway
+        const window = y === 1 && !isCorner && ((edgeX && z === 3) || (z === D - 1 && x % 2 === 1) || (big && z === 0 && (x === 2 || x === W - 3)));
+        const base = big && y === 0 && !isCorner;
+        list.push({ x, y, z, id: isCorner ? corner : window ? "minecraft:glass" : base ? "minecraft:cobblestone" : wall, alt: window ? wall : isCorner ? "#planks" : wallAlt, phase: 2 });
       }
     }
   }
-  // roof
-  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) list.push({ x, y: H, z, id: "minecraft:cobblestone", alt: "#building", phase: 3 });
-  // furniture
-  list.push({ x: 5, y: 0, z: 1, id: "minecraft:crafting_table", phase: 4, optional: true });
-  list.push({ x: 5, y: 0, z: 5, id: "minecraft:furnace", phase: 4, optional: true });
-  list.push({ x: 1, y: 0, z: 5, id: "minecraft:chest", phase: 4, optional: true });
+  // roof: a flat layer plus a stepped ridge
+  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) list.push({ x, y: H, z, id: roof, alt: "#building", phase: 3 });
+  for (let x = 1; x < W - 1; x++) for (let z = 1; z < D - 1; z++) list.push({ x, y: H + 1, z, id: roof, alt: "#building", phase: 3 });
+  if (big) for (let x = 2; x < W - 2; x++) for (let z = 2; z < D - 2; z++) list.push({ x, y: H + 2, z, id: roof, alt: "#building", phase: 3 });
+  // interior
+  const fx = W - 2;
+  list.push({ x: fx, y: 0, z: 1, id: "minecraft:crafting_table", phase: 4, optional: true });
+  list.push({ x: fx, y: 0, z: D - 2, id: "minecraft:furnace", phase: 4, optional: true });
+  list.push({ x: 1, y: 0, z: D - 2, id: "minecraft:chest", phase: 4, optional: true });
+  list.push({ x: 1, y: 0, z: 2, id: "minecraft:bed", phase: 4, optional: true, bed: true });
   list.push({ x: 1, y: 0, z: 1, id: "minecraft:torch", phase: 4, optional: true });
-  list.push({ x: 4, y: 0, z: 5, id: "minecraft:torch", phase: 4, optional: true });
-  list.push({ x: 2, y: 0, z: -1, id: "minecraft:torch", phase: 4, optional: true });
-  list.push({ x: 4, y: 0, z: -1, id: "minecraft:torch", phase: 4, optional: true });
-  return { w: W, d: D, list, door: { x: 3, y: 0, z: 0 }, inside: { x: 3, y: 0, z: 3 }, chest: { x: 1, y: 0, z: 5 } };
+  list.push({ x: fx, y: 0, z: D - 3, id: "minecraft:torch", phase: 4, optional: true });
+  list.push({ x: fx - 1, y: 0, z: D - 2, id: "minecraft:bookshelf", phase: 4, optional: true });
+  list.push({ x: doorX - 1, y: 0, z: -1, id: "minecraft:torch", phase: 4, optional: true });
+  list.push({ x: doorX + 1, y: 0, z: -1, id: "minecraft:torch", phase: 4, optional: true });
+  list.push({ x: doorX + 2, y: 0, z: -1, id: "minecraft:flower_pot", phase: 4, optional: true });
+  return { w: W, d: D, list, door: { x: doorX, y: 0, z: 0 }, inside: { x: doorX, y: 0, z: 3 }, chest: { x: 1, y: 0, z: D - 2 }, bed: { x: 1, y: 0, z: 2 } };
 }
 
 /** A small lookout tower: 5x5 hollow cobblestone, 8 tall, with crenellations and a torch on top. */
@@ -169,6 +195,30 @@ export function* buildStructure(bot, origin, bp, label = "building") {
           if (!ok) continue;
         }
         yield* mineBlock(bot, b.p);
+        continue;
+      }
+      if (b.enchantTable) {
+        if (isReplaceable(t) && bot.inv.count("minecraft:diamond") >= 2 && bot.inv.count("minecraft:obsidian") >= 4) {
+          if (!inReach(bot, b.p, 0.3)) yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20, allowDig: false });
+          const blk = getBlock(bot.dim, b.p);
+          try {
+            blk.setType("minecraft:enchanting_table");
+            bot.inv.remove("minecraft:diamond", 2);
+            bot.inv.remove("minecraft:obsidian", 4);
+            bot.placeAnim();
+          } catch (e) {
+            /* ignore */
+          }
+        }
+        continue;
+      }
+      if (b.bed) {
+        if (isReplaceable(t) && isReplaceable(typeAt(bot.dim, { x: b.p.x, y: b.p.y, z: b.p.z + 1 }) || "minecraft:stone") && bot.inv.count("#wool") >= 3 && bot.inv.count("#planks") >= 3) {
+          if (!inReach(bot, b.p, 0.3)) yield* goTo(bot, V.feet(b.p), { goalFn: reachGoal(b.p, reach, bot.dim), timeout: 20 * 20, allowDig: false });
+          bot.placeAnim();
+          placeBed(bot, b.p);
+          yield* wait(3);
+        }
         continue;
       }
       if (b.till || b.needs) {
@@ -262,7 +312,7 @@ export function* buildStructure(bot, origin, bp, label = "building") {
 
 export function* buildHouse(bot) {
   if (bot.dimName !== "overworld") return false;
-  const bp = houseBlueprint();
+  const bp = houseBlueprint(houseStyleFor(bot));
   if (bot.isUnderground()) yield* toSurface(bot);
   const site = findBuildSite(bot, bp.w + 2, bp.d + 2, 32);
   if (!site) return false;
@@ -273,6 +323,7 @@ export function* buildHouse(bot) {
   bot.mem.home = {
     x: origin.x + bp.inside.x, y: origin.y, z: origin.z + bp.inside.z, dim: "overworld",
     chest: { x: origin.x + bp.chest.x, y: origin.y + bp.chest.y, z: origin.z + bp.chest.z },
+    bed: { x: origin.x + bp.bed.x, y: origin.y, z: origin.z + bp.bed.z },
   };
   bot.save();
   bot.say("build_done");

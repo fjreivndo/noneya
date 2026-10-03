@@ -91,6 +91,7 @@ export class Bot {
     this.yaw = safe(() => entity.getRotation().y, 0);
     this.pitch = 0;
     this.shownPitch = 0;
+    this.shownYaw = 999;
     this.action = 0;
     this.actionUntil = 0;
     this.sneaking = false;
@@ -160,6 +161,7 @@ export class Bot {
     this.action = 0;
     this.sneaking = false;
     this.shownPitch = 0;
+    this.shownYaw = 999;
     this.entity = entity;
     this.entityId = entity.id;
     this.inv.entity = entity;
@@ -367,6 +369,7 @@ export class Bot {
     }
     // remember where good stuff is, and tell friends about the really good stuff
     const kind = PLACE_OF[id];
+    if (kind) this.mem.xp = (this.mem.xp || 0) + (kind === "diamonds" ? 5 : 1);
     if (kind) {
       rememberPlace(this, kind, this.pos, this.dimName);
       if (kind === "diamonds") {
@@ -376,6 +379,7 @@ export class Bot {
     }
   }
   onKill(target) {
+    this.mem.xp = (this.mem.xp || 0) + 3;
     const bonus = KILL_BONUS[target.typeId];
     if (bonus) for (const d of bonus()) this.inv.add(d.id, d.n);
     if (target.typeId === "minecraft:player" || target.typeId === "aip:ai_player" || chance(0.08)) this.say("kill");
@@ -551,6 +555,8 @@ export class Bot {
   }
 
   updateTicking(force) {
+    // chunks are kept loaded by shared cluster areas (registry.updateClusters); only travel uses a private area
+    if (!force) return;
     if (!cfg().keepChunksLoaded) return;
     const p = this.feetBlock();
     const d = this.dimName;

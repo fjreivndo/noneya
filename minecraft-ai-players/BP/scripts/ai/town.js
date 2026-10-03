@@ -5,7 +5,7 @@ import { cfg } from "../config.js";
 import { pick, now, V } from "../util.js";
 import { soc, newId, markDirty } from "../society.js";
 import { surfaceAt, getBlock, typeAt } from "./world.js";
-import { findBuildSite, buildStructure, houseBlueprint } from "./build.js";
+import { findBuildSite, buildStructure, houseBlueprint, houseStyleFor } from "./build.js";
 import { journal } from "./cognition.js";
 import { religionOf } from "./religion.js";
 import { goTo } from "./movement.js";
@@ -124,12 +124,59 @@ function farmBlueprint() {
   return { w: 9, d: 9, list };
 }
 
+/** Market: three stalls with counters, canopies and a shared chest. */
+function marketBlueprint() {
+  const list = [];
+  for (let x = 0; x < 11; x++) for (let z = 0; z < 5; z++) for (let y = 0; y <= 3; y++) list.push({ x, y, z, id: "air", phase: 0 });
+  for (let s = 0; s < 3; s++) {
+    const x0 = s * 4;
+    for (const [px, pz] of [[0, 0], [2, 0], [0, 2], [2, 2]]) for (let y = 0; y < 3; y++) list.push({ x: x0 + px, y, z: pz + 1, id: "#logs", alt: "#planks", phase: 1 });
+    for (let px = 0; px <= 2; px++) for (let pz = 0; pz <= 2; pz++) list.push({ x: x0 + px, y: 3, z: pz + 1, id: s === 1 ? "#wool" : "#planks", alt: "#planks", phase: 2 });
+    list.push({ x: x0 + 1, y: 0, z: 1, id: "#planks", alt: "#building", phase: 2 }); // counter
+  }
+  list.push({ x: 5, y: 0, z: 3, id: "minecraft:chest", phase: 3, optional: true });
+  list.push({ x: 1, y: 0, z: 3, id: "minecraft:torch", phase: 3, optional: true });
+  list.push({ x: 9, y: 0, z: 3, id: "minecraft:torch", phase: 3, optional: true });
+  return { w: 11, d: 5, list, chest: { x: 5, y: 0, z: 3 } };
+}
+
+/** Library: bookshelves, reading light and (if someone can afford it) an enchanting table. */
+function libraryBlueprint() {
+  const list = [];
+  const W = 7;
+  const D = 9;
+  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) list.push({ x, y: -1, z, id: "minecraft:cobblestone", alt: "#building", fill: true, phase: 0 });
+  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) for (let y = 0; y <= 5; y++) list.push({ x, y, z, id: "air", phase: 1 });
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < W; x++)
+      for (let z = 0; z < D; z++) {
+        const edge = x === 0 || z === 0 || x === W - 1 || z === D - 1;
+        if (!edge || (z === 0 && x === 3 && y <= 1)) continue;
+        const corner = (x === 0 || x === W - 1) && (z === 0 || z === D - 1);
+        const win = y === 2 && !corner && z % 2 === 0;
+        list.push({ x, y, z, id: corner ? "#logs" : win ? "minecraft:glass" : y === 0 ? "minecraft:cobblestone" : "#planks", alt: corner ? "#planks" : "#building", phase: 2 });
+      }
+  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) list.push({ x, y: 4, z, id: "#planks", alt: "#building", phase: 3 });
+  for (let x = 1; x < W - 1; x++) for (let z = 1; z < D - 1; z++) list.push({ x, y: 5, z, id: "#planks", alt: "#building", phase: 3 });
+  for (const z of [2, 3, 5, 6]) {
+    list.push({ x: 1, y: 0, z, id: "minecraft:bookshelf", phase: 4, optional: true });
+    list.push({ x: 5, y: 0, z, id: "minecraft:bookshelf", phase: 4, optional: true });
+  }
+  list.push({ x: 3, y: 0, z: 6, id: "minecraft:enchanting_table", phase: 4, optional: true, enchantTable: true });
+  list.push({ x: 3, y: 0, z: 2, id: "minecraft:torch", phase: 4, optional: true });
+  list.push({ x: 5, y: 0, z: 7, id: "minecraft:chest", phase: 4, optional: true });
+  return { w: W, d: D, list, chest: { x: 5, y: 0, z: 7 } };
+}
+
 const PROJECTS = {
   plaza: { label: "the town plaza", bp: plazaBlueprint, min: 1 },
   town_hall: { label: "the town hall", bp: hallBlueprint, min: 2 },
   temple: { label: "the temple", bp: templeBlueprint, min: 2, needsReligion: true },
   farm: { label: "the town farm", bp: farmBlueprint, min: 2 },
-  roads: { label: "roads", road: true, min: 3 },
+  roads: { label: "roads and street lights", road: true, min: 3 },
+  market: { label: "the market", bp: marketBlueprint, min: 3 },
+  library: { label: "the library", bp: libraryBlueprint, min: 4 },
+  walls: { label: "the town walls", wall: true, min: 5 },
 };
 
 // ---------------------------------------------------------------------------
@@ -209,10 +256,10 @@ function addProject(town, type) {
   if (town.projects.some((p) => p.type === type) || town.built.some((b) => b.type === type && type !== "roads")) return;
   const def = PROJECTS[type];
   let pos = null;
-  if (!def.road) {
+  if (!def.road && !def.wall) {
     if (type === "plaza") pos = { ...town.center };
     else {
-      const ang = { town_hall: 0.5, temple: 2.2, farm: 4.0 }[type] ?? Math.random() * 6;
+      const ang = { town_hall: 0.5, temple: 2.2, farm: 4.0, market: 1.35, library: 3.1 }[type] ?? Math.random() * 6;
       pos = { x: Math.round(town.center.x + Math.cos(ang) * 10), y: town.center.y, z: Math.round(town.center.z + Math.sin(ang) * 10) };
       // keep it off the plaza
       pos.x += Math.sign(pos.x - town.center.x) * 2;
@@ -231,6 +278,9 @@ export function plan(town) {
   if (n >= 2 && !has("town_hall")) addProject(town, "town_hall");
   if (n >= 2 && !has("farm")) addProject(town, "farm");
   if (town.religion && soc().religions[town.religion] && !has("temple")) addProject(town, "temple");
+  if (n >= 3 && !has("market")) addProject(town, "market");
+  if (n >= 4 && !has("library")) addProject(town, "library");
+  if (n >= 5 && !has("walls")) addProject(town, "walls");
   if (n >= 3 && town.plots.filter((p) => p.built).length >= 3 && !town.projects.some((p) => p.type === "roads")) {
     const last = town.built.filter((b) => b.type === "roads").pop();
     if (!last || now() - last.done > 24000) addProject(town, "roads");
@@ -247,7 +297,7 @@ export function nextProject(town) {
 
 function completeProject(town, p, bot) {
   town.projects = town.projects.filter((q) => q.id !== p.id);
-  town.built.push({ type: p.type, x: p.x, y: p.y, z: p.z, done: now(), by: bot.name, altar: p.altar });
+  town.built.push({ type: p.type, x: p.x, y: p.y, z: p.z, done: now(), by: bot.name, altar: p.altar, chest: p.chest });
   if (p.type === "temple" && town.religion) {
     const r = soc().religions[town.religion];
     if (r) r.temple = { town: town.id, x: p.altar ? p.altar.x : p.x, y: p.y, z: p.altar ? p.altar.z : p.z };
@@ -264,6 +314,11 @@ export function* workOnProject(bot, town) {
   if (!p) return false;
   if (bot.dimName !== "overworld") return false;
   if (bot.isUnderground()) yield* toSurface(bot);
+  if (PROJECTS[p.type].wall) {
+    const ok = yield* buildWalls(bot, town);
+    if (ok) completeProject(town, p, bot);
+    return ok;
+  }
   if (PROJECTS[p.type].road) {
     const ok = yield* buildRoads(bot, town);
     if (ok) completeProject(town, p, bot);
@@ -283,6 +338,7 @@ export function* workOnProject(bot, town) {
     }
     p.settled = true;
     if (bp.altar) p.altar = { x: origin.x + bp.altar.x, y: origin.y, z: origin.z + bp.altar.z };
+    if (bp.chest) p.chest = { x: origin.x + bp.chest.x, y: origin.y + bp.chest.y, z: origin.z + bp.chest.z };
     markDirty();
   }
   if (V.dist(bot.pos, origin) > 24) yield* goTo(bot, { x: p.x + 0.5, y: p.y, z: p.z + 0.5 }, { range: 8, timeout: 20 * 120 });
@@ -306,7 +362,26 @@ function completeness(bot, origin, bp) {
   return total ? good / total : 1;
 }
 
-/** Gravel roads from the plaza to every built house. */
+/** Place a lamp post (two cobblestone + torch) beside the road if there's room. */
+function* lampPost(bot, x, y, z) {
+  const ids = ["minecraft:cobblestone", "minecraft:cobblestone", "minecraft:torch"];
+  if (bot.inv.count("minecraft:cobblestone") < 2 || !bot.inv.has("minecraft:torch")) return;
+  if (!isReplaceable(typeAt(bot.dim, { x, y, z }) || "minecraft:stone")) return;
+  for (let i = 0; i < 3; i++) {
+    const b = getBlock(bot.dim, { x, y: y + i, z });
+    if (!b || !isReplaceable(b.typeId)) return;
+    try {
+      b.setType(ids[i]);
+      bot.inv.remove(ids[i], 1);
+    } catch (e) {
+      return;
+    }
+    bot.placeAnim();
+    yield;
+  }
+}
+
+/** Gravel roads from the plaza to every built house, with street lights and plank bridges over water. */
 function* buildRoads(bot, town) {
   const c = town.center;
   const targets = town.plots.filter((p) => p.built).concat(town.built.filter((b) => b.x !== undefined && b.type !== "plaza"));
@@ -315,28 +390,34 @@ function* buildRoads(bot, town) {
     const dx = t.x - c.x;
     const dz = t.z - c.z;
     const steps = Math.floor(Math.sqrt(dx * dx + dz * dz));
+    const side = { x: Math.round(-dz / (steps || 1) * 2), z: Math.round(dx / (steps || 1) * 2) };
     for (let i = 6; i < steps - 4; i++) {
       const x = Math.round(c.x + (dx * i) / steps);
       const z = Math.round(c.z + (dz * i) / steps);
       const s = surfaceAt(bot.dim, x, z);
-      if (!s || s.water) continue;
+      if (!s) continue;
       const g = { x, y: s.y - 1, z };
       const gt = typeAt(bot.dim, g);
-      if (!gt || !/grass_block|dirt|sand|podzol/.test(gt)) continue;
-      if (!bot.inv.has("minecraft:gravel") && !bot.inv.has("minecraft:cobblestone")) return i > 6;
+      const bridge = s.water;
+      if (!gt || (!bridge && !/grass_block|dirt|sand|podzol/.test(gt))) continue;
+      const id = bridge ? bot.inv.firstOf("#planks") : bot.inv.has("minecraft:gravel") ? "minecraft:gravel" : bot.inv.has("minecraft:cobblestone") ? "minecraft:cobblestone" : null;
+      if (!id) return i > 6;
       if (V.dist(bot.pos, g) > 4) {
         const ok = yield* goTo(bot, { x: x + 0.5, y: s.y, z: z + 0.5 }, { range: 2.5, timeout: 200 });
         if (!ok) continue;
       }
       const b = getBlock(bot.dim, g);
       if (!b) continue;
-      const id = bot.inv.has("minecraft:gravel") ? "minecraft:gravel" : "minecraft:cobblestone";
       try {
         b.setType(id);
         bot.inv.remove(id, 1);
         bot.placeAnim();
       } catch (e) {
         /* ignore */
+      }
+      if (!bridge && i % 8 === 0) {
+        const ls = surfaceAt(bot.dim, x + side.x, z + side.z);
+        if (ls && !ls.water) yield* lampPost(bot, x + side.x, ls.y, z + side.z);
       }
       yield;
       yield;
@@ -345,18 +426,68 @@ function* buildRoads(bot, town) {
   return true;
 }
 
+/** Low cobblestone wall around the town with four gates and lights at the gates. Built a stretch at a time. */
+function* buildWalls(bot, town) {
+  const c = town.center;
+  const R = 26 + Math.min(20, town.members.length * 2);
+  bot.setTask(`building the walls of ${town.name}`);
+  town.wallProgress = town.wallProgress || 0;
+  const total = Math.ceil(2 * Math.PI * R);
+  let placed = 0;
+  while (town.wallProgress < total && placed < 120) {
+    const i = town.wallProgress;
+    const a = (i / total) * Math.PI * 2;
+    const x = Math.round(c.x + Math.cos(a) * R);
+    const z = Math.round(c.z + Math.sin(a) * R);
+    town.wallProgress++;
+    const gate = [0, 0.25, 0.5, 0.75].some((g) => Math.abs(i / total - g) < 1.5 / total);
+    const s = surfaceAt(bot.dim, x, z);
+    if (!s || s.water) continue;
+    if (town.plots.some((p) => Math.abs(p.x - x) < 6 && Math.abs(p.z - z) < 6)) continue; // don't wall through houses
+    if (gate) {
+      if (Math.abs(i / total - Math.round((i / total) * 4) / 4) < 0.5 / total) yield* lampPost(bot, x, s.y, z);
+      continue;
+    }
+    if (bot.inv.count("#building") < 2) {
+      markDirty();
+      return false;
+    }
+    if (V.dist(bot.pos, { x, y: s.y, z }) > 4) {
+      const ok = yield* goTo(bot, { x: x + 0.5, y: s.y, z: z + 0.5 }, { range: 3, timeout: 200 });
+      if (!ok) continue;
+    }
+    for (let y = 0; y < 2; y++) {
+      const b = getBlock(bot.dim, { x, y: s.y + y, z });
+      if (!b || !isReplaceable(b.typeId)) break;
+      const id = bot.inv.has("minecraft:cobblestone") ? "minecraft:cobblestone" : bot.inv.buildingBlock();
+      if (!id) break;
+      try {
+        b.setType(id);
+        bot.inv.remove(id, 1);
+        placed++;
+      } catch (e) {
+        break;
+      }
+    }
+    bot.placeAnim();
+    yield;
+  }
+  markDirty();
+  return town.wallProgress >= total;
+}
+
 /** Build this resident's house on their plot. */
 export function* buildHouseOnPlot(bot, town) {
   const plot = claimPlot(bot, town);
   if (!plot) return false;
-  const bp = houseBlueprint();
+  const bp = houseBlueprint(houseStyleFor(bot));
   const site = findBuildSite(bot, bp.w + 2, bp.d + 2, 6, { x: plot.x, y: bot.feetBlock().y, z: plot.z });
   const origin = site ? { x: site.x + 1, y: site.y, z: site.z + 1 } : { x: plot.x - 3, y: (surfaceAt(bot.dim, plot.x, plot.z) || { y: town.center.y }).y, z: plot.z - 3 };
   if (V.dist(bot.pos, origin) > 30) yield* goTo(bot, { x: origin.x + 3.5, y: origin.y, z: origin.z + 3.5 }, { range: 6, timeout: 20 * 120 });
   const ok = yield* buildStructure(bot, origin, bp, `building my house in ${town.name}`);
   if (!ok) return false;
   plot.built = true;
-  bot.mem.home = { x: origin.x + bp.inside.x, y: origin.y, z: origin.z + bp.inside.z, dim: "overworld", chest: { x: origin.x + bp.chest.x, y: origin.y, z: origin.z + bp.chest.z } };
+  bot.mem.home = { x: origin.x + bp.inside.x, y: origin.y, z: origin.z + bp.inside.z, dim: "overworld", chest: { x: origin.x + bp.chest.x, y: origin.y, z: origin.z + bp.chest.z }, bed: { x: origin.x + bp.bed.x, y: origin.y, z: origin.z + bp.bed.z } };
   markDirty();
   journal(bot, "built", { what: "my house" });
   bot.save();

@@ -47,6 +47,13 @@ export const DEFAULTS = {
   stuckTeleport: false, // last-resort 1-2 block teleport after being stuck a long time (off: bots dig/pillar/walk out instead)
   startingKit: "none", // none | basic | iron
 
+  // --- economy, politics, life ---
+  trading: true, // bots trade with players and each other
+  villagerTrading: true, // bots sell surplus to villagers for emeralds and buy useful things
+  townWars: false, // rival towns can go to war (skirmishes and raids on town-built chests only)
+  boats: true, // bots use boats to cross water
+  maxTickingAreas: 8, // ticking areas shared by groups of nearby bots (Bedrock allows 10 per world)
+
   // --- society ---
   botChat: true, // bots talk to each other and act on what they hear
   speechMode: "auto", // auto = Claude via the BDS bridge pack when present, otherwise generated speech; generated = never use the LLM

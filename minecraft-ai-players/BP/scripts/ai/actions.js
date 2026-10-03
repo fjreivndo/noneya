@@ -4,7 +4,7 @@ import { cfg } from "../config.js";
 import { blockInfo, canHarvest, kindOf, isReplaceable, K_AIR, K_WATER, K_LAVA, K_SOLID, K_HURT, K_TALL, FOOD, toolInfo } from "../data.js";
 import { V, wait, chance, rand, now, safe, debug } from "../util.js";
 import { getBlock, typeAt, lavaNear, kindAt } from "./world.js";
-import { goTo, faceTowards } from "./movement.js";
+import { goTo, faceTowards, steer } from "./movement.js";
 
 const PROTECTED = /chest|barrel|shulker|furnace|crafting_table|bed$|door|sign|banner|glass|wool|carpet|torch|lantern|rail|spawner|portal|frame|beacon|anvil|enchant|brewing|smoker|hopper|dropper|dispenser|lectern|bookshelf|note|jukebox|bell|chain/;
 
@@ -105,22 +105,43 @@ export function reachOf() {
 }
 
 /**
- * Line of sight from an eye position to a block: the first solid block the ray hits must be the target.
+ * What an eye can see of a block: { ok, aim, blocker }. aim is the visible point to look at (a player
+ * aims at the face they can see, not the hidden centre); blocker is the first block in the way.
  * Passable targets (crops, grass) only need a clear line.
  */
-export function lineOfSight(dim, eye, p) {
-  // aim at the centre and at the faces turned towards us, like a player picking a visible face
+export function sightOf(dim, eye, p) {
   const pts = [V.center(p)];
-  if (eye.y > p.y + 1) pts.push({ x: p.x + 0.5, y: p.y + 0.98, z: p.z + 0.5 });
-  if (eye.y < p.y) pts.push({ x: p.x + 0.5, y: p.y + 0.02, z: p.z + 0.5 });
-  if (eye.x < p.x) pts.push({ x: p.x + 0.02, y: p.y + 0.5, z: p.z + 0.5 });
-  if (eye.x > p.x + 1) pts.push({ x: p.x + 0.98, y: p.y + 0.5, z: p.z + 0.5 });
-  if (eye.z < p.z) pts.push({ x: p.x + 0.5, y: p.y + 0.5, z: p.z + 0.02 });
-  if (eye.z > p.z + 1) pts.push({ x: p.x + 0.5, y: p.y + 0.5, z: p.z + 0.98 });
-  for (const pt of pts) if (rayReaches(dim, eye, p, pt)) return true;
-  return false;
+  const faces = [];
+  if (eye.y > p.y + 1) faces.push([0.5, 0.95, 0.5, "x", "z"]);
+  if (eye.y < p.y) faces.push([0.5, 0.05, 0.5, "x", "z"]);
+  if (eye.x < p.x) faces.push([0.05, 0.5, 0.5, "y", "z"]);
+  if (eye.x > p.x + 1) faces.push([0.95, 0.5, 0.5, "y", "z"]);
+  if (eye.z < p.z) faces.push([0.5, 0.5, 0.05, "x", "y"]);
+  if (eye.z > p.z + 1) faces.push([0.5, 0.5, 0.95, "x", "y"]);
+  // face centres first, then points towards the face edges (peeking past a corner)
+  for (const f of faces) pts.push({ x: p.x + f[0], y: p.y + f[1], z: p.z + f[2] });
+  for (const f of faces) {
+    for (const [a, b] of [[0.3, 0], [-0.3, 0], [0, 0.3], [0, -0.3]]) {
+      const q = { x: p.x + f[0], y: p.y + f[1], z: p.z + f[2] };
+      q[f[3]] += a;
+      q[f[4]] += b;
+      pts.push(q);
+    }
+  }
+  let blocker = null;
+  for (const pt of pts) {
+    const r = rayReaches(dim, eye, p, pt);
+    if (r === true) return { ok: true, aim: pt, blocker: null };
+    if (!blocker && r) blocker = r;
+  }
+  return { ok: false, aim: null, blocker };
 }
 
+export function lineOfSight(dim, eye, p) {
+  return sightOf(dim, eye, p).ok;
+}
+
+/** true when the ray reaches the target, otherwise the blocking block position (or false). */
 function rayReaches(dim, eye, p, aim) {
   const d = V.sub(aim, eye);
   const dist = V.len(d);
@@ -136,9 +157,11 @@ function rayReaches(dim, eye, p, aim) {
     try {
       const hit = dim.getBlockFromRay(eye, V.norm(d), { maxDistance: dist + 0.6, includeLiquidBlocks: false, includePassableBlocks: passable });
       if (!hit) return passable;
-      if (isTarget(hit.block)) return true;
+      const hp = hit.block.location;
+      if (isTarget(hp)) return true;
       // something solid *behind* an empty/passable target doesn't block the view of it
-      return passable && V.dist(eye, V.center(hit.block)) > dist + 0.2;
+      if (passable && V.dist(eye, V.center(hp)) > dist + 0.2) return true;
+      return { x: hp.x, y: hp.y, z: hp.z };
     } catch (e) {
       /* fall through to stepping */
     }
@@ -150,9 +173,19 @@ function rayReaches(dim, eye, p, aim) {
     if (isTarget(q)) return true;
     if (q.x === ec.x && q.y === ec.y && q.z === ec.z) continue;
     const qk = kindAt(dim, q);
-    if (qk === K_SOLID || qk === K_HURT || qk === K_TALL) return false;
+    if (qk === K_SOLID || qk === K_HURT || qk === K_TALL) return q;
   }
   return true;
+}
+
+/** In reach, and either visible or hidden only behind a block the bot is allowed to dig out of the way. */
+export function inReachOrClearable(bot, p, extra = 0) {
+  if (V.dist(bot.eye, V.center(p)) > reachOf() + extra) return false;
+  const s = sightOf(bot.dim, bot.eye, p);
+  if (s.ok) return true;
+  if (!s.blocker || V.dist(bot.eye, V.center(s.blocker)) > reachOf() + extra) return false;
+  const bt = typeAt(bot.dim, s.blocker);
+  return !!bt && canDig(bot, bt, s.blocker);
 }
 
 export function inReach(bot, p, extra = 0) {
@@ -198,8 +231,25 @@ export function* mineBlock(bot, p, opts = {}) {
     debug(`${bot.name}: won't dig ${t}`);
     return false;
   }
-  if (!inReach(bot, p, 0.4)) {
-    debug(`${bot.name}: ${t} at ${p.x} ${p.y} ${p.z} is out of reach or not visible`);
+  if (V.dist(bot.eye, V.center(p)) > reachOf() + 0.4) {
+    debug(`${bot.name}: ${t} at ${p.x} ${p.y} ${p.z} is out of reach`);
+    return false;
+  }
+  let sight = sightOf(dim, bot.eye, p);
+  // something in the way (leaves, grass, a stone corner): clear it first, like a player would
+  for (let tries = 0; !sight.ok && sight.blocker && tries < 2 && (opts.depth || 0) < 2; tries++) {
+    const q = sight.blocker;
+    const qt = typeAt(dim, q);
+    if (!qt || !canDig(bot, qt, q) || V.dist(bot.eye, V.center(q)) > reachOf() + 0.4) break;
+    const f = bot.feetBlock();
+    if (q.x === f.x && q.z === f.z && q.y < f.y) break; // never dig out our own floor
+    debug(`${bot.name}: ${qt} blocks the view of ${t}, clearing it`);
+    const ok = yield* mineBlock(bot, q, { ...opts, depth: (opts.depth || 0) + 1 });
+    if (!ok) break;
+    sight = sightOf(dim, bot.eye, p);
+  }
+  if (!sight.ok) {
+    debug(`${bot.name}: ${t} at ${p.x} ${p.y} ${p.z} is not visible${sight.blocker ? ` (blocked at ${sight.blocker.x} ${sight.blocker.y} ${sight.blocker.z})` : ""}`);
     return false;
   }
 
@@ -217,10 +267,12 @@ export function* mineBlock(bot, p, opts = {}) {
   const tool = bot.inv.toolFor(t);
   bot.hold(tool);
   const c = V.center(p);
-  yield* faceTowards(bot, c);
-  const ticks = Math.max(1, Math.ceil(bot.inv.ticksToBreak(t) / Math.max(0.05, cfg().miningSpeed)));
+  const aim = sight.aim || c;
+  yield* faceTowards(bot, aim, 16);
+  const eff = tool && tool.endsWith("pickaxe") && bot.mem.enchants && bot.mem.enchants.pickaxe ? bot.mem.enchants.pickaxe.level : 0;
+  const ticks = Math.max(1, Math.ceil(bot.inv.ticksToBreak(t) / Math.max(0.05, cfg().miningSpeed) / (1 + eff * 0.3)));
   for (let i = 0; i < ticks; i++) {
-    bot.motor.look = c;
+    bot.motor.look = aim;
     bot.setAction(1);
     if (i % 5 === 0) {
       safe(() => dim.playSound(digSound(t), c, { volume: 0.45, pitch: 0.75 }), null);
@@ -265,11 +317,15 @@ export function* placeBlock(bot, p, id, opts = {}) {
   if (inProtectedZone(bot, p)) return false;
   if (!opts.force && bot.occupies(p)) return false;
   if (V.dist(bot.eye, V.center(p)) > reachOf() + 0.6) return false;
-  if (!opts.force && !opts.bridge && !lineOfSight(bot.dim, bot.eye, p)) return false;
+  if (!opts.force && !opts.bridge && !lineOfSight(bot.dim, bot.eye, p)) {
+    debug(`${bot.name}: can't see where to place ${id} at ${p.x} ${p.y} ${p.z}`);
+    return false;
+  }
   bot.hold(id);
   const c = V.center(p);
-  // aim at the face we're placing against
-  yield* faceTowards(bot, { x: c.x, y: c.y - 0.4, z: c.z }, 8);
+  // aim at the visible spot (the face we're placing against)
+  const seen = opts.force || opts.bridge ? null : sightOf(bot.dim, bot.eye, p).aim;
+  yield* faceTowards(bot, seen || { x: c.x, y: c.y - 0.4, z: c.z }, 10);
   if (opts.bridge) bot.setSneak(true, 10);
   bot.placeAnim();
   try {
@@ -297,9 +353,11 @@ export function* pillarUp(bot) {
   if (!id) return false;
   bot.hold(id);
   const under = { x: f.x + 0.5, y: f.y - 1, z: f.z + 0.5 };
+  const center = { x: f.x + 0.5, y: f.y, z: f.z + 0.5 };
   for (let attempt = 0; attempt < 3; attempt++) {
-    // wait until we're standing still on the ground, then jump straight up
-    for (let t = 0; t < 10 && !bot.entity.isOnGround; t++) {
+    // stand in the middle of the block (an off-centre 0.6-wide body clips the ceiling next door), then jump straight up
+    for (let t = 0; t < 20 && (V.hdist(bot.pos, center) > 0.12 || !bot.entity.isOnGround); t++) {
+      steer(bot, center, { slow: true });
       bot.motor.look = under;
       yield;
     }
@@ -355,7 +413,7 @@ export function meleeHit(bot, target) {
   const w = bot.inv.bestWeapon();
   bot.hold(w.id);
   bot.swing();
-  let dmg = w.damage;
+  let dmg = w.damage + (w.id && w.id.endsWith("sword") && bot.mem.enchants && bot.mem.enchants.sword ? bot.mem.enchants.sword.level * 1.25 : 0);
   const crit = !bot.entity.isOnGround && bot.entity.getVelocity().y < 0;
   if (crit || chance(cfg().skill * 0.15)) dmg *= 1.5;
   if (chance((1 - cfg().skill) * 0.15)) return false; // whiff

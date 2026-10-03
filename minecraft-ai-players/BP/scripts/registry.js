@@ -84,3 +84,48 @@ export function removeAllBotTickingAreas() {
     removeTickingArea(null, tickingName(id, "t"));
   }
 }
+
+// ---------------------------------------------------------------------------
+// Shared ticking areas: bots close to each other share one area, so many bots fit in Bedrock's
+// limit of 10 ticking areas per world. Biggest groups get areas first.
+// ---------------------------------------------------------------------------
+let clusterAreas = []; // [{name, dim}]
+let cleanedLegacy = false;
+
+export function updateClusters(bots) {
+  if (!cfg().keepChunksLoaded) return { clusters: 0, covered: 0 };
+  if (!cleanedLegacy) {
+    // older versions used one area per bot
+    for (const { id } of allRecords()) removeTickingArea(null, tickingName(id));
+    cleanedLegacy = true;
+  }
+  const groups = [];
+  for (const b of bots) {
+    const p = b.feetBlock();
+    const d = b.dimName;
+    let g = groups.find((x) => x.dim === d && Math.hypot(x.cx - p.x, x.cz - p.z) < 48);
+    if (!g) {
+      g = { dim: d, cx: p.x, cz: p.z, y: p.y, members: [] };
+      groups.push(g);
+    }
+    g.members.push(p);
+    g.cx = g.members.reduce((a, m) => a + m.x, 0) / g.members.length;
+    g.cz = g.members.reduce((a, m) => a + m.z, 0) / g.members.length;
+  }
+  groups.sort((a, b) => b.members.length - a.members.length);
+  const max = Math.max(1, Math.min(10, cfg().maxTickingAreas));
+  const chosen = groups.slice(0, max);
+  for (const old of clusterAreas) removeTickingArea(old.dim, old.name);
+  clusterAreas = [];
+  let covered = 0;
+  chosen.forEach((g, i) => {
+    const spread = Math.max(...g.members.map((m) => Math.hypot(m.x - g.cx, m.z - g.cz)));
+    const radius = Math.max(2, Math.min(4, Math.ceil((spread + 20) / 16)));
+    const name = `aip_c${i}`;
+    if (addTickingArea(world.getDimension(g.dim), { x: g.cx, y: g.y, z: g.cz }, name, radius)) {
+      clusterAreas.push({ name, dim: g.dim });
+      covered += g.members.length;
+    }
+  });
+  return { clusters: clusterAreas.length, covered };
+}

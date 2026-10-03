@@ -10,6 +10,13 @@
       0.0,
       0.0
      ]
+    },
+    "root": {
+     "rotation": [
+      0.0,
+      "(query.property('aip:yaw') - query.body_y_rotation) - 360 * math.floor((query.property('aip:yaw') - query.body_y_rotation + 180) / 360)",
+      0.0
+     ]
     }
    }
   },
@@ -332,6 +339,58 @@
       0,
       0,
       -3
+     ]
+    }
+   }
+  },
+  "animation.aip.sleep": {
+   "loop": true,
+   "bones": {
+    "root": {
+     "rotation": [
+      -90,
+      0,
+      0
+     ],
+     "position": [
+      0,
+      2,
+      -12
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "rightArm": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "leftArm": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "rightLeg": {
+     "rotation": [
+      0,
+      0,
+      0
+     ]
+    },
+    "leftLeg": {
+     "rotation": [
+      0,
+      0,
+      0
      ]
     }
    }
