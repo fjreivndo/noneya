@@ -2,7 +2,7 @@
 
 AI Players adds autonomous AI players to your world. Each one has a random username and skin, a personality and a goal. They gather wood, craft tools, mine, smelt, hunt, build houses, fight mobs, travel to the Nether, find the stronghold and try to **beat the game** by killing the Ender Dragon. Nobody controls them. When they have nothing specific to do, they explore, build, go mining, hang out with players and chat.
 
-* **Install:** double-click `release/AIPlayers.mcaddon`. Then create or edit a world and enable both packs: **AI Players BP** and **AI Players RP**.
+* **Install:** double-click `release/AIPlayers_v1.3.1.mcaddon`. Then create or edit a world and enable both packs: **AI Players BP** and **AI Players RP**.
 * **Requires:** Minecraft Bedrock **1.21.90 or newer** (Script API `@minecraft/server` 2.0.0). Works on Windows, mobile, console and Realms or servers that allow add-ons. No experimental toggles are needed.
 
 ---
@@ -20,7 +20,7 @@ The **AI Player Controller** didn't load on current Minecraft versions: it used 
 * **Better cities.** Roads with lamps and bridges, walls with gates, markets, libraries, and house styles from cottages to manors.
 * **Life.** Bots craft and sleep in beds, fish, breed animals, enchant gear at an enchanting table, and build boats to cross water.
 * **Performance.** Nearby bots share ticking areas (**Max ticking areas**, default 8 of Bedrock's 10), path-finding is budgeted across bots, and searches shrink when many bots are online. 15 bots average about 3 ms per tick in the test simulator.
-* **Optional chat pack.** `release/AIPlayers_Chat_BetaAPIs.mcpack` lets bots read normal chat, so you can just type to them. It needs **Beta APIs** enabled and Minecraft 1.26.50 or newer. Without it, talk to bots through the controller item as before.
+* **Optional chat pack.** `release/AIPlayers_Chat_BetaAPIs_v1.0.0.mcpack` lets bots read normal chat, so you can just type to them. It needs **Beta APIs** enabled and Minecraft 1.26.50 or newer. Without it, talk to bots through the controller item as before.
 
 ## New in 1.2.1: no more teleporting
 
@@ -50,7 +50,7 @@ Bots no longer teleport. Pillaring up used to teleport a bot upward whenever its
 
 ### Claude-powered speech (Bedrock Dedicated Server only)
 
-Normal worlds and Realms can't reach the internet, so they use the built-in speech generator. On a **Bedrock Dedicated Server** you can install `AIPlayers_LLM_Bridge_BDS.mcpack` as well:
+Normal worlds and Realms can't reach the internet, so they use the built-in speech generator. On a **Bedrock Dedicated Server** you can install `AIPlayers_LLM_Bridge_BDS_v1.3.1.mcpack` as well:
 
 1. Copy the bridge into `behavior_packs/` and add it to the world next to the AI Players packs.
 2. Turn on the **Beta APIs** experiment for the world (the bridge uses the beta `@minecraft/server-net` and `@minecraft/server-admin` modules).
@@ -157,7 +157,7 @@ To change the defaults for new worlds, edit `BP/scripts/config.js`.
 
 ```
 python3 tools/gen_assets.py   # regenerates skins, models and icons (needs Pillow)
-./build.sh                    # writes dist/AIPlayers.mcaddon
+./build.sh                    # writes dist/AIPlayers_v<version>.mcaddon
 ```
 
 `tools/sim` is a headless simulator. It runs the real AI scripts against a mocked `@minecraft/server` voxel world, so behaviour can be tested without the game: `cd tools/sim && ./setup.sh && node run.mjs min=20 mode=beat_game`, or `node society.mjs bots=5 min=30` to watch a whole society (the chat log, towns, religions and events).
